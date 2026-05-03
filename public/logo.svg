@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" width="200" height="240">
+  <!-- Hexagon background -->
+  <polygon points="100,10 175,50 175,130 100,170 25,130 25,50" fill="#1B2340" stroke="#FACC15" stroke-width="3"/>
+  <!-- Glow effect -->
+  <polygon points="100,10 175,50 175,130 100,170 25,130 25,50" fill="none" stroke="#FACC15" stroke-width="1" opacity="0.3" transform="scale(1.02) translate(-2,-2)"/>
+  <!-- G letter with lightning bolt -->
+  <path d="M120,55 C120,55 85,45 65,65 C45,85 50,115 70,130 C90,145 120,135 125,115 L105,115 L115,95 L135,95 C135,95 140,70 120,55 Z" fill="#FACC15"/>
+  <path d="M105,80 L95,105 L110,105 L100,135 L125,95 L108,95 L120,80 Z" fill="#1B2340"/>
+  <!-- GO text -->
+  <text x="30" y="210" font-family="Arial, sans-serif" font-weight="bold" font-size="42" fill="#FACC15">GO</text>
+  <!-- THE SUPER APP text -->
+  <text x="32" y="232" font-family="Arial, sans-serif" font-weight="600" font-size="14" fill="#FACC15" letter-spacing="2">THE SUPER APP</text>
+</svg>

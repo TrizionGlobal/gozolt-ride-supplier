@@ -10,7 +10,6 @@ import { ActiveRidesTable } from '@/components/dashboard/active-rides-table';
 import { AlertsCard } from '@/components/dashboard/alerts-card';
 import { QuickActions } from '@/components/dashboard/quick-actions';
 import { ExpiringDocsBanner } from '@/components/shared/expiring-docs-banner';
-import { mockExpiringDocuments } from '@/lib/mock-data';
 import { formatCurrency } from '@/lib/utils';
 import type { DashboardKpis } from '@/types';
 
@@ -31,7 +30,7 @@ export default function DashboardPage() {
       <h1 className="mb-6 text-3xl font-bold text-white">Dashboard</h1>
 
       {/* Expiring Documents Banner */}
-      <ExpiringDocsBanner docs={mockExpiringDocuments} />
+      <ExpiringDocsBanner docs={[]} />
 
       {/* Row 1: KPI Stat Cards */}
       <div className="mb-6 grid grid-cols-5 gap-4">

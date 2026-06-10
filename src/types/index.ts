@@ -13,10 +13,14 @@ export enum UserStatus {
 }
 
 export enum DriverStatus {
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  NEW_DRIVER = 'NEW_DRIVER',
+  SUPPLIER_APPROVED = 'SUPPLIER_APPROVED',
+  SUPPLIER_SUSPENDED = 'SUPPLIER_SUSPENDED',
+  ADMIN_APPROVED = 'ADMIN_APPROVED',
+  ADMIN_SUSPENDED = 'ADMIN_SUSPENDED',
+  VEHICLE_ASSIGNED = 'VEHICLE_ASSIGNED',
   ACTIVE = 'ACTIVE',
   SUSPENDED = 'SUSPENDED',
-  INACTIVE = 'INACTIVE',
 }
 
 export enum SupplierStatus {
@@ -165,6 +169,7 @@ export interface SupplierDocument {
   fileUrl: string;
   entityType: string;
   entityId: string;
+  vehicleId?: string | null;
   expiresAt: string | null;
   rejectionReason: string | null;
   createdAt: string;
@@ -223,6 +228,9 @@ export interface FleetVehicle {
 export interface FleetVehicleDetail extends FleetVehicle {
   maintenanceCount: number;
   fuelLogCount: number;
+  driver?: FleetDriverDetail | null;
+  documents?: SupplierDocument[];
+  rideCount?: number;
 }
 
 export interface MaintenanceLog {
@@ -254,6 +262,9 @@ export interface CreateVehiclePayload {
   vin?: string;
   fuelType?: string;
   seats?: number;
+  insurancePolicyNumber?: string;
+  taxRate?: number;
+  mileage?: number;
 }
 
 export interface FleetDriverDetail {
@@ -294,6 +305,8 @@ export interface CreateDriverPayload {
   firstName: string;
   lastName: string;
   email?: string;
+  photo?: File;
+  docs?: { label: string; file: File }[];
 }
 
 export interface ChangeDriverStatusPayload {
@@ -344,6 +357,8 @@ export interface UploadDocumentPayload {
   driverId?: string;
   vehicleId?: string;
   expiresAt?: string;
+  file?: File;
+  entityType?: string;
 }
 
 // GPS Fleet Tracking interfaces

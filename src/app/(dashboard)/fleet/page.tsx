@@ -7,23 +7,28 @@ import { VehicleStatusCards } from '@/components/fleet/vehicle-status-cards';
 import { VehiclesTable } from '@/components/fleet/vehicles-table';
 import { fleetService } from '@/services/fleet/fleet.service';
 import type { FleetVehicle } from '@/types';
+import { useDebounce } from '@/hooks/use-debounce';
 
 export default function FleetPage() {
   const [vehicles, setVehicles] = useState<FleetVehicle[]>([]);
   const [allVehicles, setAllVehicles] = useState<FleetVehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalVehicles, setTotalVehicles] = useState(0);
 
   const fetchVehicles = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await fleetService.getVehicles({ page, limit: 10, search: search || undefined });
+      const res = await fleetService.getVehicles({ page, limit, search: debouncedSearch || undefined });
       setVehicles(res.data);
       setTotalPages(res.totalPages);
+      setTotalVehicles(res.total || 0);
       // Fetch all for status counts (no filter)
-      if (!search) {
+      if (!debouncedSearch) {
         setAllVehicles(res.data);
       }
     } catch {
@@ -31,7 +36,7 @@ export default function FleetPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, search]);
+  }, [page, limit, debouncedSearch]);
 
   // Fetch all vehicles once for status cards
   useEffect(() => {
@@ -75,7 +80,7 @@ export default function FleetPage() {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#71717A]" />
           <input
             type="text"
-            placeholder="Search drivers..."
+            placeholder="Search vehicles or drivers..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -90,35 +95,48 @@ export default function FleetPage() {
       <VehiclesTable vehicles={vehicles} isLoading={isLoading} />
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-center gap-2">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="rounded-lg border border-[#3F3F46] bg-[#111111] px-3 py-1.5 text-sm text-[#A1A1AA] hover:bg-[#1A1A1A] disabled:opacity-50"
-          >
-            Previous
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+      {totalVehicles > 0 && (
+        <div className="flex items-center justify-between border-t border-[#2A2A2A] px-4 py-4 mt-4 bg-[#111111] rounded-b-lg -mt-2">
+          <div className="flex items-center gap-4">
+            <p className="text-xs text-[#6B7280]">
+              Showing {(page - 1) * limit + 1}-{Math.min(page * limit, totalVehicles)} of {totalVehicles} vehicles
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[#6B7280]">Rows per page:</span>
+              <select
+                value={limit}
+                onChange={(e) => {
+                  setLimit(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="appearance-none rounded-md border border-[#3F3F46] bg-[#0A0A0A] py-1 pl-2 pr-6 text-xs text-white focus:border-[#FACC15] focus:outline-none"
+              >
+                <option value={20} className="bg-[#111111] text-white">20</option>
+                <option value={50} className="bg-[#111111] text-white">50</option>
+                <option value={100} className="bg-[#111111] text-white">100</option>
+                <option value={200} className="bg-[#111111] text-white">200</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
             <button
-              key={p}
-              onClick={() => setPage(p)}
-              className={`rounded-lg px-3 py-1.5 text-sm ${
-                p === page
-                  ? 'bg-[#FACC15] text-black font-medium'
-                  : 'border border-[#3F3F46] bg-[#111111] text-[#A1A1AA] hover:bg-[#1A1A1A]'
-              }`}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="text-xs text-[#6B7280] hover:text-white disabled:opacity-50 transition-colors"
             >
-              {p}
+              &lt; Previous
             </button>
-          ))}
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="rounded-lg border border-[#3F3F46] bg-[#111111] px-3 py-1.5 text-sm text-[#A1A1AA] hover:bg-[#1A1A1A] disabled:opacity-50"
-          >
-            Next
-          </button>
+            <span className="text-xs text-[#6B7280]">
+              Page {page} of {totalPages || 1}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages || totalPages === 0}
+              className="text-xs text-[#6B7280] hover:text-white disabled:opacity-50 transition-colors"
+            >
+              Next &gt;
+            </button>
+          </div>
         </div>
       )}
     </div>

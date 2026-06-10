@@ -2,26 +2,10 @@
 
 import { apiClient } from '@/lib/api-client';
 import type { FinancialKPIs, PerDriverEarning, PayoutRecord, RevenueTrendPoint } from '@/types';
-import {
-  mockFinancialKPIs,
-  mockRevenueTrend,
-  mockPerDriverEarnings,
-  mockPayoutHistory,
-} from '@/lib/mock-data';
 
-const isDevBypassed = () => {
-  if (typeof window === 'undefined') return false;
-  return (
-    process.env.NEXT_PUBLIC_DEV_BYPASS === 'true' ||
-    localStorage.getItem('gozolt-supplier-dev-bypass') === 'true'
-  );
-};
 
 export const financialService = {
-  async getFinancialKPIs(): Promise<FinancialKPIs> {
-    if (isDevBypassed()) return mockFinancialKPIs;
-
-    try {
+  async getFinancialKPIs(): Promise<FinancialKPIs> {    try {
       const [analyticsRes, profileRes, payoutsRes] = await Promise.all([
         apiClient.get('/suppliers/analytics'),
         apiClient.get('/suppliers/me'),
@@ -43,24 +27,29 @@ export const financialService = {
       const tipEarnings = analytics.tipEarnings || 0;
       return { grossRevenue, commissionRate, commissionAmount, netRevenue, pendingPayout, tipEarnings };
     } catch {
-      return mockFinancialKPIs;
+      return { grossRevenue: 0, commissionRate: 15, commissionAmount: 0, netRevenue: 0, pendingPayout: 0, tipEarnings: 0 };
     }
   },
 
   async getRevenueTrend(): Promise<RevenueTrendPoint[]> {
-    // No backend endpoint yet — always return mock data
-    return mockRevenueTrend;
+    try {
+      const res = await apiClient.get('/suppliers/analytics/revenue-trend', { params: { range: 'month' } });
+      return res.data;
+    } catch {
+      return [];
+    }
   },
 
   async getPerDriverEarnings(): Promise<PerDriverEarning[]> {
-    // No backend endpoint yet — always return mock data
-    return mockPerDriverEarnings;
+    try {
+      const res = await apiClient.get('/suppliers/analytics/driver-earnings');
+      return res.data;
+    } catch {
+      return [];
+    }
   },
 
-  async getPayoutHistory(): Promise<PayoutRecord[]> {
-    if (isDevBypassed()) return mockPayoutHistory;
-
-    try {
+  async getPayoutHistory(): Promise<PayoutRecord[]> {    try {
       const res = await apiClient.get('/suppliers/payouts', {
         params: { page: 1, limit: 10, sortBy: 'createdAt', order: 'desc' },
       });
@@ -75,7 +64,7 @@ export const financialService = {
         createdAt: p.createdAt,
       }));
     } catch {
-      return mockPayoutHistory;
+      return [];
     }
   },
 

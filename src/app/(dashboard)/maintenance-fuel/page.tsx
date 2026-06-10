@@ -8,7 +8,6 @@ import { MaintenanceTable } from '@/components/maintenance-fuel/maintenance-tabl
 import { FuelTable } from '@/components/maintenance-fuel/fuel-table';
 import { AddEntryModal } from '@/components/maintenance-fuel/add-entry-modal';
 import { MaintenanceReminders } from '@/components/maintenance-fuel/maintenance-reminders';
-import { mockMaintenanceReminders } from '@/lib/mock-data';
 import type { MaintenanceLogEntry, FuelLogEntry } from '@/types';
 
 type TabType = 'maintenance' | 'fuel';
@@ -46,7 +45,7 @@ export default function MaintenanceFuelPage() {
       <h1 className="text-2xl font-bold text-white">Maintenance & Fuel</h1>
 
       {/* Maintenance Reminders */}
-      <MaintenanceReminders reminders={mockMaintenanceReminders} />
+      <MaintenanceReminders reminders={[]} />
 
       {/* Tabs + Actions */}
       <div className="flex items-center justify-between">

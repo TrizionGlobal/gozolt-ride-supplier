@@ -1,46 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { fleetService } from '@/services/fleet/fleet.service';
-import type { FleetVehicleDetail, FleetDriverDetail } from '@/types';
+import type { FleetVehicleDetail } from '@/types';
 
 interface DriverTabProps {
   vehicle: FleetVehicleDetail;
 }
 
 export function DriverTab({ vehicle }: DriverTabProps) {
-  const [driver, setDriver] = useState<FleetDriverDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchDriver = async () => {
-      if (!vehicle.assignedDriverId) {
-        setIsLoading(false);
-        return;
-      }
-      try {
-        const data = await fleetService.getDriverDetail(vehicle.assignedDriverId);
-        setDriver(data);
-      } catch {
-        // ignore
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchDriver();
-  }, [vehicle.assignedDriverId]);
-
-  if (isLoading) {
-    return (
-      <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
-        <div className="space-y-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-10 rounded-lg bg-[#27272A] animate-pulse" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const driver = vehicle.driver;
 
   if (!driver) {
     return (

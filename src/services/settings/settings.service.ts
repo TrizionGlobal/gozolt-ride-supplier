@@ -8,21 +8,7 @@ import type {
   TeamUser,
   LanguageSettings,
 } from '@/types';
-import {
-  mockCompanyProfile,
-  defaultNotificationPreferences,
-  defaultPrivacySettings,
-  mockTeamUsers,
-  defaultLanguageSettings,
-} from '@/lib/mock-data';
 
-const isDevBypassed = () => {
-  if (typeof window === 'undefined') return false;
-  return (
-    process.env.NEXT_PUBLIC_DEV_BYPASS === 'true' ||
-    localStorage.getItem('gozolt-supplier-dev-bypass') === 'true'
-  );
-};
 
 const STORAGE_KEYS = {
   companyProfile: 'gozolt-supplier-company-profile',
@@ -34,32 +20,24 @@ const STORAGE_KEYS = {
 export const settingsService = {
   // ── Company Profile ──
   async getCompanyProfile(): Promise<CompanyProfile> {
-    if (isDevBypassed()) {
-      const stored = localStorage.getItem(STORAGE_KEYS.companyProfile);
-      return stored ? JSON.parse(stored) : mockCompanyProfile;
-    }
     try {
       const res = await apiClient.get('/suppliers/me');
       return res.data;
     } catch {
-      return mockCompanyProfile;
+      return {} as CompanyProfile; // Fallback empty object
     }
   },
 
   async updateCompanyProfile(data: CompanyProfile): Promise<CompanyProfile> {
-    if (isDevBypassed()) {
-      localStorage.setItem(STORAGE_KEYS.companyProfile, JSON.stringify(data));
-      return data;
-    }
     const res = await apiClient.patch('/suppliers/me', data);
     return res.data;
   },
 
   // ── Notifications ──
   getNotificationPreferences(): NotificationPreferences {
-    if (typeof window === 'undefined') return defaultNotificationPreferences;
+    if (typeof window === 'undefined') return { email: true, sms: false, push: true };
     const stored = localStorage.getItem(STORAGE_KEYS.notifications);
-    return stored ? JSON.parse(stored) : defaultNotificationPreferences;
+    return stored ? JSON.parse(stored) : { email: true, sms: false, push: true };
   },
 
   saveNotificationPreferences(prefs: NotificationPreferences): void {
@@ -68,9 +46,9 @@ export const settingsService = {
 
   // ── Privacy ──
   getPrivacySettings(): PrivacySettings {
-    if (typeof window === 'undefined') return defaultPrivacySettings;
+    if (typeof window === 'undefined') return { shareData: false, tracking: true };
     const stored = localStorage.getItem(STORAGE_KEYS.privacy);
-    return stored ? JSON.parse(stored) : defaultPrivacySettings;
+    return stored ? JSON.parse(stored) : { shareData: false, tracking: true };
   },
 
   savePrivacySettings(settings: PrivacySettings): void {
@@ -79,41 +57,28 @@ export const settingsService = {
 
   // ── Team Users ──
   async getTeamUsers(): Promise<TeamUser[]> {
-    if (isDevBypassed()) return mockTeamUsers;
     try {
       const res = await apiClient.get('/suppliers/team');
       return res.data;
     } catch {
-      return mockTeamUsers;
+      return [];
     }
   },
 
   async inviteUser(email: string, role: TeamUser['role']): Promise<TeamUser> {
-    if (isDevBypassed()) {
-      const newUser: TeamUser = {
-        id: `u-${Date.now()}`,
-        name: email.split('@')[0],
-        email,
-        role,
-        status: 'Pending',
-        joinedAt: new Date().toISOString(),
-      };
-      return newUser;
-    }
     const res = await apiClient.post('/suppliers/team/invite', { email, role });
     return res.data;
   },
 
   async removeUser(userId: string): Promise<void> {
-    if (isDevBypassed()) return;
     await apiClient.delete(`/suppliers/team/${userId}`);
   },
 
   // ── Language ──
   getLanguageSettings(): LanguageSettings {
-    if (typeof window === 'undefined') return defaultLanguageSettings;
+    if (typeof window === 'undefined') return { language: 'en', timezone: 'UTC' };
     const stored = localStorage.getItem(STORAGE_KEYS.language);
-    return stored ? JSON.parse(stored) : defaultLanguageSettings;
+    return stored ? JSON.parse(stored) : { language: 'en', timezone: 'UTC' };
   },
 
   saveLanguageSettings(settings: LanguageSettings): void {
@@ -122,7 +87,6 @@ export const settingsService = {
 
   // ── Account Actions ──
   async exportData(): Promise<void> {
-    if (isDevBypassed()) return;
     const res = await apiClient.get('/suppliers/me/export', { responseType: 'blob' });
     const url = URL.createObjectURL(res.data);
     const a = document.createElement('a');
@@ -133,7 +97,6 @@ export const settingsService = {
   },
 
   async deleteAccount(): Promise<void> {
-    if (isDevBypassed()) return;
     await apiClient.delete('/suppliers/me');
   },
 };

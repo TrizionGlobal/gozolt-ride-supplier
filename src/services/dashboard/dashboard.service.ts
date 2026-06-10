@@ -2,19 +2,10 @@
 
 import { apiClient } from '@/lib/api-client';
 import type { DashboardKpis } from '@/types';
-import { mockDashboardKpis } from '@/lib/mock-data';
 
-const isDevBypassed = () => {
-  if (typeof window === 'undefined') return false;
-  return (
-    process.env.NEXT_PUBLIC_DEV_BYPASS === 'true' ||
-    localStorage.getItem('gozolt-supplier-dev-bypass') === 'true'
-  );
-};
 
 export const dashboardService = {
   async getKpis(): Promise<DashboardKpis> {
-    if (isDevBypassed()) return mockDashboardKpis;
     try {
       const res = await apiClient.get('/suppliers/analytics');
       return {
@@ -25,7 +16,13 @@ export const dashboardService = {
         tipEarningsMTD: res.data.tipEarnings ?? 0,
       };
     } catch {
-      return mockDashboardKpis;
+      return {
+        activeDrivers: 0,
+        totalVehicles: 0,
+        ridesToday: 0,
+        revenueMTD: 0,
+        tipEarningsMTD: 0,
+      };
     }
   },
 };

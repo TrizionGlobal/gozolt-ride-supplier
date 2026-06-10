@@ -5,8 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number): string {
-  return `€${amount.toLocaleString('en-IE')}`;
+export function formatCurrency(amount?: number | null): string {
+  if (amount == null || isNaN(amount)) return '€0.00';
+  return `€${amount.toLocaleString('en-IE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function downloadCSV(data: Record<string, unknown>[], filename: string) {

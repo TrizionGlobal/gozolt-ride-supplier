@@ -11,17 +11,20 @@ import { OverviewTab } from '@/components/drivers/tabs/overview-tab';
 import { DocumentsTab } from '@/components/drivers/tabs/documents-tab';
 import { VehicleTab } from '@/components/drivers/tabs/vehicle-tab';
 import { RidesTab } from '@/components/drivers/tabs/rides-tab';
-import { ShiftsTab } from '@/components/drivers/tabs/shifts-tab';
 import { RatingsTab } from '@/components/drivers/tabs/ratings-tab';
 
-const tabs = ['Overview', 'Documents', 'Vehicle', 'Rides', 'Shifts', 'Ratings'] as const;
+const tabs = ['Overview', 'Documents', 'Vehicle', 'Rides', 'Ratings'] as const;
 type TabName = (typeof tabs)[number];
 
 const statusStyles: Record<string, { bg: string; text: string; label: string }> = {
+  [DriverStatus.NEW_DRIVER]: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'New Driver' },
+  [DriverStatus.SUPPLIER_APPROVED]: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Admin Pending' },
+  [DriverStatus.SUPPLIER_SUSPENDED]: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Supplier Suspended' },
+  [DriverStatus.ADMIN_APPROVED]: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Needs Vehicle' },
+  [DriverStatus.ADMIN_SUSPENDED]: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Admin Suspended' },
+  [DriverStatus.VEHICLE_ASSIGNED]: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Vehicle Assigned' },
   [DriverStatus.ACTIVE]: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Active' },
-  [DriverStatus.PENDING_APPROVAL]: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Pending' },
   [DriverStatus.SUSPENDED]: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Suspended' },
-  [DriverStatus.INACTIVE]: { bg: 'bg-zinc-500/20', text: 'text-zinc-400', label: 'Inactive' },
 };
 
 export default function DriverDetailPage() {
@@ -88,18 +91,24 @@ export default function DriverDetailPage() {
 
   const style = statusStyles[driver.status] || statusStyles[DriverStatus.ACTIVE];
 
+  const isVehicleTabVisible = 
+    driver.status === DriverStatus.ACTIVE || 
+    driver.status === DriverStatus.ADMIN_APPROVED ||
+    driver.status === DriverStatus.VEHICLE_ASSIGNED ||
+    driver.status === DriverStatus.SUSPENDED;
+
+  const visibleTabs = tabs.filter(tab => tab !== 'Vehicle' || isVehicleTabVisible);
+
   const renderTab = () => {
     switch (activeTab) {
       case 'Overview':
-        return <OverviewTab driver={driver} vehicle={vehiclePlate} />;
+        return <OverviewTab driver={driver} vehicle={vehiclePlate} onUpdate={(d) => setDriver({ ...driver, ...d })} />;
       case 'Documents':
         return <DocumentsTab driverId={driverId} />;
       case 'Vehicle':
         return <VehicleTab driverId={driverId} />;
       case 'Rides':
         return <RidesTab />;
-      case 'Shifts':
-        return <ShiftsTab />;
       case 'Ratings':
         return <RatingsTab driver={driver} />;
     }
@@ -127,12 +136,56 @@ export default function DriverDetailPage() {
             <span className={`rounded-full px-3 py-1 text-xs font-medium ${style.bg} ${style.text}`}>
               {style.label}
             </span>
-            <button
-              onClick={() => toast.info('Edit mode coming soon')}
-              className="rounded-md border border-[#FACC15] p-1.5 text-[#FACC15] hover:bg-[#FACC15]/10 transition-colors"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
+
+            {/* Supplier Flow Action Buttons */}
+            {driver.status === DriverStatus.NEW_DRIVER && (
+              <>
+                <button
+                  onClick={async () => {
+                    try {
+                      await driverService.supplierApproveDriver(driver.id);
+                      toast.success('Driver application approved. Sent to admin for final review.');
+                      window.location.reload();
+                    } catch {
+                      toast.error('Failed to approve driver');
+                    }
+                  }}
+                  className="rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-500 transition-colors"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await driverService.supplierSuspendDriver(driver.id);
+                      toast.success('Driver suspended.');
+                      window.location.reload();
+                    } catch {
+                      toast.error('Failed to suspend driver');
+                    }
+                  }}
+                  className="rounded-md bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-500 transition-colors ml-2"
+                >
+                  Suspend
+                </button>
+              </>
+            )}
+
+            {driver.status === DriverStatus.SUPPLIER_APPROVED && (
+              <span className="rounded-md border border-gray-600 bg-gray-800 px-3 py-1.5 text-xs font-medium text-gray-400 cursor-not-allowed">
+                Awaiting Admin Approval
+              </span>
+            )}
+
+            {driver.status === DriverStatus.ADMIN_APPROVED && (
+              <button
+                onClick={() => handleTabChange('Vehicle')}
+                className="rounded-md bg-[#FACC15] px-3 py-1.5 text-xs font-semibold text-black hover:bg-[#EAB308] transition-colors"
+              >
+                Assign Vehicle
+              </button>
+            )}
+
           </div>
         </div>
       </div>
@@ -140,7 +193,7 @@ export default function DriverDetailPage() {
       {/* Tab Navigation */}
       <div className="mb-6">
         <div className="flex gap-1">
-          {tabs.map((tab) => (
+          {visibleTabs.map((tab) => (
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}

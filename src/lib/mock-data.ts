@@ -84,7 +84,7 @@ export const mockDrivers: SupplierDriver[] = [
     email: 'peter.weber@demo.com',
     phone: '+49 170 3333333',
     licenseNumber: 'DL-2024-003',
-    status: DriverStatus.PENDING_APPROVAL,
+    status: DriverStatus.SUPPLIER_APPROVED,
     vehicleId: null,
     createdAt: '2025-03-10T14:30:00Z',
   },

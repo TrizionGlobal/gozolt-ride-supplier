@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Camera, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import { fleetService } from '@/services/fleet/fleet.service';
+import { documentService } from '@/services/documents/document.service';
 
-const vehicleTypes = ['ECONOMY', 'STANDARD', 'PREMIUM', 'XL', 'ELECTRIC'];
+const vehicleTypes = ['GO', 'STANDARD', 'COMFORT', 'GREEN', 'PRIME', 'PREMIUM_XL', 'VAN', 'CHAUFFEUR'];
 const fuelTypes = ['PETROL', 'DIESEL', 'ELECTRIC', 'HYBRID', 'LPG'];
 
 interface PhotoSlot {
@@ -87,14 +88,30 @@ export default function AddVehiclePage() {
   };
 
   const handleSubmit = async () => {
-    if (!form.plateNumber || !form.make || !form.model || !form.year || !form.color || !form.type || !form.fuelType || !form.seats) {
+    if (
+      !form.plateNumber || !form.make || !form.model || !form.year || 
+      !form.color || !form.type || !form.fuelType || !form.seats ||
+      !form.insurancePolicy || !form.insuranceExpiry || !form.vrtExpiry || !form.taxRate
+    ) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const hasAllDocs = docs.every((doc) => doc.file !== null);
+    if (!hasAllDocs) {
+      toast.error('Please upload all required documents (Registration, Insurance, VRT)');
+      return;
+    }
+
+    const hasAllPhotos = photos.every((photo) => photo.file !== null);
+    if (!hasAllPhotos) {
+      toast.error('Please upload all 4 required vehicle photos');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await fleetService.createVehicle({
+      const vehiclePayload = {
         type: form.type,
         make: form.make,
         model: form.model,
@@ -103,7 +120,50 @@ export default function AddVehiclePage() {
         plateNumber: form.plateNumber,
         fuelType: form.fuelType,
         seats: parseInt(form.seats),
+        insurancePolicyNumber: form.insurancePolicy || undefined,
+        taxRate: form.taxRate ? parseFloat(form.taxRate) : undefined,
+        mileage: form.currentMileage ? parseInt(form.currentMileage) : undefined,
+      };
+
+      // Prepare documents
+      const docPayloads = docs.map((doc, idx) => {
+        let docType: any = 'OTHER';
+        let expiresAt: string | undefined = undefined;
+
+        if (idx === 0) {
+          docType = 'VEHICLE_REGISTRATION';
+        } else if (idx === 1) {
+          docType = 'INSURANCE';
+          if (form.insuranceExpiry) expiresAt = new Date(form.insuranceExpiry).toISOString();
+        } else if (idx === 2) {
+          docType = 'ROADWORTHINESS';
+          if (form.vrtExpiry) expiresAt = new Date(form.vrtExpiry).toISOString();
+        }
+
+        return {
+          type: docType,
+          file: doc.file!,
+          expiresAt,
+        };
       });
+
+      // Prepare photos
+      const photoPayloads = photos.map((photo, idx) => {
+        let photoType: any = 'VEHICLE_PHOTO_SIDE';
+        if (idx === 0) photoType = 'VEHICLE_PHOTO_FRONT';
+        else if (idx === 1) photoType = 'VEHICLE_PHOTO_BACK';
+        else if (idx === 2) photoType = 'VEHICLE_PHOTO_INTERIOR';
+        else if (idx === 3) photoType = 'VEHICLE_PHOTO_INTERIOR';
+
+        return {
+          type: photoType,
+          file: photo.file!,
+        };
+      });
+
+      // Send EVERYTHING in a single API call to our new Next.js route
+      await fleetService.createVehicleWithDocuments(vehiclePayload, [...docPayloads, ...photoPayloads]);
+
       toast.success('Vehicle submitted for approval');
       router.push('/fleet');
     } catch {
@@ -132,61 +192,61 @@ export default function AddVehiclePage() {
         {/* Section 1: Vehicle Details */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">License Plate*</label>
+            <label className="mb-1.5 block text-sm text-[#D4D4D8]">License Plate<span className="text-red-500">*</span></label>
             <input
               type="text"
-              placeholder="MT - XXX"
+              placeholder="Enter License Plate"
               value={form.plateNumber}
               onChange={(e) => updateForm('plateNumber', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Makes*</label>
+            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Make<span className="text-red-500">*</span></label>
             <input
               type="text"
-              placeholder="Toyota"
+              placeholder="Enter Make"
               value={form.make}
               onChange={(e) => updateForm('make', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Model*</label>
+            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Model<span className="text-red-500">*</span></label>
             <input
               type="text"
-              placeholder="Corolla"
+              placeholder="Enter Model"
               value={form.model}
               onChange={(e) => updateForm('model', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Year*</label>
+            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Year<span className="text-red-500">*</span></label>
             <input
               type="number"
-              placeholder="2024"
+              placeholder="Enter Year"
               value={form.year}
               onChange={(e) => updateForm('year', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Color*</label>
+            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Color<span className="text-red-500">*</span></label>
             <input
               type="text"
-              placeholder="White"
+              placeholder="Enter Color"
               value={form.color}
               onChange={(e) => updateForm('color', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Type*</label>
+            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Type<span className="text-red-500">*</span></label>
             <select
               value={form.type}
               onChange={(e) => updateForm('type', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white focus:border-[#FACC15] focus:outline-none appearance-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white focus:border-[#FACC15] focus:outline-none appearance-none"
             >
               <option value="" className="text-[#52525B]">Select...</option>
               {vehicleTypes.map((t) => (
@@ -195,11 +255,11 @@ export default function AddVehiclePage() {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Fuel Type*</label>
+            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Fuel Type<span className="text-red-500">*</span></label>
             <select
               value={form.fuelType}
               onChange={(e) => updateForm('fuelType', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white focus:border-[#FACC15] focus:outline-none appearance-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white focus:border-[#FACC15] focus:outline-none appearance-none"
             >
               <option value="" className="text-[#52525B]">Select...</option>
               {fuelTypes.map((t) => (
@@ -208,13 +268,13 @@ export default function AddVehiclePage() {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Seats*</label>
+            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Seats<span className="text-red-500">*</span></label>
             <input
               type="number"
-              placeholder="4"
+              placeholder="Enter Seats"
               value={form.seats}
               onChange={(e) => updateForm('seats', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
             />
           </div>
         </div>
@@ -224,41 +284,41 @@ export default function AddVehiclePage() {
           <h2 className="mb-4 text-lg font-semibold text-white">Registration & Insurance</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1.5 block text-sm text-[#D4D4D8]">Insurance Policy #</label>
+              <label className="mb-1.5 block text-sm text-[#D4D4D8]">Insurance Policy #<span className="text-red-500">*</span></label>
               <input
                 type="text"
-                placeholder="INS-XXX"
+                placeholder="Enter Policy #"
                 value={form.insurancePolicy}
                 onChange={(e) => updateForm('insurancePolicy', e.target.value)}
-                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm text-[#D4D4D8]">Insurance Expiry</label>
+              <label className="mb-1.5 block text-sm text-[#D4D4D8]">Insurance Expiry<span className="text-red-500">*</span></label>
               <input
                 type="date"
                 value={form.insuranceExpiry}
                 onChange={(e) => updateForm('insuranceExpiry', e.target.value)}
-                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white focus:border-[#FACC15] focus:outline-none"
+                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white focus:border-[#FACC15] focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm text-[#D4D4D8]">VRT Expiry</label>
+              <label className="mb-1.5 block text-sm text-[#D4D4D8]">VRT Expiry<span className="text-red-500">*</span></label>
               <input
                 type="date"
                 value={form.vrtExpiry}
                 onChange={(e) => updateForm('vrtExpiry', e.target.value)}
-                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white focus:border-[#FACC15] focus:outline-none"
+                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white focus:border-[#FACC15] focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm text-[#D4D4D8]">Tax Rate</label>
+              <label className="mb-1.5 block text-sm text-[#D4D4D8]">Tax Rate<span className="text-red-500">*</span></label>
               <input
                 type="text"
-                placeholder="0.00"
+                placeholder="Enter Tax Rate"
                 value={form.taxRate}
                 onChange={(e) => updateForm('taxRate', e.target.value)}
-                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
               />
             </div>
           </div>
@@ -269,15 +329,16 @@ export default function AddVehiclePage() {
           <h2 className="mb-4 text-lg font-semibold text-white">Current Mileage</h2>
           <input
             type="text"
-            placeholder="0"
+            placeholder="Enter Current Mileage"
             value={form.currentMileage}
             onChange={(e) => updateForm('currentMileage', e.target.value)}
-            className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+            className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
           />
         </div>
 
         {/* Section 4: Vehicle Photos */}
         <div className="border-t border-[#27272A] pt-6 mb-6">
+          <h2 className="mb-4 text-lg font-semibold text-white">Vehicle Photos<span className="text-red-500">*</span></h2>
           <div className="grid grid-cols-2 gap-4">
             {photos.map((photo, i) => (
               <button
@@ -307,6 +368,7 @@ export default function AddVehiclePage() {
 
         {/* Section 5: Document Uploads */}
         <div className="border-t border-[#27272A] pt-6 mb-6">
+          <h2 className="mb-4 text-lg font-semibold text-white">Document Uploads<span className="text-red-500">*</span></h2>
           <div className="grid grid-cols-3 gap-4">
             {docs.map((doc, i) => (
               <button
@@ -340,12 +402,6 @@ export default function AddVehiclePage() {
           className="rounded-full border border-[#3F3F46] bg-[#27272A] px-5 py-2 text-sm text-white hover:bg-[#3F3F46] transition-colors"
         >
           Cancel
-        </button>
-        <button
-          onClick={() => toast.info('Draft saved')}
-          className="rounded-full border border-[#3F3F46] bg-[#27272A] px-5 py-2 text-sm text-white hover:bg-[#3F3F46] transition-colors"
-        >
-          Save Draft
         </button>
         <button
           onClick={handleSubmit}

@@ -11,7 +11,7 @@ const statusConfig = [
   { key: 'total', label: 'Total', color: 'bg-[#FACC15]' },
   { key: VehicleStatus.ACTIVE, label: 'Active', color: 'bg-[#22C55E]' },
   { key: VehicleStatus.MAINTENANCE, label: 'In Maintenance', color: 'bg-[#F97316]' },
-  { key: VehicleStatus.PENDING_APPROVAL, label: 'Pending', color: 'bg-[#EF4444]' },
+  { key: VehicleStatus.PENDING_APPROVAL, label: 'Admin Pending', color: 'bg-[#EF4444]' },
 ] as const;
 
 export function VehicleStatusCards({ vehicles }: VehicleStatusCardsProps) {

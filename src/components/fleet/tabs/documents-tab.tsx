@@ -13,6 +13,13 @@ export function DocumentsTab({ vehicle }: DocumentsTabProps) {
 
 
 
+  const formatDocType = (type: string) => {
+    return type
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   return (
     <div>
       {documents.length === 0 ? (
@@ -33,8 +40,8 @@ export function DocumentsTab({ vehicle }: DocumentsTabProps) {
             >
               <FileText className="h-5 w-5 shrink-0 text-[#A1A1AA]" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-white">{doc.fileName}</p>
-                <p className="text-xs text-[#52525B]">#{doc.id.replace(/-/g, '').slice(0, 8)}</p>
+                <p className="text-sm font-medium text-white">{formatDocType(doc.type)}</p>
+                <p className="text-xs text-[#52525B] truncate max-w-[200px] sm:max-w-xs">{doc.fileName}</p>
               </div>
               <ChevronRight className="h-4 w-4 text-[#52525B]" />
             </div>

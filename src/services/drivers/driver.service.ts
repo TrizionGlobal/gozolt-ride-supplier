@@ -14,10 +14,14 @@ import type {
 let cachedDriversList: any = null;
 let lastDriversParams: string = '';
 let cacheTimestamp = 0;
-const CACHE_TTL = 30000;
+const CACHE_TTL = 300000; // 5 minutes
+
+let cachedVehicleMap: Record<string, string> | null = null;
+let vehicleMapCacheTimestamp = 0;
 
 const clearDriversCache = () => {
   cachedDriversList = null;
+  cachedVehicleMap = null;
 };
 
 export const driverService = {
@@ -69,35 +73,88 @@ export const driverService = {
   },
 
   async createDriver(payload: CreateDriverPayload): Promise<DriverCredentials> {
+    // 1. Create the driver directly via proxy (JSON payload)
+    const createPayload: Record<string, any> = { ...payload };
+    delete createPayload.photo;
+    delete createPayload.docs;
     
-    const formData = new FormData();
-    formData.append('phone', payload.phone);
-    formData.append('firstName', payload.firstName);
-    formData.append('lastName', payload.lastName);
-    if (payload.email) formData.append('email', payload.email);
-
-    if (payload.photo) {
-      formData.append('profileImage', payload.photo);
+    // Ensure emergencyContacts is a string if it's not already
+    if (typeof createPayload.emergencyContacts === 'object') {
+      createPayload.emergencyContacts = JSON.stringify(createPayload.emergencyContacts);
     }
     
-    if (payload.docs) {
+    // Remove empty string values for dates to prevent ISO 8601 validation errors
+    if (!createPayload.dateOfBirth) delete createPayload.dateOfBirth;
+    if (!createPayload.licenseExpiryDate) delete createPayload.licenseExpiryDate;
+    if (!createPayload.licenseIssueDate) delete createPayload.licenseIssueDate;
+    if (!createPayload.email) delete createPayload.email;
+
+    const res = await apiClient.post('/suppliers/drivers', createPayload);
+    const driverCreds = res.data;
+    const driverId = driverCreds.driverId || driverCreds.id;
+
+    // 2. Upload documents individually via proxy
+    const uploadPromises: any[] = [];
+
+    if (payload.photo) {
+      const fd = new FormData();
+      fd.append('type', 'PROFILE_PHOTO');
+      fd.append('entityType', 'DRIVER');
+      fd.append('entityId', driverId);
+      fd.append('file', payload.photo);
+      uploadPromises.push(
+        apiClient.post('/documents/upload', fd, {
+          transformRequest: [(data, headers) => { delete headers['Content-Type']; return data; }],
+        })
+      );
+    }
+
+    if (payload.docs && payload.docs.length > 0) {
       payload.docs.forEach((doc) => {
-        // We'll normalize the labels to match what backend expects if needed, or just append them directly
-        // For now, we'll append them as 'documents' or use specific keys based on label
-        formData.append(doc.label.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase(), doc.file);
+        if (!doc.file) return;
+        
+        let docType = 'DRIVING_LICENSE';
+        const fn = doc.label.toLowerCase();
+        if (fn.includes('id') || fn.includes('passport') || fn.includes('residence')) docType = 'ID_CARD';
+        if (fn.includes('police')) docType = 'POLICE_CLEARANCE';
+        if (fn.includes('tm_tag') || fn.includes('transport') || fn.includes('taxi') || fn.includes('passenger') || fn.includes('permit')) docType = 'TAXI_LICENSE';
+        if (fn.includes('driving_license') || fn.includes('license')) docType = 'DRIVING_LICENSE';
+        if (fn.includes('cpc')) docType = 'CPC_CERTIFICATE';
+        if (fn.includes('insurance')) docType = 'INSURANCE';
+        if (fn.includes('medical') || fn.includes('fitness')) docType = 'MEDICAL_CERTIFICATE';
+        if (fn.includes('work') || fn.includes('residence permit')) docType = 'WORK_PERMIT';
+        if (fn.includes('address') || fn.includes('utility') || fn.includes('bank')) docType = 'PROOF_OF_ADDRESS';
+
+        const fd = new FormData();
+        fd.append('type', docType);
+        fd.append('entityType', 'DRIVER');
+        fd.append('entityId', driverId);
+        
+        // Rename the file to include the label so it's clearly identifiable (e.g., distinguishing Front/Back ID)
+        const safeLabel = doc.label.replace(/[^a-zA-Z0-9 -]/g, '').trim();
+        const renamedFile = new File([doc.file], `${safeLabel} - ${doc.file.name}`, { type: doc.file.type });
+        fd.append('file', renamedFile);
+
+        uploadPromises.push(
+          apiClient.post('/documents/upload', fd, {
+            transformRequest: [(data, headers) => { delete headers['Content-Type']; return data; }],
+          })
+        );
       });
     }
 
-    const res = await apiClient.post('/suppliers/drivers', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    if (uploadPromises.length > 0) {
+      await Promise.all(uploadPromises);
+    }
+
     clearDriversCache();
-    return res.data;
+    return driverCreds;
   },
 
   async getDriverVehicleMap(): Promise<Record<string, string>> {
+    if (cachedVehicleMap && Date.now() - vehicleMapCacheTimestamp < CACHE_TTL) {
+      return cachedVehicleMap;
+    }
     const res = await apiClient.get('/suppliers/vehicles', { params: { page: 1, limit: 100 } });
     const vehicles = res.data.data || res.data;
     const map: Record<string, string> = {};
@@ -106,6 +163,8 @@ export const driverService = {
         map[v.assignedDriverId] = v.plateNumber;
       }
     }
+    cachedVehicleMap = map;
+    vehicleMapCacheTimestamp = Date.now();
     return map;
   },
 
@@ -134,14 +193,21 @@ export const driverService = {
 
   async getDriverDocuments(driverId: string): Promise<DriverDocument[]> {
     try {
-      const res = await apiClient.get('/suppliers/documents', { params: { page: 1, limit: 50 } });
-      const docs = (res.data.data || res.data).filter(
-        (d: { entityId: string; entityType: string }) => d.entityId === driverId && d.entityType === 'DRIVER',
-      );
-      return docs.map((d: { id: string; fileName: string }) => ({
+      const res = await apiClient.get('/suppliers/documents', { 
+        params: { 
+          page: 1, 
+          limit: 50,
+          entityId: driverId,
+          entityType: 'DRIVER'
+        } 
+      });
+      const docs = res.data.data || res.data;
+      return docs.map((d: { id: string; type: string; fileName: string; fileUrl?: string }) => ({
         id: d.id,
-        type: d.fileName,
+        type: d.type,
+        fileName: d.fileName,
         referenceNumber: `#${d.id.replace(/-/g, '').slice(0, 8)}`,
+        fileUrl: d.fileUrl,
       }));
     } catch {
       return [];
@@ -163,6 +229,7 @@ export const driverService = {
       id: res.data.id || `doc-${Date.now()}`,
       type: file.name,
       referenceNumber: res.data.id ? `#${res.data.id.replace(/-/g, '').slice(0, 8)}` : `#mock`,
+      fileUrl: res.data.fileUrl,
     };
   },
 

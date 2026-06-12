@@ -62,9 +62,9 @@ export default function FleetPage() {
         <h1 className="text-2xl font-bold text-white">Fleet – Vehicles</h1>
         <Link
           href="/fleet/add"
-          className="flex items-center gap-2 rounded-full bg-[#FACC15] px-4 py-2 text-sm font-semibold text-black hover:bg-[#EAB308] transition-colors"
+          className="flex items-center gap-1.5 rounded-full bg-[#FACC15] px-3 py-1.5 text-xs font-semibold text-black hover:bg-[#EAB308] transition-colors"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-3.5 w-3.5" />
           Add Vehicle
         </Link>
       </div>

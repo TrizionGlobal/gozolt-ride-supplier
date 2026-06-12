@@ -307,6 +307,20 @@ export interface CreateDriverPayload {
   email?: string;
   photo?: File;
   docs?: { label: string; file: File }[];
+  dateOfBirth?: string;
+  nationality?: string;
+  countryOfResidence?: string;
+  nationalId?: string;
+  homeAddress?: string;
+  emergencyContacts?: string;
+  licenseNumber?: string;
+  licenseExpiryDate?: string;
+  licenseIssueDate?: string;
+  licenseCategory?: string;
+  licenseIssuingCountry?: string;
+  cpcCertificateNumber?: string;
+  taxiPhvLicenseNumber?: string;
+  insurancePolicyNumber?: string;
 }
 
 export interface ChangeDriverStatusPayload {
@@ -324,6 +338,8 @@ export interface DriverDocument {
   id: string;
   type: string;
   referenceNumber: string;
+  fileUrl?: string;
+  fileName?: string;
 }
 
 export interface AssignedVehicle {

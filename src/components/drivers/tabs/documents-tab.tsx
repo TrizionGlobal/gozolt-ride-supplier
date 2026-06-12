@@ -38,34 +38,15 @@ export function DocumentsTab({ driverId }: DocumentsTabProps) {
     );
   }
 
+  const formatDocType = (type: string) => {
+    return type
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   return (
     <div>
-      <div className="mb-4 flex justify-end">
-        <label className="flex cursor-pointer items-center gap-1.5 text-sm text-[#FACC15] hover:underline">
-          <input
-            type="file"
-            className="hidden"
-            disabled={isLoading}
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (!file) return;
-              setIsLoading(true);
-              try {
-                const newDoc = await driverService.uploadDriverDocument(driverId, file);
-                setDocuments((prev) => [...prev, newDoc]);
-                toast.success('Document uploaded successfully');
-              } catch {
-                toast.error('Failed to upload document');
-              } finally {
-                setIsLoading(false);
-              }
-            }}
-          />
-          <Plus className="h-3.5 w-3.5" />
-          Upload Document
-        </label>
-      </div>
-
       {documents.length === 0 ? (
         <div className="rounded-lg border border-[#27272A] bg-[#111111] p-8 text-center">
           <FileText className="mx-auto mb-2 h-8 w-8 text-[#52525B]" />
@@ -79,12 +60,26 @@ export function DocumentsTab({ driverId }: DocumentsTabProps) {
               className="flex items-center gap-3 rounded-lg border border-[#27272A] bg-[#111111] p-4"
             >
               <FileText className="h-5 w-5 shrink-0 text-[#A1A1AA]" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-white">{doc.type}</p>
-                <p className="text-xs text-[#52525B]">{doc.referenceNumber}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">{formatDocType(doc.type)}</p>
+                {doc.fileName && (
+                  <p className="text-xs text-[#71717A] truncate" title={doc.fileName}>
+                    {doc.fileName}
+                  </p>
+                )}
+                {doc.referenceNumber && doc.referenceNumber !== 'undefined' && (
+                  <p className="text-[10px] text-[#52525B] mt-0.5">{doc.referenceNumber}</p>
+                )}
               </div>
               <button
-                onClick={() => toast.info('Document preview coming soon')}
+                onClick={() => {
+                  console.log('Clicked doc:', doc);
+                  if (doc.fileUrl) {
+                    window.open(doc.fileUrl, '_blank');
+                  } else {
+                    toast.error('Document preview not available');
+                  }
+                }}
                 className="text-[#A1A1AA] hover:text-white transition-colors"
               >
                 <Eye className="h-4 w-4" />

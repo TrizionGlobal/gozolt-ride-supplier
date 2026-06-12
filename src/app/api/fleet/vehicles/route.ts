@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const vehicleData = JSON.parse(vehicleDataStr);
     
     // 1. Create vehicle
-    const createRes = await fetch(`${BACKEND_URL}/v1/fleet/vehicles`, {
+    const createRes = await fetch(`${BACKEND_URL}/v1/suppliers/vehicles`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

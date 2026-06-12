@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, HandCoins, Pencil, X, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
@@ -33,7 +33,7 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
   const [phoneWithoutCode, setPhoneWithoutCode] = useState(
     driver.phone?.startsWith('+356') ? driver.phone.slice(4) : driver.phone || ''
   );
-  
+
   const [formData, setFormData] = useState({
     firstName: driver.firstName,
     lastName: driver.lastName,
@@ -42,7 +42,7 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
   });
 
   const style = statusStyles[driver.status] || statusStyles[DriverStatus.ACTIVE];
-  
+
   const [earnings, setEarnings] = useState<PerDriverEarning | null>(null);
 
   useEffect(() => {
@@ -155,9 +155,10 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
                 <select
                   value={countryCode}
                   onChange={(e) => setCountryCode(e.target.value)}
-                  className="w-[120px] rounded-md border border-[#3F3F46] bg-[#0A0A0A] px-3 py-1.5 text-sm text-white focus:border-[#FACC15] focus:outline-none"
+                  className="w-[100px] shrink-0 appearance-none rounded-md border border-[#3F3F46] bg-[#0A0A0A] p-2 text-sm text-white focus:border-[#FACC15] focus:outline-none"
                 >
                   <option value="+356">🇲🇹 +356</option>
+                  <option value="+91">🇮🇳 +91</option>
                 </select>
                 <input
                   type="text"

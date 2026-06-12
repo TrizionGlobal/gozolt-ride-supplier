@@ -10,8 +10,9 @@ interface VehicleStatusCardsProps {
 const statusConfig = [
   { key: 'total', label: 'Total', color: 'bg-[#FACC15]' },
   { key: VehicleStatus.ACTIVE, label: 'Active', color: 'bg-[#22C55E]' },
+  { key: VehicleStatus.PENDING_APPROVAL, label: 'Pending Approval', color: 'bg-[#EAB308]' },
   { key: VehicleStatus.MAINTENANCE, label: 'In Maintenance', color: 'bg-[#F97316]' },
-  { key: VehicleStatus.PENDING_APPROVAL, label: 'Admin Pending', color: 'bg-[#EF4444]' },
+  { key: VehicleStatus.SUSPENDED, label: 'Suspended', color: 'bg-[#EF4444]' },
 ] as const;
 
 export function VehicleStatusCards({ vehicles }: VehicleStatusCardsProps) {
@@ -21,7 +22,7 @@ export function VehicleStatusCards({ vehicles }: VehicleStatusCardsProps) {
   };
 
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
       {statusConfig.map((item) => (
         <div
           key={item.key}

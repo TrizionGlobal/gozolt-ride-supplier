@@ -121,8 +121,6 @@ export default function AddVehiclePage() {
         fuelType: form.fuelType,
         seats: parseInt(form.seats),
         insurancePolicyNumber: form.insurancePolicy || undefined,
-        taxRate: form.taxRate ? parseFloat(form.taxRate) : undefined,
-        mileage: form.currentMileage ? parseInt(form.currentMileage) : undefined,
       };
 
       // Prepare documents
@@ -142,6 +140,7 @@ export default function AddVehiclePage() {
 
         return {
           type: docType,
+          label: doc.label,
           file: doc.file!,
           expiresAt,
         };
@@ -166,8 +165,9 @@ export default function AddVehiclePage() {
 
       toast.success('Vehicle submitted for approval');
       router.push('/fleet');
-    } catch {
-      toast.error('Failed to create vehicle');
+    } catch (err: any) {
+      const errMsg = err.response?.data?.error || err.message || 'Failed to create vehicle';
+      toast.error(errMsg);
     } finally {
       setIsSubmitting(false);
     }
@@ -179,12 +179,12 @@ export default function AddVehiclePage() {
       <div className="mb-6">
         <button
           onClick={() => router.push('/fleet')}
-          className="mb-4 flex items-center gap-2 text-sm text-[#A1A1AA] hover:text-white transition-colors"
+          className="mb-4 flex items-center gap-2 text-xs text-[#A1A1AA] hover:text-white transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Fleet
         </button>
-        <h1 className="text-2xl font-bold text-white">Vehicle Details</h1>
+        <h1 className="text-xl font-bold text-white">Vehicle Details</h1>
       </div>
 
       {/* Form Card */}
@@ -192,61 +192,61 @@ export default function AddVehiclePage() {
         {/* Section 1: Vehicle Details */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">License Plate<span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs text-[#D4D4D8]">License Plate<span className="text-red-500">*</span></label>
             <input
               type="text"
               placeholder="Enter License Plate"
               value={form.plateNumber}
               onChange={(e) => updateForm('plateNumber', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Make<span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Make<span className="text-red-500">*</span></label>
             <input
               type="text"
               placeholder="Enter Make"
               value={form.make}
               onChange={(e) => updateForm('make', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Model<span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Model<span className="text-red-500">*</span></label>
             <input
               type="text"
               placeholder="Enter Model"
               value={form.model}
               onChange={(e) => updateForm('model', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Year<span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Year<span className="text-red-500">*</span></label>
             <input
               type="number"
               placeholder="Enter Year"
               value={form.year}
               onChange={(e) => updateForm('year', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Color<span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Color<span className="text-red-500">*</span></label>
             <input
               type="text"
               placeholder="Enter Color"
               value={form.color}
               onChange={(e) => updateForm('color', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Type<span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Type<span className="text-red-500">*</span></label>
             <select
               value={form.type}
               onChange={(e) => updateForm('type', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white focus:border-[#FACC15] focus:outline-none appearance-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white focus:border-[#FACC15] focus:outline-none appearance-none"
             >
               <option value="" className="text-[#52525B]">Select...</option>
               {vehicleTypes.map((t) => (
@@ -255,11 +255,11 @@ export default function AddVehiclePage() {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Fuel Type<span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Fuel Type<span className="text-red-500">*</span></label>
             <select
               value={form.fuelType}
               onChange={(e) => updateForm('fuelType', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white focus:border-[#FACC15] focus:outline-none appearance-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white focus:border-[#FACC15] focus:outline-none appearance-none"
             >
               <option value="" className="text-[#52525B]">Select...</option>
               {fuelTypes.map((t) => (
@@ -268,57 +268,57 @@ export default function AddVehiclePage() {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-[#D4D4D8]">Seats<span className="text-red-500">*</span></label>
+            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Seats<span className="text-red-500">*</span></label>
             <input
               type="number"
               placeholder="Enter Seats"
               value={form.seats}
               onChange={(e) => updateForm('seats', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
             />
           </div>
         </div>
 
         {/* Section 2: Registration & Insurance */}
         <div className="border-t border-[#27272A] pt-6 mb-6">
-          <h2 className="mb-4 text-lg font-semibold text-white">Registration & Insurance</h2>
+          <h2 className="mb-4 text-base font-semibold text-white">Registration & Insurance</h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1.5 block text-sm text-[#D4D4D8]">Insurance Policy #<span className="text-red-500">*</span></label>
+              <label className="mb-1.5 block text-xs text-[#D4D4D8]">Insurance Policy #<span className="text-red-500">*</span></label>
               <input
                 type="text"
                 placeholder="Enter Policy #"
                 value={form.insurancePolicy}
                 onChange={(e) => updateForm('insurancePolicy', e.target.value)}
-                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm text-[#D4D4D8]">Insurance Expiry<span className="text-red-500">*</span></label>
+              <label className="mb-1.5 block text-xs text-[#D4D4D8]">Insurance Expiry<span className="text-red-500">*</span></label>
               <input
                 type="date"
                 value={form.insuranceExpiry}
                 onChange={(e) => updateForm('insuranceExpiry', e.target.value)}
-                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white focus:border-[#FACC15] focus:outline-none"
+                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white focus:border-[#FACC15] focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm text-[#D4D4D8]">VRT Expiry<span className="text-red-500">*</span></label>
+              <label className="mb-1.5 block text-xs text-[#D4D4D8]">VRT Expiry<span className="text-red-500">*</span></label>
               <input
                 type="date"
                 value={form.vrtExpiry}
                 onChange={(e) => updateForm('vrtExpiry', e.target.value)}
-                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white focus:border-[#FACC15] focus:outline-none"
+                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white focus:border-[#FACC15] focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm text-[#D4D4D8]">Tax Rate<span className="text-red-500">*</span></label>
+              <label className="mb-1.5 block text-xs text-[#D4D4D8]">Tax Rate<span className="text-red-500">*</span></label>
               <input
                 type="text"
                 placeholder="Enter Tax Rate"
                 value={form.taxRate}
                 onChange={(e) => updateForm('taxRate', e.target.value)}
-                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
               />
             </div>
           </div>
@@ -326,19 +326,19 @@ export default function AddVehiclePage() {
 
         {/* Section 3: Current Mileage */}
         <div className="border-t border-[#27272A] pt-6 mb-6">
-          <h2 className="mb-4 text-lg font-semibold text-white">Current Mileage</h2>
+          <h2 className="mb-4 text-base font-semibold text-white">Current Mileage</h2>
           <input
             type="text"
             placeholder="Enter Current Mileage"
             value={form.currentMileage}
             onChange={(e) => updateForm('currentMileage', e.target.value)}
-            className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-sm text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+            className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
           />
         </div>
 
         {/* Section 4: Vehicle Photos */}
         <div className="border-t border-[#27272A] pt-6 mb-6">
-          <h2 className="mb-4 text-lg font-semibold text-white">Vehicle Photos<span className="text-red-500">*</span></h2>
+          <h2 className="mb-4 text-base font-semibold text-white">Vehicle Photos<span className="text-red-500">*</span></h2>
           <div className="grid grid-cols-2 gap-4">
             {photos.map((photo, i) => (
               <button
@@ -352,7 +352,7 @@ export default function AddVehiclePage() {
                 ) : (
                   <Camera className="h-8 w-8 text-[#52525B]" />
                 )}
-                <span className="text-sm font-medium text-[#D4D4D8]">{photo.label}</span>
+                <span className="text-xs font-medium text-[#D4D4D8]">{photo.label}</span>
                 <span className="text-[10px] text-[#52525B]">JPG, PNG — max 5MB</span>
                 <input
                   ref={(el) => { photoRefs.current[i] = el; }}
@@ -368,7 +368,7 @@ export default function AddVehiclePage() {
 
         {/* Section 5: Document Uploads */}
         <div className="border-t border-[#27272A] pt-6 mb-6">
-          <h2 className="mb-4 text-lg font-semibold text-white">Document Uploads<span className="text-red-500">*</span></h2>
+          <h2 className="mb-4 text-base font-semibold text-white">Document Uploads<span className="text-red-500">*</span></h2>
           <div className="grid grid-cols-3 gap-4">
             {docs.map((doc, i) => (
               <button
@@ -399,14 +399,14 @@ export default function AddVehiclePage() {
       <div className="mt-6 flex items-center justify-end gap-3">
         <button
           onClick={() => router.push('/fleet')}
-          className="rounded-full border border-[#3F3F46] bg-[#27272A] px-5 py-2 text-sm text-white hover:bg-[#3F3F46] transition-colors"
+          className="rounded-full border border-[#3F3F46] bg-[#27272A] px-5 py-2 text-xs text-white hover:bg-[#3F3F46] transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className="rounded-full bg-[#FACC15] px-5 py-2 text-sm font-semibold text-black hover:bg-[#EAB308] transition-colors disabled:opacity-50"
+          className="rounded-full bg-[#FACC15] px-5 py-2 text-xs font-semibold text-black hover:bg-[#EAB308] transition-colors disabled:opacity-50"
         >
           {isSubmitting ? 'Submitting...' : 'Submit for Approval'}
         </button>

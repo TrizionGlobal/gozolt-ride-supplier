@@ -31,13 +31,21 @@ async function proxyRequest(request: NextRequest, { params }: { params: Promise<
   };
 
   if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
-    try {
-      const body = await request.text();
-      if (body) {
-        fetchOptions.body = body;
+    const contentType = request.headers.get('content-type') || '';
+    if (contentType.includes('multipart/form-data')) {
+      // Forward the boundary properly
+      headers['Content-Type'] = contentType;
+      fetchOptions.body = request.body;
+      (fetchOptions as any).duplex = 'half';
+    } else {
+      try {
+        const body = await request.text();
+        if (body) {
+          fetchOptions.body = body;
+        }
+      } catch {
+        // no body
       }
-    } catch {
-      // no body
     }
   }
 

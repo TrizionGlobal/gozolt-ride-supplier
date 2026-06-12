@@ -7,7 +7,6 @@ import { CurrentPlanBanner } from '@/components/subscription/current-plan-banner
 import { PlanComparisonCards } from '@/components/subscription/plan-comparison-cards';
 import { RatePricingTable } from '@/components/subscription/rate-pricing-table';
 import { BillingHistoryTable } from '@/components/subscription/billing-history-table';
-import { vehicleRatePricing, mockBillingHistory } from '@/lib/mock-data';
 import type { SubscriptionInfo, PlanDetails } from '@/types';
 
 const PLAN_CONFIG: PlanDetails[] = [
@@ -136,10 +135,10 @@ export default function SubscriptionPage() {
       />
 
       {/* Vehicle Rate Pricing */}
-      <RatePricingTable data={vehicleRatePricing} />
+      <RatePricingTable data={[]} />
 
       {/* Billing History */}
-      <BillingHistoryTable data={mockBillingHistory} />
+      <BillingHistoryTable data={[]} />
 
       {/* Cancel Subscription Dialog */}
       {showCancelDialog && (

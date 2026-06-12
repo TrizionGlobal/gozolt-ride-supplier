@@ -1,9 +1,28 @@
 'use client';
 
-import { mockDashboardActiveRides } from '@/lib/mock-data';
+import { useEffect, useState } from 'react';
+import { ridesService } from '@/services/rides/rides.service';
+import type { SupplierRideListItem } from '@/types';
 import { formatCurrency } from '@/lib/utils';
 
 export function ActiveRidesTable() {
+  const [rides, setRides] = useState<SupplierRideListItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadRides() {
+      try {
+        const res = await ridesService.getRides({ status: 'ACTIVE' });
+        setRides(res.data || []);
+      } catch {
+        setRides([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadRides();
+  }, []);
+
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#111111]">
       {/* Header */}
@@ -33,23 +52,33 @@ export function ActiveRidesTable() {
             </tr>
           </thead>
           <tbody>
-            {mockDashboardActiveRides.map((ride) => (
-              <tr key={ride.id} className="border-b border-[#27272A] last:border-b-0">
-                <td className="px-4 py-3 text-sm text-white">{ride.driver}</td>
-                <td className="px-4 py-3 text-sm text-white">{ride.vehicle}</td>
-                <td className="px-4 py-3 text-sm text-white">{ride.rider}</td>
-                <td className="px-4 py-3 text-sm text-[#A1A1AA]">{ride.route}</td>
-                <td className="px-4 py-3">
-                  <span className="rounded-full bg-[#22C55E]/20 px-2 py-1 text-xs text-[#22C55E]">
-                    {ride.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-sm text-[#A1A1AA]">{ride.duration}</td>
-                <td className="px-4 py-3 text-sm font-medium text-green-400">
-                  {ride.tipAmount ? formatCurrency(ride.tipAmount) : '—'}
-                </td>
+            {loading ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-[#71717A]">Loading active rides...</td>
               </tr>
-            ))}
+            ) : rides.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-[#71717A]">No active rides</td>
+              </tr>
+            ) : (
+              rides.map((ride) => (
+                <tr key={ride.id} className="border-b border-[#27272A] last:border-b-0">
+                  <td className="px-4 py-3 text-sm text-white">{ride.driverName}</td>
+                  <td className="px-4 py-3 text-sm text-white">{ride.vehiclePlate}</td>
+                  <td className="px-4 py-3 text-sm text-white">{ride.riderName}</td>
+                  <td className="px-4 py-3 text-sm text-[#A1A1AA]">{ride.pickupAddress || 'Unknown'} → {ride.dropoffAddress || 'Unknown'}</td>
+                  <td className="px-4 py-3">
+                    <span className="rounded-full bg-[#22C55E]/20 px-2 py-1 text-xs text-[#22C55E]">
+                      {ride.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[#A1A1AA]">—</td>
+                  <td className="px-4 py-3 text-sm font-medium text-green-400">
+                    {ride.tipAmount ? formatCurrency(ride.tipAmount) : '—'}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

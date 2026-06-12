@@ -5,7 +5,6 @@ import L from 'leaflet';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { FleetLocationData } from '@/types';
-import { mockRoutePolyline } from '@/lib/mock-data';
 
 // Fix Leaflet default marker icons
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,12 +69,6 @@ export default function FleetMap({ locations, selectedDriverId, onMarkerClick }:
         <TileLayer
           attribution='&copy; <a href="https://carto.com/">CARTO</a>'
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        />
-
-        {/* Route polyline */}
-        <Polyline
-          positions={mockRoutePolyline}
-          pathOptions={{ color: '#EF4444', weight: 3, dashArray: '8, 8', opacity: 0.7 }}
         />
 
         {/* Vehicle markers */}

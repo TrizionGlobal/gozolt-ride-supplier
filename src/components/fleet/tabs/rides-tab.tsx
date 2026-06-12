@@ -2,13 +2,18 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
-const RIDES_COUNT = 340;
-const data = [
-  { name: 'Completed', value: RIDES_COUNT },
-  { name: 'Remaining', value: 100 },
-];
+import type { FleetVehicleDetail } from '@/types';
 
-export function RidesTab() {
+interface RidesTabProps {
+  vehicle: FleetVehicleDetail;
+}
+
+export function RidesTab({ vehicle }: RidesTabProps) {
+  const RIDES_COUNT = vehicle.rideCount || 0;
+  const data = [
+    { name: 'Completed', value: RIDES_COUNT },
+    { name: 'Remaining', value: 100 },
+  ];
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
       <p className="mb-4 text-sm text-[#A1A1AA]">Total rides completed this month:</p>

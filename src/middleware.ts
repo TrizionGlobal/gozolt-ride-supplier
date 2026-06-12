@@ -18,10 +18,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // In DEV_BYPASS mode, check localStorage-simulated auth via a cookie marker
   if (DEV_BYPASS) {
     const devAuth = request.cookies.get('gozolt-supplier-dev-authenticated')?.value;
     if (!devAuth) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+      }
       return NextResponse.redirect(new URL('/login', request.url));
     }
     return NextResponse.next();
@@ -30,6 +32,9 @@ export function middleware(request: NextRequest) {
   // Check for auth cookie
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   if (!token) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

@@ -2,15 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Search, ChevronDown } from 'lucide-react';
+import { Plus, Search, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DriversTable } from '@/components/drivers/drivers-table';
 import { driverService } from '@/services/drivers/driver.service';
+import { useDebounce } from '@/hooks/use-debounce';
 import type { Driver } from '@/types';
 
 const statusOptions = [
-  { label: 'Status', value: 'ALL' },
+  { label: 'Status (All)', value: 'ALL' },
   { label: 'Active', value: 'ACTIVE' },
-  { label: 'Pending', value: 'PENDING_APPROVAL' },
+  { label: 'Pending Supplier Review', value: 'PENDING_SUPPLIER_REVIEW' },
+  { label: 'Pending Admin Review', value: 'PENDING_ADMIN_APPROVAL' },
+  { label: 'Needs Vehicle', value: 'PENDING_VEHICLE_ASSIGNMENT' },
   { label: 'Suspended', value: 'SUSPENDED' },
   { label: 'Inactive', value: 'INACTIVE' },
 ];
@@ -20,27 +23,33 @@ export default function DriversPage() {
   const [vehicleMap, setVehicleMap] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalDrivers, setTotalDrivers] = useState(0);
 
   const fetchDrivers = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await driverService.getDrivers({
         page,
-        limit: 10,
+        limit,
         status: statusFilter !== 'ALL' ? statusFilter : undefined,
-        search: search || undefined,
+        search: debouncedSearch || undefined,
       });
-      setDrivers(res.data);
-      setTotalPages(res.totalPages);
+      const data: any = res.data || [];
+      setDrivers(Array.isArray(data) ? data : data.data || []);
+      setTotalPages(res.totalPages || 1);
+      setTotalDrivers(res.total || 0);
     } catch {
       setDrivers([]);
+      setTotalDrivers(0);
     } finally {
       setIsLoading(false);
     }
-  }, [page, statusFilter, search]);
+  }, [page, limit, statusFilter, debouncedSearch]);
 
   useEffect(() => {
     const fetchVehicleMap = async () => {
@@ -97,7 +106,7 @@ export default function DriversPage() {
             className="appearance-none rounded-lg border border-[#3F3F46] bg-[#0A0A0A] py-2.5 pl-3 pr-9 text-sm text-white focus:border-[#FACC15] focus:outline-none"
           >
             {statusOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
+              <option key={opt.value} value={opt.value} className="bg-[#111111] text-white">
                 {opt.label}
               </option>
             ))}
@@ -110,35 +119,51 @@ export default function DriversPage() {
       <DriversTable drivers={drivers} vehicleMap={vehicleMap} isLoading={isLoading} />
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-center gap-2">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="rounded-lg border border-[#3F3F46] bg-[#111111] px-3 py-1.5 text-sm text-[#A1A1AA] hover:bg-[#1A1A1A] disabled:opacity-50"
-          >
-            Previous
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+      {totalDrivers > 0 && (
+        <div className="flex items-center justify-between border-t border-[#2A2A2A] px-4 py-4 mt-4 bg-[#111111] rounded-b-lg -mt-2">
+          <div className="flex items-center gap-4">
+            <p className="text-xs text-[#6B7280]">
+              Showing {(page - 1) * limit + 1}-{Math.min(page * limit, totalDrivers)} of {totalDrivers} drivers
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[#6B7280]">Rows per page:</span>
+              <select
+                value={limit}
+                onChange={(e) => {
+                  setLimit(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="appearance-none rounded-md border border-[#3F3F46] bg-[#0A0A0A] py-1 pl-2 pr-6 text-xs text-white focus:border-[#FACC15] focus:outline-none"
+              >
+                <option value={20} className="bg-[#111111] text-white">20</option>
+                <option value={50} className="bg-[#111111] text-white">50</option>
+                <option value={100} className="bg-[#111111] text-white">100</option>
+                <option value={200} className="bg-[#111111] text-white">200</option>
+                <option value={500} className="bg-[#111111] text-white">500</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
             <button
-              key={p}
-              onClick={() => setPage(p)}
-              className={`rounded-lg px-3 py-1.5 text-sm ${
-                p === page
-                  ? 'bg-[#FACC15] text-black font-medium'
-                  : 'border border-[#3F3F46] bg-[#111111] text-[#A1A1AA] hover:bg-[#1A1A1A]'
-              }`}
+              onClick={() => setPage(page - 1)}
+              disabled={page <= 1}
+              className="flex h-8 items-center rounded-md px-2 text-xs text-[#9CA3AF] hover:bg-[#1A1A1A] hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#9CA3AF]"
             >
-              {p}
+              <ChevronLeft className="mr-1 h-3 w-3" />
+              Previous
             </button>
-          ))}
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            className="rounded-lg border border-[#3F3F46] bg-[#111111] px-3 py-1.5 text-sm text-[#A1A1AA] hover:bg-[#1A1A1A] disabled:opacity-50"
-          >
-            Next
-          </button>
+            <span className="text-xs text-[#6B7280] px-2">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page >= totalPages}
+              className="flex h-8 items-center rounded-md px-2 text-xs text-[#9CA3AF] hover:bg-[#1A1A1A] hover:text-white disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#9CA3AF]"
+            >
+              Next
+              <ChevronRight className="ml-1 h-3 w-3" />
+            </button>
+          </div>
         </div>
       )}
     </div>

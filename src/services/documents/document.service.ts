@@ -1,20 +1,8 @@
 'use client';
 
+import axios from 'axios';
 import { apiClient } from '@/lib/api-client';
 import type { DocumentCenterItem, UploadDocumentPayload } from '@/types';
-import {
-  mockCompanyDocuments,
-  mockVehicleDocuments2,
-  mockDriverDocuments2,
-} from '@/lib/mock-data';
-
-const isDevBypassed = () => {
-  if (typeof window === 'undefined') return false;
-  return (
-    process.env.NEXT_PUBLIC_DEV_BYPASS === 'true' ||
-    localStorage.getItem('gozolt-supplier-dev-bypass') === 'true'
-  );
-};
 
 export const documentService = {
   async getAllDocuments(): Promise<{
@@ -22,14 +10,6 @@ export const documentService = {
     vehicle: DocumentCenterItem[];
     driver: DocumentCenterItem[];
   }> {
-    if (isDevBypassed()) {
-      return {
-        company: mockCompanyDocuments,
-        vehicle: mockVehicleDocuments2,
-        driver: mockDriverDocuments2,
-      };
-    }
-
     try {
       const [docsRes, driversRes, vehiclesRes] = await Promise.all([
         apiClient.get('/suppliers/documents', { params: { page: 1, limit: 100 } }),
@@ -85,29 +65,46 @@ export const documentService = {
   },
 
   async uploadDocument(payload: UploadDocumentPayload): Promise<DocumentCenterItem> {
-    if (isDevBypassed()) {
-      return {
-        id: `doc-${Date.now()}`,
-        entityType: payload.driverId ? 'DRIVER' : 'SUPPLIER',
-        type: payload.type,
-        status: 'PENDING',
-        fileName: payload.fileName,
-        expiresAt: payload.expiresAt || null,
-        createdAt: new Date().toISOString(),
-      };
+    const formData = new FormData();
+    formData.append('type', payload.type);
+    formData.append('entityType', 'SUPPLIER'); // Required by backend
+    
+    if (payload.file) {
+      formData.append('file', payload.file);
     }
-    const res = await apiClient.post('/suppliers/documents', payload);
+    if (payload.vehicleId) {
+      formData.append('vehicleId', payload.vehicleId);
+    }
+
+    const res = await apiClient.post('/documents/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
+  },
+
+  async batchUploadDocuments(payloads: UploadDocumentPayload[]): Promise<any> {
+    const formData = new FormData();
+    const metadata = payloads.map((p, idx) => {
+      if (p.file) {
+        formData.append(`file_${idx}`, p.file);
+      }
+      return {
+        type: p.type,
+        entityType: p.entityType || 'SUPPLIER',
+        vehicleId: p.vehicleId,
+        expiresAt: p.expiresAt,
+      };
+    });
+    formData.append('metadata', JSON.stringify(metadata));
+
+    // We use standard axios to hit the Next.js API route directly without the /api/proxy prefix
+    const res = await axios.post('/api/documents/batch-upload', formData);
     return res.data;
   },
 
   async getDriversList(): Promise<{ id: string; name: string }[]> {
-    if (isDevBypassed()) {
-      return [
-        { id: 'drv-1', name: 'John Borg' },
-        { id: 'drv-2', name: 'Mark Vella' },
-        { id: 'drv-3', name: 'Jose Camilleri' },
-      ];
-    }
     const res = await apiClient.get('/suppliers/drivers', { params: { page: 1, limit: 100 } });
     const drivers = res.data.data || res.data;
     return drivers.map((d: { id: string; firstName: string; lastName: string }) => ({
@@ -117,13 +114,6 @@ export const documentService = {
   },
 
   async getVehiclesList(): Promise<{ id: string; plate: string }[]> {
-    if (isDevBypassed()) {
-      return [
-        { id: 'v1', plate: 'ABC-123' },
-        { id: 'v2', plate: 'ANS89' },
-        { id: 'v3', plate: 'ANS89P' },
-      ];
-    }
     const res = await apiClient.get('/fleet/vehicles', { params: { page: 1, limit: 100 } });
     const vehicles = res.data.data || res.data;
     return vehicles.map((v: { id: string; plateNumber: string }) => ({

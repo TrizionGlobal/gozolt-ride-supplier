@@ -15,12 +15,12 @@ import { FuelTab } from '@/components/fleet/tabs/fuel-tab';
 import { RidesTab } from '@/components/fleet/tabs/rides-tab';
 import { OthersTab } from '@/components/fleet/tabs/others-tab';
 
-const tabs = ['Details', 'Driver', 'Documents', 'Maintenance', 'Fuel', 'Rides', 'Others'] as const;
+const tabs = ['Details', 'Driver', 'Documents', 'Rides'] as const;
 type TabName = (typeof tabs)[number];
 
 const statusStyles: Record<string, { bg: string; text: string; label: string }> = {
   [VehicleStatus.ACTIVE]: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Active' },
-  [VehicleStatus.PENDING_APPROVAL]: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Pending' },
+  [VehicleStatus.PENDING_APPROVAL]: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', label: 'Admin Pending' },
   [VehicleStatus.MAINTENANCE]: { bg: 'bg-orange-500/20', text: 'text-orange-400', label: 'In Maint.' },
   [VehicleStatus.SUSPENDED]: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Suspended' },
   [VehicleStatus.DECOMMISSIONED]: { bg: 'bg-zinc-500/20', text: 'text-zinc-400', label: 'Decom.' },
@@ -79,15 +79,9 @@ export default function VehicleDetailPage() {
       case 'Driver':
         return <DriverTab vehicle={vehicle} />;
       case 'Documents':
-        return <DocumentsTab vehicleId={vehicleId} />;
-      case 'Maintenance':
-        return <MaintenanceTab vehicleId={vehicleId} />;
-      case 'Fuel':
-        return <FuelTab vehicleId={vehicleId} />;
+        return <DocumentsTab vehicle={vehicle} />;
       case 'Rides':
-        return <RidesTab />;
-      case 'Others':
-        return <OthersTab />;
+        return <RidesTab vehicle={vehicle} />;
     }
   };
 
@@ -111,18 +105,6 @@ export default function VehicleDetailPage() {
             <span className={`rounded-full px-3 py-1 text-xs font-medium ${style.bg} ${style.text}`}>
               {style.label}
             </span>
-            <button
-              onClick={() => toast.info('Edit mode coming soon')}
-              className="flex h-8 w-8 items-center justify-center rounded-md bg-[#FACC15] text-black hover:bg-[#EAB308] transition-colors"
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={() => toast.info('Edit mode coming soon')}
-              className="rounded-md bg-[#FACC15] px-3 py-1.5 text-sm font-medium text-black hover:bg-[#EAB308] transition-colors"
-            >
-              Edit
-            </button>
           </div>
         </div>
       </div>

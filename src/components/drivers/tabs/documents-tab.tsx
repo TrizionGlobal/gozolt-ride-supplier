@@ -41,13 +41,29 @@ export function DocumentsTab({ driverId }: DocumentsTabProps) {
   return (
     <div>
       <div className="mb-4 flex justify-end">
-        <button
-          onClick={() => toast.info('Document upload coming soon')}
-          className="flex items-center gap-1.5 text-sm text-[#FACC15] hover:underline"
-        >
+        <label className="flex cursor-pointer items-center gap-1.5 text-sm text-[#FACC15] hover:underline">
+          <input
+            type="file"
+            className="hidden"
+            disabled={isLoading}
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              setIsLoading(true);
+              try {
+                const newDoc = await driverService.uploadDriverDocument(driverId, file);
+                setDocuments((prev) => [...prev, newDoc]);
+                toast.success('Document uploaded successfully');
+              } catch {
+                toast.error('Failed to upload document');
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+          />
           <Plus className="h-3.5 w-3.5" />
           Upload Document
-        </button>
+        </label>
       </div>
 
       {documents.length === 0 ? (

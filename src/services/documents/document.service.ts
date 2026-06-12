@@ -77,9 +77,10 @@ export const documentService = {
     }
 
     const res = await apiClient.post('/documents/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+      transformRequest: [(data, headers) => {
+        delete headers['Content-Type'];
+        return data;
+      }],
     });
     return res.data;
   },

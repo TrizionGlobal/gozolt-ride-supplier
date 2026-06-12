@@ -28,19 +28,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
         <Toaster
           theme="dark"
           position="top-right"
-          toastOptions={{
-            style: {
-              background: '#141414',
-              border: '1px solid #2A2A2A',
-              color: '#FFFFFF',
-            },
-          }}
+          richColors
         />
       </body>
     </html>

@@ -14,7 +14,7 @@ import type { FleetDriverDetail } from '@/types';
 let cachedVehicles: any = null;
 let lastVehiclesParams = '';
 let vehiclesCacheTimestamp = 0;
-const CACHE_TTL = 30000;
+const CACHE_TTL = 300000; // 5 minutes
 
 export const clearVehiclesCache = () => {
   cachedVehicles = null;
@@ -57,24 +57,40 @@ export const fleetService = {
   },
 
   async createVehicleWithDocuments(payload: CreateVehiclePayload, docPayloads: any[]): Promise<FleetVehicleDetail> {
-    const formData = new FormData();
-    formData.append('vehicleData', JSON.stringify(payload));
-    
-    const metadata = docPayloads.map((p, idx) => {
-      if (p.file) {
-        formData.append(`file_${idx}`, p.file);
-      }
-      return {
-        type: p.type,
-        expiresAt: p.expiresAt,
-      };
-    });
-    formData.append('metadata', JSON.stringify(metadata));
+    // 1. Create the vehicle directly via proxy (JSON payload)
+    const vehicleRes = await apiClient.post('/suppliers/vehicles', payload);
+    const vehicle = vehicleRes.data;
 
-    const axios = (await import('axios')).default;
-    const res = await axios.post('/api/fleet/vehicles', formData);
+    // 2. Upload documents individually via proxy
+    if (docPayloads && docPayloads.length > 0) {
+      const uploadPromises = docPayloads.map(async (p) => {
+        if (!p.file) return null;
+        const formData = new FormData();
+        formData.append('type', p.type);
+        formData.append('entityType', 'SUPPLIER');
+        
+        const safeLabel = (p.label || p.type).replace(/[^a-zA-Z0-9 -]/g, '').trim();
+        const renamedFile = new File([p.file], `${safeLabel} - ${p.file.name}`, { type: p.file.type });
+        formData.append('file', renamedFile);
+        
+        formData.append('vehicleId', vehicle.id);
+        if (p.expiresAt) {
+          formData.append('expiresAt', p.expiresAt);
+        }
+
+        return apiClient.post('/documents/upload', formData, {
+          transformRequest: [(data, headers) => {
+            delete headers['Content-Type'];
+            return data;
+          }],
+        });
+      });
+      
+      await Promise.all(uploadPromises);
+    }
+
     clearVehiclesCache();
-    return res.data;
+    return vehicle;
   },
 
   // Driver for vehicle
@@ -85,10 +101,14 @@ export const fleetService = {
 
   // Documents for vehicle
   async getVehicleDocuments(vehicleId: string): Promise<SupplierDocument[]> {
-    const res = await apiClient.get('/suppliers/documents', { params: { page: 1, limit: 50 } });
-    return (res.data.data || res.data).filter(
-      (d: SupplierDocument) => d.vehicleId === vehicleId,
-    );
+    const res = await apiClient.get('/suppliers/documents', { 
+      params: { 
+        page: 1, 
+        limit: 50,
+        vehicleId: vehicleId
+      } 
+    });
+    return res.data.data || res.data;
   },
 
   // Maintenance

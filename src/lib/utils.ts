@@ -5,9 +5,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount?: number | null): string {
-  if (amount == null || isNaN(amount)) return '€0.00';
-  return `€${amount.toLocaleString('en-IE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export function formatCurrency(amount?: number | string | null): string {
+  const num = Number(amount);
+  if (amount == null || isNaN(num)) return '€0.00';
+  return `€${num.toLocaleString('en-IE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function downloadCSV(data: Record<string, unknown>[], filename: string) {

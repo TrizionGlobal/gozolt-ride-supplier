@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, AlertTriangle } from 'lucide-react';
+import { Star, AlertTriangle, MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { driverService } from '@/services/drivers/driver.service';
 import type { Driver } from '@/types';
@@ -29,6 +29,13 @@ export function DriversTable({ drivers, vehicleMap, isLoading }: DriversTablePro
   const router = useRouter();
   const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const closeDropdown = () => setOpenDropdownId(null);
+    window.addEventListener('click', closeDropdown);
+    return () => window.removeEventListener('click', closeDropdown);
+  }, []);
 
   const confirmDelete = async () => {
     if (!driverToDelete) return;
@@ -46,11 +53,38 @@ export function DriversTable({ drivers, vehicleMap, isLoading }: DriversTablePro
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-[#27272A] bg-[#111111]">
-        <div className="p-4 space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 w-full rounded-lg bg-[#27272A] animate-pulse" />
-          ))}
+      <div className="rounded-lg border border-[#27272A] bg-[#111111] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-[#2A2A2A] bg-transparent">
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Driver</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Driver Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Rating</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Rides</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Earnings</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Vehicle</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-[#9CA3AF]">Supplier Status</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-[#9CA3AF]">Admin Status</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-[#9CA3AF]">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <tr key={i} className="border-b border-[#2A2A2A] last:border-b-0">
+                  <td className="px-4 py-4"><div className="h-4 w-32 rounded bg-[#27272A] animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="h-4 w-20 rounded-full bg-[#27272A] animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="h-4 w-12 rounded bg-[#27272A] animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="h-4 w-8 rounded bg-[#27272A] animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="h-4 w-10 rounded bg-[#27272A] animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="h-4 w-24 rounded bg-[#27272A] animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="mx-auto h-4 w-20 rounded-full bg-[#27272A] animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="mx-auto h-4 w-20 rounded-full bg-[#27272A] animate-pulse" /></td>
+                  <td className="px-4 py-4"><div className="mx-auto h-4 w-24 rounded bg-[#27272A] animate-pulse" /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     );
@@ -157,7 +191,7 @@ export function DriversTable({ drivers, vehicleMap, isLoading }: DriversTablePro
                     </span>
                   </td>
                   <td className="px-4 py-4 text-sm text-[#9CA3AF]">
-                    {driver.totalRides.toLocaleString()}
+                    {(driver.totalRides ?? 0).toLocaleString()}
                   </td>
                   <td className="px-4 py-4 text-sm text-white">
                     {/* Mock earnings as we don't have _computed locally */}
@@ -177,7 +211,7 @@ export function DriversTable({ drivers, vehicleMap, isLoading }: DriversTablePro
                       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
                         supplierStatus === 'Pending' || supplierStatus === 'Waiting'
                           ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                          : supplierStatus === 'Rejected'
+                          : supplierStatus === 'Rejected' || supplierStatus === 'Suspended'
                           ? 'bg-red-500/20 text-red-400 border-red-500/30'
                           : 'bg-green-500/20 text-green-400 border-green-500/30'
                       }`}
@@ -190,7 +224,7 @@ export function DriversTable({ drivers, vehicleMap, isLoading }: DriversTablePro
                       className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
                         adminStatus === 'Pending' || adminStatus === 'Waiting'
                           ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                          : adminStatus === 'Rejected'
+                          : adminStatus === 'Rejected' || adminStatus === 'Suspended'
                           ? 'bg-red-500/20 text-red-400 border-red-500/30'
                           : 'bg-green-500/20 text-green-400 border-green-500/30'
                       }`}
@@ -198,61 +232,81 @@ export function DriversTable({ drivers, vehicleMap, isLoading }: DriversTablePro
                       {adminStatus}
                     </span>
                   </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center justify-center gap-3">
-                      {driver.status === DriverStatus.NEW_DRIVER && (
-                        <>
+                  <td className="px-4 py-4 text-center">
+                    <div className="relative inline-block text-left">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenDropdownId(openDropdownId === driver.id ? null : driver.id);
+                        }}
+                        className="p-1 rounded-md text-[#A1A1AA] hover:bg-[#27272A] hover:text-white transition-colors"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+
+                      {openDropdownId === driver.id && (
+                        <div
+                          className="absolute right-0 mt-1 w-32 origin-top-right rounded-md border border-[#27272A] bg-[#18181B] shadow-2xl focus:outline-none z-50 py-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {driver.status === DriverStatus.NEW_DRIVER && (
+                            <>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdownId(null);
+                                  try {
+                                    await driverService.supplierApproveDriver(driver.id);
+                                    toast.success('Driver approved');
+                                    window.location.reload();
+                                  } catch (err) {
+                                    toast.error('Failed to approve driver');
+                                  }
+                                }}
+                                className="block w-full px-4 py-2 text-left text-xs font-medium text-green-500 hover:bg-[#2A2A2A]"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setOpenDropdownId(null);
+                                  try {
+                                    await driverService.supplierSuspendDriver(driver.id);
+                                    toast.success('Driver suspended');
+                                    window.location.reload();
+                                  } catch (err) {
+                                    toast.error('Failed to suspend driver');
+                                  }
+                                }}
+                                className="block w-full px-4 py-2 text-left text-xs font-medium text-orange-500 hover:bg-[#2A2A2A]"
+                              >
+                                Suspend
+                              </button>
+                            </>
+                          )}
                           <button
-                            onClick={async (e) => {
+                            onClick={(e) => {
                               e.stopPropagation();
-                              try {
-                                await driverService.supplierApproveDriver(driver.id);
-                                toast.success('Driver approved');
-                                window.location.reload();
-                              } catch (err) {
-                                toast.error('Failed to approve driver');
-                              }
+                              setOpenDropdownId(null);
+                              router.push(`/drivers/${driver.id}`);
                             }}
-                            className="text-xs font-medium text-green-500 hover:underline"
+                            className="block w-full px-4 py-2 text-left text-xs font-medium text-[#FACC15] hover:bg-[#2A2A2A]"
                           >
-                            Approve
+                            View
                           </button>
                           <button
-                            onClick={async (e) => {
+                            onClick={(e) => {
                               e.stopPropagation();
-                              try {
-                                await driverService.supplierSuspendDriver(driver.id);
-                                toast.success('Driver suspended');
-                                window.location.reload();
-                              } catch (err) {
-                                toast.error('Failed to suspend driver');
-                              }
+                              setOpenDropdownId(null);
+                              setDriverToDelete(driver);
                             }}
-                            className="text-xs font-medium text-orange-500 hover:underline"
+                            className="block w-full px-4 py-2 text-left text-xs font-medium text-red-500 hover:bg-[#2A2A2A]"
                           >
-                            Suspend
+                            Remove
                           </button>
-                        </>
+                        </div>
                       )}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/drivers/${driver.id}`);
-                        }}
-                        className="text-xs font-medium text-[#FACC15] hover:underline"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDriverToDelete(driver);
-                        }}
-                        className="text-[11px] font-medium text-red-500 hover:underline"
-                        title="Remove Driver"
-                      >
-                        Remove
-                      </button>
                     </div>
                   </td>
                 </tr>

@@ -116,7 +116,7 @@ export default function VehicleDetailPage() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
+              className={`rounded-md px-2 py-1 text-xs transition-colors ${
                 activeTab === tab
                   ? 'bg-[#FACC15] text-black font-medium'
                   : 'text-[#A1A1AA] hover:bg-[#1A1A1A]'

@@ -33,10 +33,8 @@ async function proxyRequest(request: NextRequest, { params }: { params: Promise<
   if (['POST', 'PUT', 'PATCH'].includes(request.method)) {
     const contentType = request.headers.get('content-type') || '';
     if (contentType.includes('multipart/form-data')) {
-      // Forward the boundary properly
-      headers['Content-Type'] = contentType;
-      fetchOptions.body = request.body;
-      (fetchOptions as any).duplex = 'half';
+      delete headers['Content-Type'];
+      fetchOptions.body = (await request.formData()) as any;
     } else {
       try {
         const body = await request.text();

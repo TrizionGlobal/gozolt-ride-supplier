@@ -15,6 +15,25 @@ export interface AuthSuccessResponse {
 
 export interface RegisterResponse {
   message: string;
+  supplierId: string;
+}
+
+export interface SupplierSubscribePayload {
+  supplierId: string;
+  subscriptionTier: string;
+  cardName: string;
+  paymentMethodId: string;
+  cardBrand?: string;
+  cardLast4?: string;
+}
+
+export interface SupplierSubscribeResponse {
+  message: string;
+  paymentDetails?: {
+    txnId: string;
+    amount: number;
+    tier: string;
+  };
 }
 
 export interface TokenRefreshResponse {

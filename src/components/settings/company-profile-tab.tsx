@@ -9,6 +9,7 @@ import { Camera } from 'lucide-react';
 import { Upload, Image } from 'antd';
 import type { UploadFile } from 'antd';
 import { useAuthStore } from '@/stores/auth.store';
+import { PhoneInput } from '@/components/ui/phone-input';
 
 export function CompanyProfileTab() {
   const [form, setForm] = useState<CompanyProfile>({
@@ -221,42 +222,16 @@ export function CompanyProfileTab() {
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         {fields.map(({ label, key, type }) => {
           if (key === 'phone') {
-            const match = form.phone?.match(/^(\+\d{1,4})\s?(.*)$/);
-            const code = match ? match[1] : '+356';
-            const number = match ? match[2] : (form.phone || '');
-
             return (
               <div key={key}>
                 <label className="mb-1.5 block text-sm font-medium text-[#A1A1AA]">
                   {label}
                 </label>
-                <div className="flex gap-2">
-                  <select
-                    className="w-1/3 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-2 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors"
-                    value={code}
-                    onChange={(e) => {
-                      handleChange('phone', `${e.target.value} ${number}`.trim());
-                    }}
-                  >
-                    <option value="+356">🇲🇹 +356</option>
-                    <option value="+44">🇬🇧 +44</option>
-                    <option value="+1">🇺🇸 +1</option>
-                    <option value="+91">🇮🇳 +91</option>
-                    <option value="+39">🇮🇹 +39</option>
-                    <option value="+33">🇫🇷 +33</option>
-                    <option value="+49">🇩🇪 +49</option>
-                    <option value="+34">🇪🇸 +34</option>
-                  </select>
-                  <input
-                    type="tel"
-                    value={number}
-                    placeholder="Enter Phone number"
-                    onChange={(e) => {
-                      handleChange('phone', `${code} ${e.target.value}`.trim());
-                    }}
-                    className="w-2/3 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15] transition-colors"
-                  />
-                </div>
+                <PhoneInput
+                  value={form.phone}
+                  onChange={(val) => handleChange('phone', val)}
+                  placeholder="Enter Mobile Number"
+                />
               </div>
             );
           }

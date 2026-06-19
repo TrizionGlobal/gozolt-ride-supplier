@@ -5,7 +5,15 @@ import { useRouter } from 'next/navigation';
 import { Check, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 
-export function RegistrationComplete() {
+interface RegistrationCompleteProps {
+  paymentDetails?: {
+    txnId: string;
+    amount: number;
+    tier: string;
+  };
+}
+
+export function RegistrationComplete({ paymentDetails }: RegistrationCompleteProps) {
   const router = useRouter();
   const [resending, setResending] = useState(false);
 
@@ -16,6 +24,13 @@ export function RegistrationComplete() {
     setResending(false);
     toast.success('Verification email resent successfully');
   };
+
+  const planName = paymentDetails?.tier ? ({
+    STARTER: 'Starter Fleet',
+    GROWTH: 'Growth Fleet',
+    PROFESSIONAL: 'Professional Fleet',
+    ENTERPRISE: 'Enterprise Fleet',
+  }[paymentDetails.tier] || 'Professional Fleet') : 'Professional Fleet';
 
   return (
     <div className="w-full max-w-[450px] rounded-lg border border-[#27272A] bg-[#111111] p-10">
@@ -29,9 +44,37 @@ export function RegistrationComplete() {
         <h1 className="mt-5 text-2xl font-bold text-white">Application Submitted!</h1>
 
         {/* Subtitle */}
-        <p className="mt-3 max-w-[350px] text-sm text-[#A1A1AA]">
+        <p className="mt-3 max-w-[350px] text-sm text-[#A1A1AA] mb-4">
           Your application is under review, you&apos;ll hear from us within 2-3 business days.
         </p>
+
+        {/* Stripe Payment Confirmation Receipt */}
+        {paymentDetails && (
+          <div className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] p-4 text-left space-y-2.5 mb-6">
+            <div className="flex justify-between text-xs border-b border-[#27272A]/50 pb-2">
+              <span className="text-[#71717A]">Plan Subscribed:</span>
+              <span className="font-medium text-white">{planName}</span>
+            </div>
+            <div className="flex justify-between text-xs border-b border-[#27272A]/50 pb-2">
+              <span className="text-[#71717A]">Amount Charged:</span>
+              <span className="font-semibold text-[#FACC15]">€{paymentDetails.amount.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-xs border-b border-[#27272A]/50 pb-2">
+              <span className="text-[#71717A]">Transaction ID:</span>
+              <span className="font-mono text-white text-[11px]">{paymentDetails.txnId}</span>
+            </div>
+            <div className="flex justify-between text-xs pb-2 border-b border-[#27272A]/50">
+              <span className="text-[#71717A]">Billing Country:</span>
+              <span className="font-medium text-white">🇲🇹 Malta</span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-[#71717A]">Payment Provider:</span>
+              <span className="font-medium text-[#635BFF] flex items-center gap-1 font-mono text-[11px]">
+                stripe
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Email Verification Reminder */}
         <div className="mt-6 w-full rounded-lg border border-[#FACC15]/30 bg-[#FACC15]/10 p-4">

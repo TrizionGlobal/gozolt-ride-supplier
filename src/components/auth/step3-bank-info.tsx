@@ -45,7 +45,7 @@ export function Step3BankInfo({ defaultValues, onNext, onPrevious }: Step3Props)
           <label className="mb-1.5 block text-xs text-white">
             Account Holder Name<span className="text-[#FACC15]">*</span>
           </label>
-          <Input placeholder="Enter account holder name" className={inputClassName} {...register('supplierAccountHolder')} />
+          <Input placeholder="Enter Account Holder Name" className={inputClassName} {...register('supplierAccountHolder')} />
           {errors.supplierAccountHolder && <p className="mt-1 text-xs text-red-500">{errors.supplierAccountHolder.message}</p>}
         </div>
 
@@ -53,7 +53,7 @@ export function Step3BankInfo({ defaultValues, onNext, onPrevious }: Step3Props)
           <label className="mb-1.5 block text-xs text-white">
             Bank Name<span className="text-[#FACC15]">*</span>
           </label>
-          <Input placeholder="Enter bank name" className={inputClassName} {...register('supplierBankName')} />
+          <Input placeholder="Enter Bank Name" className={inputClassName} {...register('supplierBankName')} />
           {errors.supplierBankName && <p className="mt-1 text-xs text-red-500">{errors.supplierBankName.message}</p>}
         </div>
 
@@ -61,7 +61,7 @@ export function Step3BankInfo({ defaultValues, onNext, onPrevious }: Step3Props)
           <label className="mb-1.5 block text-xs text-white">
             IBAN Number<span className="text-[#FACC15]">*</span>
           </label>
-          <Input placeholder="Enter IBAN number" className={inputClassName} {...register('supplierAccountNumber')} />
+          <Input placeholder="Enter IBAN Number" className={inputClassName} {...register('supplierAccountNumber')} />
           {errors.supplierAccountNumber && <p className="mt-1 text-xs text-red-500">{errors.supplierAccountNumber.message}</p>}
         </div>
 
@@ -69,7 +69,7 @@ export function Step3BankInfo({ defaultValues, onNext, onPrevious }: Step3Props)
           <label className="mb-1.5 block text-xs text-white">
             SWIFT / BIC Code<span className="text-[#FACC15]">*</span>
           </label>
-          <Input placeholder="Enter SWIFT/BIC code" className={inputClassName} {...register('supplierSwiftCode')} />
+          <Input placeholder="Enter SWIFT/BIC Code" className={inputClassName} {...register('supplierSwiftCode')} />
           {errors.supplierSwiftCode && <p className="mt-1 text-xs text-red-500">{errors.supplierSwiftCode.message}</p>}
         </div>
 

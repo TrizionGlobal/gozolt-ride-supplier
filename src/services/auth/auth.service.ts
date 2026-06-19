@@ -7,6 +7,8 @@ import type {
   TokenRefreshResponse,
   MessageResponse,
   ChangePasswordPayload,
+  SupplierSubscribePayload,
+  SupplierSubscribeResponse,
 } from './auth.types';
 
 
@@ -18,8 +20,12 @@ export async function supplierLogin(payload: SupplierLoginPayload): Promise<Auth
 }
 
 export async function supplierRegister(payload: FormData): Promise<RegisterResponse> {
-
   const { data } = await apiClient.post<RegisterResponse>('/auth/supplier/register', payload);
+  return data;
+}
+
+export async function supplierSubscribe(payload: SupplierSubscribePayload): Promise<SupplierSubscribeResponse> {
+  const { data } = await apiClient.post<SupplierSubscribeResponse>('/auth/supplier/subscribe', payload);
   return data;
 }
 

@@ -30,6 +30,7 @@ const PLAN_CONFIG: PlanDetails[] = [
     tier: 'GROWTH',
     name: 'Growth Fleet',
     price: 149,
+    isRecommended: true,
     features: [
       'Up to 20 Vehicles',
       'Up to 40 Drivers',
@@ -43,8 +44,7 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'PROFESSIONAL',
     name: 'Professional Fleet',
-    price: 299,
-    isRecommended: true,
+    price: 199,
     features: [
       'Up to 50 Vehicles',
       'Up to 100 Drivers',
@@ -58,7 +58,7 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'ENTERPRISE',
     name: 'Enterprise Fleet',
-    price: 499,
+    price: 299,
     features: [
       'Unlimited Vehicles',
       'Unlimited Drivers',

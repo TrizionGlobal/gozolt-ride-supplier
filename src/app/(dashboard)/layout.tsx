@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { Sidebar } from '@/components/layout/sidebar';
@@ -9,12 +10,27 @@ import { CookieConsentBanner } from '@/components/shared/cookie-consent-banner';
 import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { hydrateFromSession, isLoading } = useAuthStore();
+  const { user, hydrateFromSession, isLoading } = useAuthStore();
   const isCollapsed = useSidebarStore((s) => s.isCollapsed);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     hydrateFromSession();
   }, [hydrateFromSession]);
+
+  useEffect(() => {
+    if (!isLoading && user && user.status === 'ACTIVE') {
+      const isMissingSubscription = !user.subscription;
+      const isExpired =
+        user.subscription?.currentPeriodEnd &&
+        new Date(user.subscription.currentPeriodEnd) < new Date();
+
+      if ((isMissingSubscription || isExpired) && pathname !== '/subscription') {
+        router.push('/subscription');
+      }
+    }
+  }, [user, isLoading, pathname, router]);
 
   if (isLoading) {
     return (
@@ -23,6 +39,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#FACC15] border-t-transparent" />
           <p className="text-sm text-[#6B7280]">Loading...</p>
         </div>
+      </div>
+    );
+  }
+
+  // If the user has no subscription or is expired, we render only the topbar and the main content (no sidebar)
+  const isExpired = user?.subscription?.currentPeriodEnd && new Date(user.subscription.currentPeriodEnd) < new Date();
+  const isSubscriptionSetup = pathname === '/subscription' && (!user?.subscription || isExpired);
+
+  if (isSubscriptionSetup) {
+    return (
+      <div className="min-h-screen bg-black">
+        <Topbar />
+        <main className="p-6">{children}</main>
+        <CookieConsentBanner />
       </div>
     );
   }

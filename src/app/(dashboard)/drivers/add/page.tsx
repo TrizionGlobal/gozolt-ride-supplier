@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Camera, Upload, CheckCircle, ArrowLeft, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { driverService } from '@/services/drivers/driver.service';
+import { PhoneInput } from '@/components/ui/phone-input';
 import type { DriverCredentials } from '@/types';
 
 interface DocSlot {
@@ -21,8 +22,7 @@ export default function AddDriverPage() {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
-    countryCode: '+356',
-    phone: '',
+    phone: '+356',
     email: '',
     dateOfBirth: '',
     nationality: '',
@@ -120,8 +120,7 @@ export default function AddDriverPage() {
     setForm({
       firstName: '',
       lastName: '',
-      countryCode: '+356',
-      phone: '',
+      phone: '+356',
       email: '',
       dateOfBirth: '',
       nationality: '',
@@ -151,7 +150,6 @@ export default function AddDriverPage() {
     if (
       !form.firstName.trim() ||
       !form.lastName.trim() ||
-      !form.phone.trim() ||
       !form.email.trim() ||
       !form.dateOfBirth.trim() ||
       !form.nationality.trim() ||
@@ -159,7 +157,6 @@ export default function AddDriverPage() {
       !form.nationalId.trim() ||
       !form.homeAddress.trim() ||
       !form.emergencyContactName.trim() ||
-      !form.emergencyContactPhone.trim() ||
       !form.licenseNumber.trim() ||
       !form.licenseExpiry.trim() ||
       !form.licenseIssueDate.trim() ||
@@ -169,6 +166,21 @@ export default function AddDriverPage() {
       !form.taxiPhvLicenseNumber.trim()
     ) {
       toast.error('Please fill in all required fields.');
+      return;
+    }
+
+    // Validate Phone and Emergency Contact Phone components
+    const phoneMatch = form.phone?.match(/^(\+\d{1,4})\s?(.*)$/);
+    const phoneNational = phoneMatch ? phoneMatch[2] : form.phone;
+    if (!phoneNational || phoneNational.trim() === '') {
+      toast.error('Mobile Number is required');
+      return;
+    }
+
+    const emergencyMatch = form.emergencyContactPhone?.match(/^(\+\d{1,4})\s?(.*)$/);
+    const emergencyNational = emergencyMatch ? emergencyMatch[2] : form.emergencyContactPhone;
+    if (!emergencyNational || emergencyNational.trim() === '') {
+      toast.error('Emergency Contact Phone is required');
       return;
     }
 
@@ -183,11 +195,17 @@ export default function AddDriverPage() {
       return;
     }
 
-    const fullPhone = `${form.countryCode}${form.phone.replace(/^0+/, '')}`;
+    const cleanPhone = form.phone.replace(/[\s-]+/g, '');
+    const cleanEmergencyPhone = form.emergencyContactPhone.replace(/[\s-]+/g, '');
     const phoneRegex = /^\+[1-9]\d{1,14}$/;
-    const cleanPhone = fullPhone.replace(/\s/g, '');
+
     if (!phoneRegex.test(cleanPhone)) {
       toast.error('Invalid phone number format');
+      return;
+    }
+
+    if (!phoneRegex.test(cleanEmergencyPhone)) {
+      toast.error('Invalid emergency contact phone format');
       return;
     }
 
@@ -203,8 +221,8 @@ export default function AddDriverPage() {
         countryOfResidence: form.countryOfResidence || undefined,
         nationalId: form.nationalId || undefined,
         homeAddress: form.homeAddress || undefined,
-        emergencyContacts: (form.emergencyContactName && form.emergencyContactPhone) 
-          ? JSON.stringify([{ name: form.emergencyContactName, phone: form.emergencyContactPhone }]) 
+        emergencyContacts: (form.emergencyContactName && cleanEmergencyPhone) 
+          ? JSON.stringify([{ name: form.emergencyContactName, phone: cleanEmergencyPhone }]) 
           : undefined,
         licenseNumber: form.licenseNumber || undefined,
         licenseExpiryDate: form.licenseExpiry || undefined,
@@ -295,23 +313,12 @@ export default function AddDriverPage() {
             </div>
             <div>
               <label className="mb-1.5 block text-xs text-[#D4D4D8]">Phone<span className="text-red-400">*</span></label>
-              <div className="flex gap-2">
-                <select
-                  value={form.countryCode}
-                  onChange={(e) => updateForm('countryCode', e.target.value)}
-                  className="w-[100px] shrink-0 appearance-none rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white focus:border-[#FACC15] focus:outline-none"
-                >
-                  <option value="+356">🇲🇹 +356</option>
-                  <option value="+91">🇮🇳 +91</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Enter Mobile Number"
-                  value={form.phone}
-                  onChange={(e) => updateForm('phone', e.target.value)}
-                  className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
-                />
-              </div>
+              <PhoneInput
+                value={form.phone}
+                onChange={(val) => updateForm('phone', val)}
+                placeholder="Enter Mobile Number"
+                className="!border-[#3F3F46]"
+              />
             </div>
             <div>
               <label className="mb-1.5 block text-xs text-[#D4D4D8]">Email<span className="text-red-400">*</span></label>
@@ -397,12 +404,11 @@ export default function AddDriverPage() {
             </div>
             <div>
               <label className="mb-1.5 block text-xs text-[#D4D4D8]">Emergency Contact Phone<span className="text-red-400">*</span></label>
-              <input
-                type="text"
-                placeholder="e.g. +35612345678"
+              <PhoneInput
                 value={form.emergencyContactPhone}
-                onChange={(e) => updateForm('emergencyContactPhone', e.target.value)}
-                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+                onChange={(val) => updateForm('emergencyContactPhone', val)}
+                placeholder="Enter Mobile Number"
+                className="!border-[#3F3F46]"
               />
             </div>
           </div>

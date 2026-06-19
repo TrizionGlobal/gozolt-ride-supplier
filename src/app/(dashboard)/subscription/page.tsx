@@ -9,6 +9,10 @@ import { RatePricingTable } from '@/components/subscription/rate-pricing-table';
 import { BillingHistoryTable } from '@/components/subscription/billing-history-table';
 import type { SubscriptionInfo, PlanDetails } from '@/types';
 import { useFleetTracking } from '@/hooks/use-fleet-tracking';
+import { useAuthStore } from '@/stores/auth.store';
+import { Step4Subscription } from '@/components/auth/step4-subscription';
+import { Step5Payment } from '@/components/auth/step5-payment';
+import { useRouter } from 'next/navigation';
 
 const PLAN_CONFIG: PlanDetails[] = [
   {
@@ -30,6 +34,7 @@ const PLAN_CONFIG: PlanDetails[] = [
     tier: 'GROWTH',
     name: 'Growth Fleet',
     price: 149,
+    isRecommended: true,
     features: [
       'Up to 20 Vehicles',
       'Up to 40 Drivers',
@@ -43,8 +48,7 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'PROFESSIONAL',
     name: 'Professional Fleet',
-    price: 299,
-    isRecommended: true,
+    price: 199,
     features: [
       'Up to 50 Vehicles',
       'Up to 100 Drivers',
@@ -58,7 +62,7 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'ENTERPRISE',
     name: 'Enterprise Fleet',
-    price: 499,
+    price: 299,
     features: [
       'Unlimited Vehicles',
       'Unlimited Drivers',
@@ -78,6 +82,16 @@ export default function SubscriptionPage() {
   const [usage, setUsage] = useState<{ totalVehicles: number; totalDrivers: number } | null>(null);
   const [isChanging, setIsChanging] = useState<string | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  // Setup Flow States
+  const { user, hydrateFromSession } = useAuthStore();
+  const router = useRouter();
+  const [setupStep, setSetupStep] = useState<1 | 2>(1);
+  const [selectedTier, setSelectedTier] = useState<'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE'>('STARTER');
+  const [cardData, setCardData] = useState<{ paymentMethodId: string; cardName: string; last4: string; brand: string; }>({
+    paymentMethodId: '', cardName: '', last4: '', brand: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -126,6 +140,100 @@ export default function SubscriptionPage() {
     setShowCancelDialog(false);
     toast.success('Subscription cancellation request submitted');
   };
+
+  const handleSetupSubscription = async (paymentData: any) => {
+    setIsSubmitting(true);
+    try {
+      await subscriptionService.setupSubscription({
+        subscriptionTier: selectedTier,
+        paymentMethodId: paymentData.paymentMethodId,
+      });
+      toast.success('Subscription setup successful!');
+      
+      // Update auth store to reflect the new subscription
+      await hydrateFromSession();
+      
+      // Fetch the dashboard data
+      await fetchData();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to setup subscription');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#FACC15] border-t-transparent" />
+      </div>
+    );
+  }
+
+  const isExpired =
+    subscription?.currentPeriodEnd &&
+    new Date(subscription.currentPeriodEnd) < new Date();
+
+  // Check if we need to show the setup flow
+  if (!subscription || isExpired) {
+    const isMissing = !subscription;
+    
+    return (
+      <div className="max-w-4xl mx-auto py-8">
+        <div className="mb-8 text-center space-y-2">
+          {isMissing ? (
+            <>
+              <h1 className="text-3xl font-bold text-white">Welcome to Gozolt</h1>
+              <p className="text-[#A1A1AA]">
+                Supplier not yet subscribed. To use the app, please subscribe to a plan.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold text-red-500">Subscription Expired</h1>
+              <p className="text-[#A1A1AA]">
+                Your subscription expired on{' '}
+                <span className="font-medium text-white">
+                  {new Date(subscription!.currentPeriodEnd!).toLocaleDateString()}
+                </span>
+                . Please repay to continue using the app.
+              </p>
+            </>
+          )}
+        </div>
+
+        {setupStep === 1 && (
+          <Step4Subscription
+            selectedTier={selectedTier}
+            onSelectTier={setSelectedTier}
+            onNext={() => setSetupStep(2)}
+            onPrevious={() => {
+              // Can't go back from here
+            }}
+          />
+        )}
+
+        {setupStep === 2 && (
+          <div className="relative">
+            {isSubmitting && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#FACC15] border-t-transparent" />
+              </div>
+            )}
+            <Step5Payment
+              selectedTier={selectedTier}
+              initialValues={cardData}
+              ownerName={user?.companyName || ''}
+              companyAddress={user?.address || ''}
+              companyCity={user?.city || ''}
+              onPrevious={() => setSetupStep(1)}
+              onNext={handleSetupSubscription}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

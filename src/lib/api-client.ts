@@ -11,6 +11,10 @@ export const apiClient = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
+    // If the data is FormData, remove the default Content-Type so Axios sets it automatically with the boundary
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
     // Token is managed via HTTP-only cookies through Next.js API routes
     return config;
   },

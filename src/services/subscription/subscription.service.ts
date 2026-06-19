@@ -5,12 +5,12 @@ import type { SubscriptionInfo } from '@/types';
 
 
 export const subscriptionService = {
-  async getSubscription(): Promise<SubscriptionInfo> {
+  async getSubscription(): Promise<SubscriptionInfo | null> {
     try {
       const res = await apiClient.get('/suppliers/subscription');
       return res.data;
     } catch {
-      return { tier: 'STARTER', maxVehicles: 5, maxDrivers: 10, maxRides: 100, currentPeriodEnd: new Date().toISOString() };
+      return null;
     }
   },
 
@@ -30,6 +30,11 @@ export const subscriptionService = {
 
   async changePlan(tier: 'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE'): Promise<SubscriptionInfo> {
     const res = await apiClient.patch('/suppliers/subscription', { tier });
+    return res.data;
+  },
+
+  async setupSubscription(payload: { subscriptionTier: string, paymentMethodId: string }): Promise<any> {
+    const res = await apiClient.post('/suppliers/subscribe', payload);
     return res.data;
   },
 };

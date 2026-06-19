@@ -1,16 +1,55 @@
 'use client';
 
-import { useState } from 'react';
-import { Building2, Calendar, CreditCard, Save } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Calendar, CreditCard, ExternalLink, ShieldCheck, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import { financialService } from '@/services/financials/financial.service';
+import { PayoutHistoryTable } from '@/components/financials/payout-history-table';
+import { apiClient } from '@/lib/api-client';
+import type { PayoutRecord } from '@/types';
 
 export default function PayoutsPage() {
-  const [bankName, setBankName] = useState('Deutsche Bank');
-  const [iban, setIban] = useState('DE89 3704 0044 0532 0130 00');
-  const [bic, setBic] = useState('COBADEFFXXX');
-  const [accountHolder, setAccountHolder] = useState('Gozolt Transport GmbH');
   const [schedule, setSchedule] = useState<'WEEKLY' | 'BIWEEKLY' | 'MONTHLY'>('BIWEEKLY');
   const [saving, setSaving] = useState(false);
+  
+  const [isStripeConnected, setIsStripeConnected] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  
+  const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
+  const [isLoadingPayouts, setIsLoadingPayouts] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    setIsLoadingPayouts(true);
+    try {
+      const [profileRes, payoutsData] = await Promise.all([
+        apiClient.get('/suppliers/me'),
+        financialService.getPayoutHistory()
+      ]);
+      setIsStripeConnected(!!profileRes.data.stripeAccountId);
+      setPayouts(payoutsData);
+    } catch {
+      toast.error('Failed to load payout data');
+    } finally {
+      setIsLoadingPayouts(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleConnectStripe = async () => {
+    setConnecting(true);
+    try {
+      await financialService.connectStripeAccount();
+      toast.success('Successfully connected Stripe account!');
+      setIsStripeConnected(true);
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Failed to connect Stripe');
+    } finally {
+      setConnecting(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -49,72 +88,76 @@ export default function PayoutsPage() {
         </div>
       </div>
 
-      {/* Bank Details */}
+      {/* Stripe Connect */}
       <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Building2 className="h-5 w-5 text-[#FACC15]" />
-          <h3 className="text-lg font-semibold text-white">Bank Details</h3>
+          <ShieldCheck className="h-5 w-5 text-[#FACC15]" />
+          <h3 className="text-lg font-semibold text-white">Stripe Connected Account</h3>
         </div>
-        <p className="mb-4 text-sm text-[#A1A1AA]">
-          Your payout bank account information. Ensure details are correct to avoid delays.
+        <p className="mb-6 text-sm text-[#A1A1AA]">
+          Gozolt uses Stripe to securely process and transfer your earnings. You must connect your account to receive payouts.
         </p>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-[#A1A1AA]">Account Holder</label>
-            <input
-              value={accountHolder}
-              onChange={(e) => setAccountHolder(e.target.value)}
-              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors"
-            />
+        
+        {isStripeConnected ? (
+          <div className="flex items-center justify-between rounded-lg border border-green-500/20 bg-green-500/5 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/20 text-green-400">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-white">Account Connected</p>
+                <p className="text-xs text-[#A1A1AA]">Your payouts will be automatically routed to your bank</p>
+              </div>
+            </div>
+            <button className="flex items-center gap-2 rounded-lg bg-[#27272A] px-4 py-2 text-sm font-medium text-white hover:bg-[#3F3F46] transition-colors">
+              Stripe Dashboard <ExternalLink className="h-4 w-4" />
+            </button>
           </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-[#A1A1AA]">Bank Name</label>
-            <input
-              value={bankName}
-              onChange={(e) => setBankName(e.target.value)}
-              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors"
-            />
+        ) : (
+          <div className="flex items-center justify-between rounded-lg border border-[#27272A] bg-[#0A0A0A] p-4">
+            <div>
+              <p className="text-sm font-medium text-white">Action Required</p>
+              <p className="text-xs text-red-400">Connect your account to start receiving funds</p>
+            </div>
+            <button 
+              onClick={handleConnectStripe}
+              disabled={connecting}
+              className="flex items-center gap-2 rounded-lg bg-[#635BFF] px-6 py-2.5 text-sm font-medium text-white hover:bg-[#5851E5] transition-colors disabled:opacity-60"
+            >
+              {connecting ? 'Connecting...' : 'Connect with Stripe'}
+            </button>
           </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-[#A1A1AA]">IBAN</label>
-            <input
-              value={iban}
-              onChange={(e) => setIban(e.target.value)}
-              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-[#A1A1AA]">BIC / SWIFT</label>
-            <input
-              value={bic}
-              onChange={(e) => setBic(e.target.value)}
-              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors"
-            />
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Payment Method Info */}
       <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
         <div className="flex items-center gap-2 mb-4">
           <CreditCard className="h-5 w-5 text-[#FACC15]" />
-          <h3 className="text-lg font-semibold text-white">Payment Method</h3>
+          <h3 className="text-lg font-semibold text-white">Billing Payment Method</h3>
         </div>
+        <p className="mb-4 text-sm text-[#A1A1AA]">
+          This card is used for your monthly platform subscription fees.
+        </p>
         <div className="flex items-center justify-between rounded-lg border border-[#27272A] bg-[#0A0A0A] p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0EA5E9]/20">
-              <Building2 className="h-5 w-5 text-[#0EA5E9]" />
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-16 items-center justify-center rounded bg-white">
+              {/* Visa Logo placeholder */}
+              <span className="font-bold text-blue-900">VISA</span>
             </div>
             <div>
-              <p className="text-sm font-medium text-white">Bank Transfer (SEPA)</p>
-              <p className="text-xs text-[#71717A]">IBAN ending in ···{iban.slice(-4)}</p>
+              <p className="font-medium text-white">•••• •••• •••• 4242</p>
+              <p className="text-sm text-[#A1A1AA]">Expires 12/26</p>
             </div>
           </div>
-          <span className="rounded-full bg-green-500/20 px-2.5 py-1 text-xs font-medium text-green-400">
-            Active
-          </span>
+          <button className="text-sm font-medium text-[#FACC15] hover:text-[#EAB308]">
+            Update Card
+          </button>
         </div>
       </div>
+
+      {/* Payout History Table */}
+      <PayoutHistoryTable data={payouts} isLoading={isLoadingPayouts} />
 
       {/* Save Button */}
       <div className="flex justify-end">

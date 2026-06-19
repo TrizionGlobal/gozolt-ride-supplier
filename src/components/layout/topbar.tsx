@@ -1,16 +1,13 @@
 'use client';
 
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, Bell, Settings } from 'lucide-react';
+import { Search, Bell } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/auth.store';
-import { useAuth } from '@/hooks/use-auth';
 
 export function Topbar() {
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
-  const { logout } = useAuth();
 
   // Build breadcrumb from pathname
   const segments = pathname.split('/').filter(Boolean);
@@ -56,16 +53,6 @@ export function Topbar() {
           <span className="text-sm text-white">{user?.companyName || 'Malta Taxis Ltd'}</span>
         </div>
 
-        {/* Settings & Logout links */}
-        <div className="flex flex-col items-end text-[10px] gap-0.5 ml-2">
-          <Link href="/settings" className="text-[#71717A] hover:text-white transition-colors flex items-center gap-1">
-            <Settings className="h-3 w-3" />
-            Settings
-          </Link>
-          <button onClick={logout} className="text-red-400 hover:text-red-300 transition-colors">
-            Logout
-          </button>
-        </div>
       </div>
     </header>
   );

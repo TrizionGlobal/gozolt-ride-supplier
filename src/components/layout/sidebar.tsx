@@ -25,16 +25,19 @@ export function Sidebar() {
       <div className={cn('flex items-center justify-between px-4 py-4', isCollapsed && 'justify-center px-2')}>
         <Link href="/dashboard" className="flex items-center gap-2">
           <img
-            src="/logo.svg"
+            src="/logo-icon.png"
             alt="Gozolt"
-            width={36}
-            height={36}
+            width={44}
+            height={44}
             className="shrink-0 object-contain"
           />
           {!isCollapsed && (
-            <div>
-              <span className="text-lg font-bold text-[#FACC15]">GOZOLT</span>
-              <p className="text-[10px] text-[#71717A] -mt-0.5">Supplier Portal</p>
+            <div className="flex flex-col">
+              <span className="text-lg font-black tracking-wide leading-none">
+                <span className="text-white">GO</span>
+                <span className="text-[#FACC15]">ZOLT</span>
+              </span>
+              <span className="text-[8px] font-bold tracking-[0.2em] text-[#FACC15] uppercase mt-0.5">Supplier Portal</span>
             </div>
           )}
         </Link>
@@ -50,14 +53,7 @@ export function Sidebar() {
         )}
       </div>
 
-      {/* Plan badge */}
-      {!isCollapsed && (
-        <div className="px-3 pb-3">
-          <div className="rounded-full bg-[#FACC15] px-3 py-1 text-center text-xs font-semibold text-black">
-            Professional Plan
-          </div>
-        </div>
-      )}
+
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">

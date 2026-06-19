@@ -13,7 +13,7 @@ interface PlanComparisonCardsProps {
 export function PlanComparisonCards({ plans, currentTier, isChanging, onSelectPlan }: PlanComparisonCardsProps) {
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#0A0A0A] p-6">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan) => {
           const isCurrent = currentTier === plan.tier;
           const isRecommended = plan.isRecommended;

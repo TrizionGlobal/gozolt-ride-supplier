@@ -12,7 +12,7 @@ export function GozoltLogo({ showSubtitle = true, size = 'md' }: GozoltLogoProps
   return (
     <div className="flex flex-col items-center gap-1">
       <img
-        src="/logo.svg"
+        src="/logo.png"
         alt="Gozolt"
         width={dimensions}
         height={dimensions}

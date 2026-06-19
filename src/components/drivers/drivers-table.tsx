@@ -7,11 +7,17 @@ import { toast } from 'sonner';
 import { driverService } from '@/services/drivers/driver.service';
 import type { Driver } from '@/types';
 import { DriverStatus } from '@/types';
+import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
 
 interface DriversTableProps {
   drivers: Driver[];
   vehicleMap: Record<string, string>;
   isLoading: boolean;
+  page: number;
+  limit: number;
+  total: number;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
 }
 
 const statusStyles: Record<string, { bg: string; text: string; label: string }> = {
@@ -25,7 +31,16 @@ const statusStyles: Record<string, { bg: string; text: string; label: string }> 
   [DriverStatus.SUSPENDED]: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Suspended' },
 };
 
-export function DriversTable({ drivers, vehicleMap, isLoading }: DriversTableProps) {
+export function DriversTable({
+  drivers,
+  vehicleMap,
+  isLoading,
+  page,
+  limit,
+  total,
+  onPageChange,
+  onLimitChange,
+}: DriversTableProps) {
   const router = useRouter();
   const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -51,270 +66,254 @@ export function DriversTable({ drivers, vehicleMap, isLoading }: DriversTablePro
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="rounded-lg border border-[#27272A] bg-[#111111] overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[#2A2A2A] bg-transparent">
-                <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Driver</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Driver Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Rating</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Rides</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Earnings</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Vehicle</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-[#9CA3AF]">Supplier Status</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-[#9CA3AF]">Admin Status</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-[#9CA3AF]">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <tr key={i} className="border-b border-[#2A2A2A] last:border-b-0">
-                  <td className="px-4 py-4"><div className="h-4 w-32 rounded bg-[#27272A] animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-20 rounded-full bg-[#27272A] animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-12 rounded bg-[#27272A] animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-8 rounded bg-[#27272A] animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-10 rounded bg-[#27272A] animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="h-4 w-24 rounded bg-[#27272A] animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="mx-auto h-4 w-20 rounded-full bg-[#27272A] animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="mx-auto h-4 w-20 rounded-full bg-[#27272A] animate-pulse" /></td>
-                  <td className="px-4 py-4"><div className="mx-auto h-4 w-24 rounded bg-[#27272A] animate-pulse" /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  const columns: ColumnDef<Driver>[] = [
+    {
+      key: 'driver',
+      title: 'Driver',
+      render: (row) => (
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-white">{row.firstName} {row.lastName}</span>
+          <span className="text-xs text-[#6B7280]">{row.email ?? row.phone}</span>
         </div>
-      </div>
-    );
-  }
+      ),
+    },
+    {
+      key: 'phone',
+      title: 'Phone',
+      dataIndex: 'phone',
+      render: (row) => <span className="text-sm text-[#A1A1AA]">{row.phone}</span>,
+    },
+    {
+      key: 'driverStatus',
+      title: 'Driver Status',
+      render: (row) => {
+        const style = statusStyles[row.status] || statusStyles[DriverStatus.ACTIVE];
+        let displayLabel = style.label;
+        let displayBg = style.bg;
+        let displayText = style.text;
 
-  if (drivers.length === 0) {
-    return (
-      <div className="rounded-lg border border-[#27272A] bg-[#111111] py-12 flex flex-col items-center justify-center">
-        <p className="text-sm text-[#6B7280]">No drivers found</p>
-        <p className="text-xs text-[#4B5563] mt-1">Try adjusting your filters</p>
-      </div>
-    );
-  }
+        if (row.status === DriverStatus.SUSPENDED || row.status === DriverStatus.ADMIN_SUSPENDED || row.status === DriverStatus.SUPPLIER_SUSPENDED) {
+          displayLabel = style.label;
+        } else if (row.status === DriverStatus.NEW_DRIVER) {
+          displayLabel = 'Supplier Pending';
+          displayBg = 'bg-orange-500/20';
+          displayText = 'text-orange-400';
+        } else if (row.status === DriverStatus.SUPPLIER_APPROVED) {
+          displayLabel = 'Admin Pending';
+          displayBg = 'bg-yellow-500/20';
+          displayText = 'text-yellow-400';
+        } else if (row.status === DriverStatus.ADMIN_APPROVED) {
+          displayLabel = 'Needs Vehicle';
+          displayBg = 'bg-blue-500/20';
+          displayText = 'text-blue-400';
+        } else if (row.status === DriverStatus.ACTIVE) {
+          displayLabel = row.isOnline ? 'Online' : 'Offline';
+          displayBg = row.isOnline ? 'bg-green-500/20' : 'bg-zinc-500/20';
+          displayText = row.isOnline ? 'text-green-400' : 'text-zinc-400';
+        }
+
+        return (
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border border-opacity-30 border-current ${displayBg} ${displayText}`}>
+            <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${row.isOnline ? 'bg-green-500' : 'bg-gray-500'}`} />
+            {displayLabel}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'rating',
+      title: 'Rating',
+      render: (row) => {
+        const formattedRating = Number(row.avgRating).toFixed(1).replace(/\.0$/, '');
+        return (
+          <span className="inline-flex items-center gap-1 text-sm text-white">
+            <Star className="h-3.5 w-3.5 fill-[#FACC15] text-[#FACC15]" />
+            {formattedRating}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'trips',
+      title: 'Trips',
+      render: (row) => <span className="text-sm text-[#9CA3AF]">{(row.totalRides ?? 0).toLocaleString()}</span>,
+    },
+    {
+      key: 'earnings',
+      title: 'Earnings',
+      render: () => <span className="text-sm text-white">€0</span>,
+    },
+    {
+      key: 'vehicle',
+      title: 'Vehicle',
+      render: (row) => {
+        const vehicle = vehicleMap[row.id];
+        return vehicle ? (
+          <span className="text-sm text-[#9CA3AF]">{vehicle}</span>
+        ) : (
+          <span className="inline-flex items-center rounded-full bg-blue-500/20 px-2 py-0.5 text-[11px] font-medium text-blue-400 border border-blue-500/30">
+            Not Assigned
+          </span>
+        );
+      },
+    },
+    {
+      key: 'supplierStatus',
+      title: 'Supplier Status',
+      className: 'text-center',
+      render: (row) => {
+        let supplierStatus = 'Approved';
+        if (row.status === DriverStatus.NEW_DRIVER) {
+          supplierStatus = 'Pending';
+        } else if (row.status === DriverStatus.SUPPLIER_SUSPENDED) {
+          supplierStatus = 'Suspended';
+        }
+
+        return (
+          <span
+            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+              supplierStatus === 'Pending' || supplierStatus === 'Waiting'
+                ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                : supplierStatus === 'Rejected' || supplierStatus === 'Suspended'
+                ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                : 'bg-green-500/20 text-green-400 border-green-500/30'
+            }`}
+          >
+            {supplierStatus}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'adminStatus',
+      title: 'Admin Status',
+      className: 'text-center',
+      render: (row) => {
+        let adminStatus = 'Approved';
+        if (row.status === DriverStatus.NEW_DRIVER) {
+          adminStatus = 'Waiting';
+        } else if (row.status === DriverStatus.SUPPLIER_APPROVED) {
+          adminStatus = 'Pending';
+        } else if (row.status === DriverStatus.SUPPLIER_SUSPENDED) {
+          adminStatus = 'Waiting';
+        } else if (row.status === DriverStatus.ADMIN_SUSPENDED || row.status === DriverStatus.SUSPENDED) {
+          adminStatus = 'Suspended';
+        }
+
+        return (
+          <span
+            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+              adminStatus === 'Pending' || adminStatus === 'Waiting'
+                ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                : adminStatus === 'Rejected' || adminStatus === 'Suspended'
+                ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                : 'bg-green-500/20 text-green-400 border-green-500/30'
+            }`}
+          >
+            {adminStatus}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      title: 'Actions',
+      className: 'text-center',
+      render: (row) => (
+        <div className="relative inline-block text-left">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpenDropdownId(openDropdownId === row.id ? null : row.id);
+            }}
+            className="p-1 rounded-md text-[#A1A1AA] hover:bg-[#27272A] hover:text-white transition-colors"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+
+          {openDropdownId === row.id && (
+            <div
+              className="absolute right-0 mt-1 w-32 origin-top-right rounded-md border border-[#27272A] bg-[#18181B] shadow-2xl focus:outline-none z-50 py-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {row.status === DriverStatus.NEW_DRIVER && (
+                <>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      setOpenDropdownId(null);
+                      try {
+                        await driverService.supplierApproveDriver(row.id);
+                        toast.success('Driver approved');
+                        window.location.reload();
+                      } catch (err) {
+                        toast.error('Failed to approve driver');
+                      }
+                    }}
+                    className="block w-full px-4 py-2 text-left text-xs font-medium text-green-500 hover:bg-[#2A2A2A]"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      setOpenDropdownId(null);
+                      try {
+                        await driverService.supplierSuspendDriver(row.id);
+                        toast.success('Driver suspended');
+                        window.location.reload();
+                      } catch (err) {
+                        toast.error('Failed to suspend driver');
+                      }
+                    }}
+                    className="block w-full px-4 py-2 text-left text-xs font-medium text-orange-500 hover:bg-[#2A2A2A]"
+                  >
+                    Suspend
+                  </button>
+                </>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenDropdownId(null);
+                  router.push(`/drivers/${row.id}`);
+                }}
+                className="block w-full px-4 py-2 text-left text-xs font-medium text-[#FACC15] hover:bg-[#2A2A2A]"
+              >
+                View
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenDropdownId(null);
+                  setDriverToDelete(row);
+                }}
+                className="block w-full px-4 py-2 text-left text-xs font-medium text-red-500 hover:bg-[#2A2A2A]"
+              >
+                Remove
+              </button>
+            </div>
+          )}
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#111111] overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-[#2A2A2A] bg-transparent">
-              <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Driver</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Driver Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Rating</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Rides</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Earnings</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-[#9CA3AF]">Vehicle</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-[#9CA3AF]">Supplier Status</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-[#9CA3AF]">Admin Status</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-[#9CA3AF]">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {drivers.map((driver) => {
-              const style = statusStyles[driver.status] || statusStyles[DriverStatus.ACTIVE];
-              const vehicle = vehicleMap[driver.id];
-              const fullName = `${driver.firstName} ${driver.lastName}`;
-              
-              // Format rating to at most 1 decimal place, e.g., 4.56 -> 4.6, 5.0 -> 5
-              const formattedRating = Number(driver.avgRating).toFixed(1).replace(/\.0$/, '');
-
-              let supplierStatus = 'Approved';
-              let adminStatus = 'Approved';
-              
-              if (driver.status === DriverStatus.NEW_DRIVER) {
-                supplierStatus = 'Pending';
-                adminStatus = 'Waiting';
-              } else if (driver.status === DriverStatus.SUPPLIER_APPROVED) {
-                supplierStatus = 'Approved';
-                adminStatus = 'Pending';
-              } else if (driver.status === DriverStatus.SUPPLIER_SUSPENDED) {
-                supplierStatus = 'Suspended';
-                adminStatus = 'Waiting';
-              } else if (driver.status === DriverStatus.ADMIN_SUSPENDED || driver.status === DriverStatus.SUSPENDED) {
-                supplierStatus = 'Approved';
-                adminStatus = 'Suspended';
-              }
-
-              let displayLabel = style.label;
-              let displayBg = style.bg;
-              let displayText = style.text;
-
-              if (driver.status === DriverStatus.SUSPENDED || driver.status === DriverStatus.ADMIN_SUSPENDED || driver.status === DriverStatus.SUPPLIER_SUSPENDED) {
-                displayLabel = style.label;
-              } else if (driver.status === DriverStatus.NEW_DRIVER) {
-                displayLabel = 'Supplier Pending';
-                displayBg = 'bg-orange-500/20';
-                displayText = 'text-orange-400';
-              } else if (driver.status === DriverStatus.SUPPLIER_APPROVED) {
-                displayLabel = 'Admin Pending';
-                displayBg = 'bg-yellow-500/20';
-                displayText = 'text-yellow-400';
-              } else if (driver.status === DriverStatus.ADMIN_APPROVED) {
-                displayLabel = 'Needs Vehicle';
-                displayBg = 'bg-blue-500/20';
-                displayText = 'text-blue-400';
-              } else if (driver.status === DriverStatus.ACTIVE) {
-                displayLabel = driver.isOnline ? 'Online' : 'Offline';
-                displayBg = driver.isOnline ? 'bg-green-500/20' : 'bg-zinc-500/20';
-                displayText = driver.isOnline ? 'text-green-400' : 'text-zinc-400';
-              }
-
-              return (
-                <tr
-                  key={driver.id}
-                  onClick={() => router.push(`/drivers/${driver.id}`)}
-                  className="border-b border-[#2A2A2A] last:border-b-0 hover:bg-[#1A1A1A]/50 transition-colors cursor-pointer"
-                >
-                  <td className="px-4 py-4">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-white">{fullName}</span>
-                      <span className="text-xs text-[#6B7280]">{driver.email ?? driver.phone}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium border border-opacity-30 border-current ${displayBg} ${displayText}`}>
-                      <span className={`mr-1.5 h-1.5 w-1.5 rounded-full ${driver.isOnline ? 'bg-green-500' : 'bg-gray-500'}`} />
-                      {displayLabel}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4">
-                    <span className="inline-flex items-center gap-1 text-sm text-white">
-                      <Star className="h-3.5 w-3.5 fill-[#FACC15] text-[#FACC15]" />
-                      {formattedRating}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-[#9CA3AF]">
-                    {(driver.totalRides ?? 0).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-4 text-sm text-white">
-                    {/* Mock earnings as we don't have _computed locally */}
-                    €0
-                  </td>
-                  <td className="px-4 py-4 text-sm text-[#9CA3AF]">
-                    {vehicle ? (
-                      vehicle
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-blue-500/20 px-2 py-0.5 text-[11px] font-medium text-blue-400 border border-blue-500/30">
-                        Not Assigned
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-4 text-center">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
-                        supplierStatus === 'Pending' || supplierStatus === 'Waiting'
-                          ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                          : supplierStatus === 'Rejected' || supplierStatus === 'Suspended'
-                          ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                          : 'bg-green-500/20 text-green-400 border-green-500/30'
-                      }`}
-                    >
-                      {supplierStatus}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-center">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${
-                        adminStatus === 'Pending' || adminStatus === 'Waiting'
-                          ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-                          : adminStatus === 'Rejected' || adminStatus === 'Suspended'
-                          ? 'bg-red-500/20 text-red-400 border-red-500/30'
-                          : 'bg-green-500/20 text-green-400 border-green-500/30'
-                      }`}
-                    >
-                      {adminStatus}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-center">
-                    <div className="relative inline-block text-left">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenDropdownId(openDropdownId === driver.id ? null : driver.id);
-                        }}
-                        className="p-1 rounded-md text-[#A1A1AA] hover:bg-[#27272A] hover:text-white transition-colors"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-
-                      {openDropdownId === driver.id && (
-                        <div
-                          className="absolute right-0 mt-1 w-32 origin-top-right rounded-md border border-[#27272A] bg-[#18181B] shadow-2xl focus:outline-none z-50 py-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {driver.status === DriverStatus.NEW_DRIVER && (
-                            <>
-                              <button
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  setOpenDropdownId(null);
-                                  try {
-                                    await driverService.supplierApproveDriver(driver.id);
-                                    toast.success('Driver approved');
-                                    window.location.reload();
-                                  } catch (err) {
-                                    toast.error('Failed to approve driver');
-                                  }
-                                }}
-                                className="block w-full px-4 py-2 text-left text-xs font-medium text-green-500 hover:bg-[#2A2A2A]"
-                              >
-                                Approve
-                              </button>
-                              <button
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  setOpenDropdownId(null);
-                                  try {
-                                    await driverService.supplierSuspendDriver(driver.id);
-                                    toast.success('Driver suspended');
-                                    window.location.reload();
-                                  } catch (err) {
-                                    toast.error('Failed to suspend driver');
-                                  }
-                                }}
-                                className="block w-full px-4 py-2 text-left text-xs font-medium text-orange-500 hover:bg-[#2A2A2A]"
-                              >
-                                Suspend
-                              </button>
-                            </>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenDropdownId(null);
-                              router.push(`/drivers/${driver.id}`);
-                            }}
-                            className="block w-full px-4 py-2 text-left text-xs font-medium text-[#FACC15] hover:bg-[#2A2A2A]"
-                          >
-                            View
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenDropdownId(null);
-                              setDriverToDelete(driver);
-                            }}
-                            className="block w-full px-4 py-2 text-left text-xs font-medium text-red-500 hover:bg-[#2A2A2A]"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <ServerSideTable<Driver>
+        columns={columns}
+        data={drivers}
+        isLoading={isLoading}
+        page={page}
+        limit={limit}
+        total={total}
+        onPageChange={onPageChange}
+        onLimitChange={onLimitChange}
+        onRowClick={(row) => router.push(`/drivers/${row.id}`)}
+        rowKey="id"
+        emptyText="No drivers found"
+      />
 
       {/* Delete Confirmation Modal */}
       {driverToDelete && (

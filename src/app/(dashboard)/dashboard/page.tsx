@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Users, Truck, Navigation, DollarSign, HandCoins } from 'lucide-react';
 import { dashboardService } from '@/services/dashboard/dashboard.service';
+import { useFleetTracking } from '@/hooks/use-fleet-tracking';
 import { StatCard } from '@/components/dashboard/stat-card';
 import { RidesChart } from '@/components/dashboard/rides-chart';
 import { RevenueChart } from '@/components/dashboard/revenue-chart';
@@ -17,12 +18,19 @@ export default function DashboardPage() {
   const [kpis, setKpis] = useState<DashboardKpis | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchKpis = useCallback(() => {
     dashboardService.getKpis().then((data) => {
       setKpis(data);
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    fetchKpis();
+  }, [fetchKpis]);
+
+  // Listen for real-time dashboard refresh triggers from backend via Socket.io
+  useFleetTracking({ onRefresh: fetchKpis });
 
   return (
     <div>

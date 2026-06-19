@@ -7,7 +7,9 @@ import { VehicleStatusCards } from '@/components/fleet/vehicle-status-cards';
 import { VehiclesTable } from '@/components/fleet/vehicles-table';
 import { fleetService } from '@/services/fleet/fleet.service';
 import type { FleetVehicle } from '@/types';
+import { ExportButton } from '@/components/ui/export-button';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useFleetTracking } from '@/hooks/use-fleet-tracking';
 
 export default function FleetPage() {
   const [vehicles, setVehicles] = useState<FleetVehicle[]>([]);
@@ -55,18 +57,34 @@ export default function FleetPage() {
     fetchVehicles();
   }, [fetchVehicles]);
 
+  // Listen for real-time fleet updates from the backend
+  useFleetTracking({ onRefresh: fetchVehicles });
+
   return (
     <div>
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Fleet – Vehicles</h1>
-        <Link
-          href="/fleet/add"
-          className="flex items-center gap-1.5 rounded-full bg-[#FACC15] px-3 py-1.5 text-xs font-semibold text-black hover:bg-[#EAB308] transition-colors"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Add Vehicle
-        </Link>
+        <h1 className="text-2xl font-bold text-white">Fleet Management</h1>
+        <div className="flex items-center gap-3">
+          <ExportButton
+            filename="fleet-export"
+            data={vehicles.map((vehicle) => ({
+              'Vehicle No': vehicle.plateNumber,
+              'Make/Model': `${vehicle.make} ${vehicle.model}`,
+              'Vehicle Type': vehicle.type,
+              'Fuel': vehicle.fuelType,
+              'Assigned Driver': vehicle.assignedDriverName || 'Not Assigned',
+              'Status': vehicle.status,
+            }))}
+          />
+          <Link
+            href="/fleet/add"
+            className="flex items-center gap-1.5 rounded-full bg-[#FACC15] px-3 py-1.5 text-xs font-semibold text-black hover:bg-[#EAB308] transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Vehicle
+          </Link>
+        </div>
       </div>
 
       {/* Status Cards */}
@@ -76,69 +94,34 @@ export default function FleetPage() {
 
       {/* Search */}
       <div className="mb-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#71717A]" />
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#52525B]" />
           <input
             type="text"
-            placeholder="Search vehicles or drivers..."
+            placeholder="Search vehicles..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(1);
             }}
-            className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] py-2.5 pl-10 pr-4 text-sm text-white placeholder-[#71717A] focus:border-[#FACC15] focus:outline-none"
+            className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2 pl-10 pr-3 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15]"
           />
         </div>
       </div>
 
       {/* Table */}
-      <VehiclesTable vehicles={vehicles} isLoading={isLoading} />
-
-      {/* Pagination */}
-      {totalVehicles > 0 && (
-        <div className="flex items-center justify-between border-t border-[#2A2A2A] px-4 py-4 mt-4 bg-[#111111] rounded-b-lg -mt-2">
-          <div className="flex items-center gap-4">
-            <p className="text-xs text-[#6B7280]">
-              Showing {(page - 1) * limit + 1}-{Math.min(page * limit, totalVehicles)} of {totalVehicles} vehicles
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-[#6B7280]">Rows per page:</span>
-              <select
-                value={limit}
-                onChange={(e) => {
-                  setLimit(Number(e.target.value));
-                  setPage(1);
-                }}
-                className="appearance-none rounded-md border border-[#3F3F46] bg-[#0A0A0A] py-1 pl-2 pr-6 text-xs text-white focus:border-[#FACC15] focus:outline-none"
-              >
-                <option value={20} className="bg-[#111111] text-white">20</option>
-                <option value={50} className="bg-[#111111] text-white">50</option>
-                <option value={100} className="bg-[#111111] text-white">100</option>
-                <option value={200} className="bg-[#111111] text-white">200</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="text-xs text-[#6B7280] hover:text-white disabled:opacity-50 transition-colors"
-            >
-              &lt; Previous
-            </button>
-            <span className="text-xs text-[#6B7280]">
-              Page {page} of {totalPages || 1}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages || totalPages === 0}
-              className="text-xs text-[#6B7280] hover:text-white disabled:opacity-50 transition-colors"
-            >
-              Next &gt;
-            </button>
-          </div>
-        </div>
-      )}
+      <VehiclesTable 
+        vehicles={vehicles} 
+        isLoading={isLoading} 
+        page={page}
+        limit={limit}
+        total={totalVehicles}
+        onPageChange={setPage}
+        onLimitChange={(l) => {
+          setLimit(l);
+          setPage(1);
+        }}
+      />
     </div>
   );
 }

@@ -5,11 +5,21 @@ import { io, Socket } from 'socket.io-client';
 import type { FleetLocationData } from '@/types';
 
 
-export function useFleetTracking() {
+interface UseFleetTrackingOptions {
+  onRefresh?: () => void;
+}
+
+export function useFleetTracking(options?: UseFleetTrackingOptions) {
   const [locations, setLocations] = useState<FleetLocationData[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const socketRef = useRef<Socket | null>(null);
+
+  // Use a ref for the callback so it doesn't trigger effect re-runs
+  const onRefreshRef = useRef(options?.onRefresh);
+  useEffect(() => {
+    onRefreshRef.current = options?.onRefresh;
+  }, [options?.onRefresh]);
 
   useEffect(() => {
     // Real WebSocket connection
@@ -26,7 +36,7 @@ export function useFleetTracking() {
       return;
     }
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
     const socket = io(`${API_URL}/supplier`, {
       auth: { token },
       transports: ['websocket'],
@@ -45,6 +55,13 @@ export function useFleetTracking() {
 
     socket.on('supplier:vehicle:location', (data: FleetLocationData[]) => {
       setLocations(data);
+    });
+
+    socket.on('supplier:refresh', () => {
+      console.log('Supplier WS: Refresh requested by server');
+      if (onRefreshRef.current) {
+        onRefreshRef.current();
+      }
     });
 
     socket.on('error', (data: { message: string }) => {

@@ -43,7 +43,7 @@ export const SIDEBAR_ITEMS = [
   { label: 'Rides', href: ROUTES.RIDES, icon: Navigation },
   { label: 'GPS Tracking', href: ROUTES.GPS_TRACKING, icon: MapPin },
   { label: 'Documents', href: ROUTES.DOCUMENTS, icon: FileText },
-  { label: 'Financials', href: ROUTES.FINANCIALS, icon: Wallet },
+  { label: 'Earnings', href: ROUTES.FINANCIALS, icon: Wallet },
   { label: 'Invoices', href: ROUTES.INVOICES, icon: Receipt },
   { label: 'Maintenance & Fuel', href: ROUTES.MAINTENANCE, icon: Wrench },
   { label: 'Analytics', href: ROUTES.ANALYTICS, icon: BarChart3 },

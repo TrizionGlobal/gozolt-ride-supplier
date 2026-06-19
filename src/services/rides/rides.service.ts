@@ -5,7 +5,7 @@ import type { SupplierRideListItem, SupplierRideKpis } from '@/types';
 
 
 export const ridesService = {
-  async getRides(params?: { status?: string; search?: string; page?: number }): Promise<{
+  async getRides(params?: { status?: string; search?: string; page?: number; limit?: number }): Promise<{
     data: SupplierRideListItem[];
     total: number;
     page: number;
@@ -13,7 +13,12 @@ export const ridesService = {
   }> {
     try {
       const res = await apiClient.get('/suppliers/rides', { params });
-      return res.data;
+      return {
+        data: res.data.data,
+        total: res.data.meta.total,
+        page: res.data.meta.page,
+        totalPages: res.data.meta.totalPages,
+      };
     } catch {
       return { data: [], total: 0, page: 1, totalPages: 1 };
     }
@@ -28,9 +33,7 @@ export const ridesService = {
         totalRides: 0,
         completedRides: 0,
         cancelledRides: 0,
-        completionRate: 0,
-        averageRating: 0,
-        totalRevenue: 0,
+        activeNow: 0,
       };
     }
   },

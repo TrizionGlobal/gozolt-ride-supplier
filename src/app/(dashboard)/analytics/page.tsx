@@ -6,8 +6,9 @@ import { RevenueWeekChart } from '@/components/analytics/revenue-week-chart';
 import { DriverPerformanceChart } from '@/components/analytics/driver-performance-chart';
 import { SystemDistributionChart } from '@/components/analytics/system-distribution-chart';
 import { TipsWeekChart } from '@/components/analytics/tips-week-chart';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { useFleetTracking } from '@/hooks/use-fleet-tracking';
 export default function AnalyticsPage() {
   const [ridesData, setRidesData] = useState([]);
   const [revenueData, setRevenueData] = useState([]);
@@ -15,28 +16,31 @@ export default function AnalyticsPage() {
   const [systemDistData, setSystemDistData] = useState([]);
   const [tipsData, setTipsData] = useState([]);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [rides, revenue, perf, dist, tips] = await Promise.allSettled([
-          apiClient.get('/suppliers/analytics/rides-trend'),
-          apiClient.get('/suppliers/analytics/revenue-trend'),
-          apiClient.get('/suppliers/analytics/driver-performance'),
-          apiClient.get('/suppliers/analytics/system-distribution'),
-          apiClient.get('/suppliers/analytics/tips-trend')
-        ]);
-        
-        if (rides.status === 'fulfilled') setRidesData(rides.value.data || []);
-        if (revenue.status === 'fulfilled') setRevenueData(revenue.value.data || []);
-        if (perf.status === 'fulfilled') setDriverPerfData(perf.value.data || []);
-        if (dist.status === 'fulfilled') setSystemDistData(dist.value.data || []);
-        if (tips.status === 'fulfilled') setTipsData(tips.value.data || []);
-      } catch (err) {
-        console.error('Failed to load analytics', err);
-      }
+  const loadData = useCallback(async () => {
+    try {
+      const [rides, revenue, perf, dist, tips] = await Promise.allSettled([
+        apiClient.get('/suppliers/analytics/rides-trend'),
+        apiClient.get('/suppliers/analytics/revenue-trend'),
+        apiClient.get('/suppliers/analytics/driver-performance'),
+        apiClient.get('/suppliers/analytics/system-distribution'),
+        apiClient.get('/suppliers/analytics/tips-trend')
+      ]);
+      
+      if (rides.status === 'fulfilled') setRidesData(rides.value.data || []);
+      if (revenue.status === 'fulfilled') setRevenueData(revenue.value.data || []);
+      if (perf.status === 'fulfilled') setDriverPerfData(perf.value.data || []);
+      if (dist.status === 'fulfilled') setSystemDistData(dist.value.data || []);
+      if (tips.status === 'fulfilled') setTipsData(tips.value.data || []);
+    } catch (err) {
+      console.error('Failed to load analytics', err);
     }
-    loadData();
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useFleetTracking({ onRefresh: loadData });
 
   return (
     <div className="space-y-6">

@@ -6,8 +6,9 @@ import { financialService } from '@/services/financials/financial.service';
 import { FinancialKPICards } from '@/components/financials/financial-kpi-cards';
 import { RevenueTrendChart } from '@/components/financials/revenue-trend-chart';
 import { PerDriverEarningsTable } from '@/components/financials/per-driver-earnings-table';
-import { PayoutHistoryTable } from '@/components/financials/payout-history-table';
-import type { FinancialKPIs, RevenueTrendPoint, PerDriverEarning, PayoutRecord } from '@/types';
+import type { FinancialKPIs, RevenueTrendPoint, PerDriverEarning } from '@/types';
+import { useFleetTracking } from '@/hooks/use-fleet-tracking';
+import { useCallback } from 'react';
 
 const periodOptions = [
   'This Month',
@@ -23,36 +24,58 @@ export default function FinancialsPage() {
   const [kpis, setKpis] = useState<FinancialKPIs | null>(null);
   const [revenueTrend, setRevenueTrend] = useState<RevenueTrendPoint[]>([]);
   const [driverEarnings, setDriverEarnings] = useState<PerDriverEarning[]>([]);
-  const [payoutHistory, setPayoutHistory] = useState<PayoutRecord[]>([]);
+
+  const loadAll = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      let fromDate: Date | undefined;
+      const today = new Date();
+      if (period === 'This Month') {
+        fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      } else if (period === 'Last Month') {
+        fromDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      } else if (period === 'Last 3 Months') {
+        fromDate = new Date(today.getFullYear(), today.getMonth() - 3, today.getDate());
+      } else if (period === 'Last 6 Months') {
+        fromDate = new Date(today.getFullYear(), today.getMonth() - 6, today.getDate());
+      } else if (period === 'This Year') {
+        fromDate = new Date(today.getFullYear(), 0, 1);
+      }
+      
+      let toDate: Date | undefined;
+      if (period === 'Last Month') {
+        toDate = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);
+      }
+
+      const fromStr = fromDate?.toISOString();
+      const toStr = toDate?.toISOString();
+
+      const [kpiData, trendData, earningsData] = await Promise.all([
+        financialService.getFinancialKPIs(fromStr, toStr),
+        financialService.getRevenueTrend(fromStr, toStr),
+        financialService.getPerDriverEarnings(fromStr, toStr),
+      ]);
+      setKpis(kpiData);
+      setRevenueTrend(trendData);
+      setDriverEarnings(earningsData);
+    } catch {
+      // handled in services
+    } finally {
+      setIsLoading(false);
+    }
+  }, [period]);
 
   useEffect(() => {
-    const loadAll = async () => {
-      setIsLoading(true);
-      try {
-        const [kpiData, trendData, earningsData, payoutsData] = await Promise.all([
-          financialService.getFinancialKPIs(),
-          financialService.getRevenueTrend(),
-          financialService.getPerDriverEarnings(),
-          financialService.getPayoutHistory(),
-        ]);
-        setKpis(kpiData);
-        setRevenueTrend(trendData);
-        setDriverEarnings(earningsData);
-        setPayoutHistory(payoutsData);
-      } catch {
-        // handled in services
-      } finally {
-        setIsLoading(false);
-      }
-    };
     loadAll();
-  }, []);
+  }, [loadAll]);
+
+  useFleetTracking({ onRefresh: loadAll });
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Financials</h1>
+        <h1 className="text-2xl font-bold text-white">Earnings & Settlements</h1>
         <div className="flex items-center gap-2">
           <button className="flex items-center justify-center rounded-md border border-[#3F3F46] bg-[#1A1A1A] p-2 text-[#A1A1AA] hover:text-white transition-colors">
             <Calendar className="h-4 w-4" />
@@ -78,11 +101,12 @@ export default function FinancialsPage() {
       {/* Revenue Trend Chart */}
       <RevenueTrendChart data={revenueTrend} isLoading={isLoading} />
 
-      {/* Per-Driver Earnings */}
-      <PerDriverEarningsTable data={driverEarnings} isLoading={isLoading} />
-
-      {/* Payout History */}
-      <PayoutHistoryTable data={payoutHistory} isLoading={isLoading} />
+      {/* Driver Settlements Table */}
+      <PerDriverEarningsTable 
+        data={driverEarnings} 
+        isLoading={isLoading} 
+        onRefresh={loadAll}
+      />
     </div>
   );
 }

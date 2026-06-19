@@ -2,23 +2,20 @@
 
 import { Check } from 'lucide-react';
 
-const STEPS = [
-  { number: 1, label: 'Company Info' },
-  { number: 2, label: 'Documents' },
-  { number: 3, label: 'Payments' },
-  { number: 4, label: 'Plan' },
-  { number: 5, label: 'Review' },
-  { number: 6, label: 'Contact Info' },
-];
+export interface StepConfig {
+  number: number;
+  label: string;
+}
 
 interface RegistrationStepperProps {
   currentStep: number;
+  steps: StepConfig[];
 }
 
-export function RegistrationStepper({ currentStep }: RegistrationStepperProps) {
+export function RegistrationStepper({ currentStep, steps }: RegistrationStepperProps) {
   return (
     <div className="flex items-center justify-center gap-0 mb-6">
-      {STEPS.map((step, index) => (
+      {steps.map((step, index) => (
         <div key={step.number} className="flex items-center">
           <div className="flex flex-col items-center">
             <div
@@ -48,7 +45,7 @@ export function RegistrationStepper({ currentStep }: RegistrationStepperProps) {
               {step.label}
             </span>
           </div>
-          {index < STEPS.length - 1 && (
+          {index < steps.length - 1 && (
             <div
               className={`h-[2px] w-10 mx-1 mt-[-14px] ${
                 step.number < currentStep ? 'bg-[#22C55E]' : 'bg-[#3F3F46]'

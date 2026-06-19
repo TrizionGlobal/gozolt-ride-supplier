@@ -77,6 +77,7 @@ export enum PaymentMethod {
 
 export enum SubscriptionTier {
   STARTER = 'STARTER',
+  GROWTH = 'GROWTH',
   PROFESSIONAL = 'PROFESSIONAL',
   ENTERPRISE = 'ENTERPRISE',
 }
@@ -132,6 +133,18 @@ export interface SupplierProfile {
   contactPhone: string | null;
   status: SupplierStatus;
   subscription: SupplierSubscription | null;
+  defaultDriverCommission?: number;
+  supplierBankName?: string | null;
+  supplierAccountNumber?: string | null;
+  supplierAccountHolder?: string | null;
+  supplierSwiftCode?: string | null;
+  tradingName?: string | null;
+  registrationNo?: string | null;
+  address?: string | null;
+  city?: string | null;
+  country?: string | null;
+  postalCode?: string | null;
+  logoUrl?: string | null;
   createdAt: string;
 }
 
@@ -340,6 +353,9 @@ export interface DriverDocument {
   referenceNumber: string;
   fileUrl?: string;
   fileName?: string;
+  status?: string;
+  expiresAt?: string;
+  uploadedAt?: string;
 }
 
 export interface AssignedVehicle {
@@ -363,6 +379,8 @@ export interface DocumentCenterItem {
   entityName?: string;
   vehiclePlate?: string;
   driverName?: string;
+  driverId?: string;
+  vehicleId?: string;
 }
 
 export interface UploadDocumentPayload {
@@ -407,14 +425,18 @@ export interface FinancialKPIs {
 }
 
 export interface PerDriverEarning {
+  driverId: string;
   driverName: string;
-  rides: number;
-  gross: number;
-  commission: number;
-  net: number;
-  avgPerRide: number;
-  tipEarnings: number;
-  tipCount: number;
+  vehicleType?: string | null;
+  totalEarnings: number;
+  totalTips: number;
+  totalPaidOut: number;
+  availableBalance: number;
+  cardEarnings?: number;
+  cashEarnings?: number;
+  tipEarnings?: number;
+  tipCount?: number;
+  ridesCompleted?: number;
 }
 
 export interface PayoutRecord {
@@ -446,14 +468,15 @@ export interface RevenueTrendPoint {
 
 // Subscription interfaces
 export interface SubscriptionInfo {
-  tier: 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
+  tier: 'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE';
   maxVehicles: number;
   maxDrivers: number;
+  maxRides: number;
   currentPeriodEnd: string | null;
 }
 
 export interface PlanDetails {
-  tier: 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
+  tier: 'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE';
   name: string;
   price: number;
   features: string[];
@@ -520,6 +543,8 @@ export interface CompanyProfile {
   city: string;
   country: string;
   postalCode: string;
+  defaultDriverCommission: number;
+  logoUrl?: string;
 }
 
 export interface NotificationPreferences {
@@ -550,7 +575,7 @@ export interface LanguageSettings {
   driverAppLanguage: string;
 }
 
-export type SettingsTab = 'company' | 'notifications' | 'users' | 'language' | 'privacy' | 'security';
+export type SettingsTab = 'company' | 'notifications' | 'users' | 'language' | 'privacy' | 'security' | 'bank';
 
 export interface RegistrationFormData {
   companyName: string;
@@ -601,9 +626,10 @@ export interface SupplierRideListItem {
   driverId: string;
   vehiclePlate: string;
   vehicleType: string;
-  riderName: string;
+  riderName: string | null;
   pickup: string;
   dropoff: string;
+  distance: string;
   status: string;
   estimatedFare: number;
   actualFare: number | null;
@@ -620,11 +646,9 @@ export interface SupplierRideListItem {
 
 export interface SupplierRideKpis {
   totalRides: number;
-  completedToday: number;
+  completedRides: number;
+  cancelledRides: number;
   activeNow: number;
-  totalRevenue: number;
-  totalTips: number;
-  cancellationRate: number;
 }
 
 // Invoice interfaces

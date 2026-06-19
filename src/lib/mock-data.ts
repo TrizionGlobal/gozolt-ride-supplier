@@ -603,12 +603,90 @@ export const mockRevenueTrend: RevenueTrendPoint[] = [
 ];
 
 export const mockPerDriverEarnings: PerDriverEarning[] = [
-  { driverName: 'Hans Mueller', rides: 87, gross: 3480, commission: 522, net: 2958, avgPerRide: 34, tipEarnings: 420, tipCount: 52 },
-  { driverName: 'Anna Schmidt', rides: 76, gross: 3040, commission: 456, net: 2584, avgPerRide: 34, tipEarnings: 380, tipCount: 45 },
-  { driverName: 'Peter Weber', rides: 68, gross: 2720, commission: 408, net: 2312, avgPerRide: 34, tipEarnings: 310, tipCount: 38 },
-  { driverName: 'Maria Fischer', rides: 62, gross: 2480, commission: 372, net: 2108, avgPerRide: 34, tipEarnings: 280, tipCount: 30 },
-  { driverName: 'Thomas Koch', rides: 54, gross: 2160, commission: 324, net: 1836, avgPerRide: 34, tipEarnings: 250, tipCount: 28 },
-  { driverName: 'Sarah Braun', rides: 41, gross: 1640, commission: 246, net: 1394, avgPerRide: 34, tipEarnings: 200, tipCount: 22 },
+  {
+    driverId: 'drv-001',
+    driverName: 'Hans Mueller',
+    vehicleType: 'STANDARD',
+    totalEarnings: 3900,
+    totalTips: 420,
+    totalPaidOut: 2958,
+    availableBalance: 522,
+    cardEarnings: 2500,
+    cashEarnings: 980,
+    tipEarnings: 420,
+    tipCount: 52,
+    ridesCompleted: 87,
+  },
+  {
+    driverId: 'drv-002',
+    driverName: 'Anna Schmidt',
+    vehicleType: 'PREMIUM',
+    totalEarnings: 3420,
+    totalTips: 380,
+    totalPaidOut: 2584,
+    availableBalance: 456,
+    cardEarnings: 2200,
+    cashEarnings: 840,
+    tipEarnings: 380,
+    tipCount: 45,
+    ridesCompleted: 76,
+  },
+  {
+    driverId: 'drv-003',
+    driverName: 'Peter Weber',
+    vehicleType: 'STANDARD',
+    totalEarnings: 3030,
+    totalTips: 310,
+    totalPaidOut: 2312,
+    availableBalance: 408,
+    cardEarnings: 2000,
+    cashEarnings: 720,
+    tipEarnings: 310,
+    tipCount: 38,
+    ridesCompleted: 68,
+  },
+  {
+    driverId: 'drv-004',
+    driverName: 'Maria Fischer',
+    vehicleType: 'XL',
+    totalEarnings: 2760,
+    totalTips: 280,
+    totalPaidOut: 2108,
+    availableBalance: 372,
+    cardEarnings: 1800,
+    cashEarnings: 680,
+    tipEarnings: 280,
+    tipCount: 30,
+    ridesCompleted: 62,
+  },
+  {
+    driverId: 'drv-005',
+    driverName: 'Thomas Koch',
+    vehicleType: 'STANDARD',
+    totalEarnings: 2410,
+    totalTips: 250,
+    totalPaidOut: 1836,
+    availableBalance: 324,
+    cardEarnings: 1600,
+    cashEarnings: 560,
+    tipEarnings: 250,
+    tipCount: 28,
+    ridesCompleted: 54,
+  },
+  {
+    driverId: 'drv-006',
+    driverName: 'Sarah Braun',
+    vehicleType: 'STANDARD',
+    totalEarnings: 1840,
+    totalTips: 200,
+    totalPaidOut: 1394,
+    availableBalance: 246,
+    cardEarnings: 1200,
+    cashEarnings: 440,
+    tipEarnings: 200,
+    tipCount: 22,
+    ridesCompleted: 41,
+  },
 ];
 
 export const mockPayoutHistory: PayoutRecord[] = [
@@ -673,8 +751,9 @@ export const mockSystemDistribution: SystemDistSegment[] = [
 // ── Subscription Mock Data ──
 export const mockSubscriptionInfo: SubscriptionInfo = {
   tier: 'PROFESSIONAL',
-  maxVehicles: 25,
-  maxDrivers: 25,
+  maxVehicles: 50,
+  maxDrivers: 100,
+  maxRides: 1500,
   currentPeriodEnd: '2026-03-01T00:00:00Z',
 };
 
@@ -708,6 +787,7 @@ export const mockCompanyProfile: CompanyProfile = {
   city: 'Valletta',
   country: 'Malta',
   postalCode: 'VLT 1234',
+  defaultDriverCommission: 15,
 };
 
 export const defaultNotificationPreferences: NotificationPreferences = {
@@ -753,23 +833,25 @@ export const mockDashboardActiveRides: DashboardActiveRide[] = [
 
 // ── Rides Management Mock Data ──
 export const mockSupplierRides: SupplierRideListItem[] = [
-  { id: 'ride-001', displayId: 'R-5001', driverName: 'Hans Mueller', driverId: 'drv-001', vehiclePlate: 'ABC-123', vehicleType: 'STANDARD', riderName: 'James Falzon', pickup: 'Valletta Bus Terminal', dropoff: 'Sliema Ferries', status: 'COMPLETED', estimatedFare: 12.50, actualFare: 13.20, baseFare: 5.00, distanceFare: 4.80, timeFare: 2.40, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: 2.00, paymentMethod: 'CARD', requestedAt: '2026-02-25T08:30:00Z', completedAt: '2026-02-25T08:52:00Z' },
-  { id: 'ride-002', displayId: 'R-5002', driverName: 'Anna Schmidt', driverId: 'drv-002', vehiclePlate: 'DEF-456', vehicleType: 'PREMIUM', riderName: 'Maria Camilleri', pickup: 'Mosta Centre', dropoff: 'Valletta Waterfront', status: 'COMPLETED', estimatedFare: 15.00, actualFare: 16.80, baseFare: 5.00, distanceFare: 7.20, timeFare: 3.60, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: 3.00, paymentMethod: 'CARD', requestedAt: '2026-02-25T09:15:00Z', completedAt: '2026-02-25T09:42:00Z' },
-  { id: 'ride-003', displayId: 'R-5003', driverName: 'Peter Weber', driverId: 'drv-003', vehiclePlate: 'GHI-789', vehicleType: 'STANDARD', riderName: 'David Zammit', pickup: 'St Julians Paceville', dropoff: 'Bugibba Square', status: 'IN_PROGRESS', estimatedFare: 18.00, actualFare: null, baseFare: null, distanceFare: null, timeFare: null, bookingFee: null, surgeMultiplier: 1.2, tipAmount: null, paymentMethod: 'CASH', requestedAt: '2026-02-25T10:00:00Z', completedAt: null },
-  { id: 'ride-004', displayId: 'R-5004', driverName: 'Hans Mueller', driverId: 'drv-001', vehiclePlate: 'ABC-123', vehicleType: 'STANDARD', riderName: 'Sarah Borg', pickup: 'Mdina Gate', dropoff: 'Marsaxlokk Market', status: 'COMPLETED', estimatedFare: 22.00, actualFare: 24.50, baseFare: 5.00, distanceFare: 12.00, timeFare: 6.50, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: 5.00, paymentMethod: 'CARD', requestedAt: '2026-02-24T14:20:00Z', completedAt: '2026-02-24T14:55:00Z' },
-  { id: 'ride-005', displayId: 'R-5005', driverName: 'Maria Fischer', driverId: 'drv-004', vehiclePlate: 'JKL-012', vehicleType: 'PREMIUM', riderName: 'John Galea', pickup: 'MIA Airport', dropoff: 'Hilton Portomaso', status: 'COMPLETED', estimatedFare: 20.00, actualFare: 19.80, baseFare: 5.00, distanceFare: 9.00, timeFare: 4.80, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: null, paymentMethod: 'CARD', requestedAt: '2026-02-24T16:30:00Z', completedAt: '2026-02-24T16:52:00Z' },
-  { id: 'ride-006', displayId: 'R-5006', driverName: 'Thomas Koch', driverId: 'drv-005', vehiclePlate: 'MNO-345', vehicleType: 'XL', riderName: 'Chris Vella', pickup: 'Mellieha Bay', dropoff: 'Cirkewwa Ferry', status: 'CANCELLED', estimatedFare: 8.00, actualFare: null, baseFare: null, distanceFare: null, timeFare: null, bookingFee: null, surgeMultiplier: 1.0, tipAmount: null, paymentMethod: 'CARD', requestedAt: '2026-02-24T11:00:00Z', completedAt: null },
-  { id: 'ride-007', displayId: 'R-5007', driverName: 'Anna Schmidt', driverId: 'drv-002', vehiclePlate: 'DEF-456', vehicleType: 'PREMIUM', riderName: 'Tina Abela', pickup: 'Qormi Road', dropoff: 'Hamrun Centre', status: 'COMPLETED', estimatedFare: 7.50, actualFare: 7.20, baseFare: 3.50, distanceFare: 2.00, timeFare: 0.70, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: 1.50, paymentMethod: 'CASH', requestedAt: '2026-02-23T08:00:00Z', completedAt: '2026-02-23T08:12:00Z' },
-  { id: 'ride-008', displayId: 'R-5008', driverName: 'Peter Weber', driverId: 'drv-003', vehiclePlate: 'GHI-789', vehicleType: 'STANDARD', riderName: 'Paul Grech', pickup: 'Tarxien Temples', dropoff: 'Paola Square', status: 'COMPLETED', estimatedFare: 6.00, actualFare: 5.80, baseFare: 3.50, distanceFare: 1.30, timeFare: 0.00, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: 1.00, paymentMethod: 'CARD', requestedAt: '2026-02-23T10:30:00Z', completedAt: '2026-02-23T10:38:00Z' },
-  { id: 'ride-009', displayId: 'R-5009', driverName: 'Hans Mueller', driverId: 'drv-001', vehiclePlate: 'ABC-123', vehicleType: 'STANDARD', riderName: 'Rita Azzopardi', pickup: 'Sliema Strand', dropoff: 'Gzira Seafront', status: 'NO_SHOW_USER', estimatedFare: 5.50, actualFare: null, baseFare: null, distanceFare: null, timeFare: null, bookingFee: null, surgeMultiplier: 1.0, tipAmount: null, paymentMethod: 'CARD', requestedAt: '2026-02-22T18:00:00Z', completedAt: null },
-  { id: 'ride-010', displayId: 'R-5010', driverName: 'Maria Fischer', driverId: 'drv-004', vehiclePlate: 'JKL-012', vehicleType: 'PREMIUM', riderName: 'Luke Mifsud', pickup: 'Balzan Centre', dropoff: 'Attard Gardens', status: 'COMPLETED', estimatedFare: 8.00, actualFare: 8.40, baseFare: 3.50, distanceFare: 3.20, timeFare: 0.70, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: 2.00, paymentMethod: 'CARD', requestedAt: '2026-02-22T09:00:00Z', completedAt: '2026-02-22T09:15:00Z' },
-  { id: 'ride-011', displayId: 'R-5011', driverName: 'Thomas Koch', driverId: 'drv-005', vehiclePlate: 'MNO-345', vehicleType: 'XL', riderName: 'Amy Spiteri', pickup: 'Naxxar Centre', dropoff: 'San Gwann', status: 'COMPLETED', estimatedFare: 9.00, actualFare: 8.60, baseFare: 5.50, distanceFare: 1.80, timeFare: 0.30, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: null, paymentMethod: 'CASH', requestedAt: '2026-02-21T15:00:00Z', completedAt: '2026-02-21T15:14:00Z' },
-  { id: 'ride-012', displayId: 'R-5012', driverName: 'Anna Schmidt', driverId: 'drv-002', vehiclePlate: 'DEF-456', vehicleType: 'PREMIUM', riderName: 'Ivan Bonnici', pickup: 'Birkirkara Bypass', dropoff: 'Msida Marina', status: 'IN_PROGRESS', estimatedFare: 10.00, actualFare: null, baseFare: null, distanceFare: null, timeFare: null, bookingFee: null, surgeMultiplier: 1.0, tipAmount: null, paymentMethod: 'CARD', requestedAt: '2026-02-25T10:30:00Z', completedAt: null },
+  { id: 'ride-001', displayId: 'R-5001', driverName: 'Hans Mueller', driverId: 'drv-001', vehiclePlate: 'ABC-123', vehicleType: 'STANDARD', riderName: 'James Falzon', pickup: 'Valletta Bus Terminal', dropoff: 'Sliema Ferries', distance: '5.2 km', status: 'COMPLETED', estimatedFare: 12.50, actualFare: 13.20, baseFare: 5.00, distanceFare: 4.80, timeFare: 2.40, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: 2.00, paymentMethod: 'CARD', requestedAt: '2026-02-25T08:30:00Z', completedAt: '2026-02-25T08:52:00Z' },
+  { id: 'ride-002', displayId: 'R-5002', driverName: 'Anna Schmidt', driverId: 'drv-002', vehiclePlate: 'DEF-456', vehicleType: 'PREMIUM', riderName: 'Maria Camilleri', pickup: 'Mosta Centre', dropoff: 'Valletta Waterfront', distance: '12.4 km', status: 'COMPLETED', estimatedFare: 15.00, actualFare: 16.80, baseFare: 5.00, distanceFare: 7.20, timeFare: 3.60, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: 3.00, paymentMethod: 'CARD', requestedAt: '2026-02-25T09:15:00Z', completedAt: '2026-02-25T09:42:00Z' },
+  { id: 'ride-003', displayId: 'R-5003', driverName: 'Peter Weber', driverId: 'drv-003', vehiclePlate: 'GHI-789', vehicleType: 'STANDARD', riderName: 'David Zammit', pickup: 'St Julians Paceville', dropoff: 'Bugibba Square', distance: '14.8 km', status: 'IN_PROGRESS', estimatedFare: 18.00, actualFare: null, baseFare: null, distanceFare: null, timeFare: null, bookingFee: null, surgeMultiplier: 1.2, tipAmount: null, paymentMethod: 'CASH', requestedAt: '2026-02-25T10:00:00Z', completedAt: null },
+  { id: 'ride-004', displayId: 'R-5004', driverName: 'Hans Mueller', driverId: 'drv-001', vehiclePlate: 'ABC-123', vehicleType: 'STANDARD', riderName: 'Sarah Borg', pickup: 'Mdina Gate', dropoff: 'Marsaxlokk Market', distance: '18.1 km', status: 'COMPLETED', estimatedFare: 22.00, actualFare: 24.50, baseFare: 5.00, distanceFare: 12.00, timeFare: 6.50, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: 5.00, paymentMethod: 'CARD', requestedAt: '2026-02-24T14:20:00Z', completedAt: '2026-02-24T14:55:00Z' },
+  { id: 'ride-005', displayId: 'R-5005', driverName: 'Maria Fischer', driverId: 'drv-004', vehiclePlate: 'JKL-012', vehicleType: 'PREMIUM', riderName: 'John Galea', pickup: 'MIA Airport', dropoff: 'Hilton Portomaso', distance: '9.6 km', status: 'COMPLETED', estimatedFare: 20.00, actualFare: 19.80, baseFare: 5.00, distanceFare: 9.00, timeFare: 4.80, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: null, paymentMethod: 'CARD', requestedAt: '2026-02-24T16:30:00Z', completedAt: '2026-02-24T16:52:00Z' },
+  { id: 'ride-006', displayId: 'R-5006', driverName: 'Thomas Koch', driverId: 'drv-005', vehiclePlate: 'MNO-345', vehicleType: 'XL', riderName: 'Chris Vella', pickup: 'Mellieha Bay', dropoff: 'Cirkewwa Ferry', distance: '6.5 km', status: 'CANCELLED', estimatedFare: 8.00, actualFare: null, baseFare: null, distanceFare: null, timeFare: null, bookingFee: null, surgeMultiplier: 1.0, tipAmount: null, paymentMethod: 'CARD', requestedAt: '2026-02-24T11:00:00Z', completedAt: null },
+  { id: 'ride-007', displayId: 'R-5007', driverName: 'Anna Schmidt', driverId: 'drv-002', vehiclePlate: 'DEF-456', vehicleType: 'PREMIUM', riderName: 'Tina Abela', pickup: 'Qormi Road', dropoff: 'Hamrun Centre', distance: '3.1 km', status: 'COMPLETED', estimatedFare: 7.50, actualFare: 7.20, baseFare: 3.50, distanceFare: 2.00, timeFare: 0.70, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: 1.50, paymentMethod: 'CASH', requestedAt: '2026-02-23T08:00:00Z', completedAt: '2026-02-23T08:12:00Z' },
+  { id: 'ride-008', displayId: 'R-5008', driverName: 'Peter Weber', driverId: 'drv-003', vehiclePlate: 'GHI-789', vehicleType: 'STANDARD', riderName: 'Paul Grech', pickup: 'Tarxien Temples', dropoff: 'Paola Square', distance: '2.4 km', status: 'COMPLETED', estimatedFare: 6.00, actualFare: 5.80, baseFare: 3.50, distanceFare: 1.30, timeFare: 0.00, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: 1.00, paymentMethod: 'CARD', requestedAt: '2026-02-23T10:30:00Z', completedAt: '2026-02-23T10:38:00Z' },
+  { id: 'ride-009', displayId: 'R-5009', driverName: 'Hans Mueller', driverId: 'drv-001', vehiclePlate: 'ABC-123', vehicleType: 'STANDARD', riderName: 'Rita Azzopardi', pickup: 'Sliema Strand', dropoff: 'Gzira Seafront', distance: '1.2 km', status: 'NO_SHOW_USER', estimatedFare: 5.50, actualFare: null, baseFare: null, distanceFare: null, timeFare: null, bookingFee: null, surgeMultiplier: 1.0, tipAmount: null, paymentMethod: 'CARD', requestedAt: '2026-02-22T18:00:00Z', completedAt: null },
+  { id: 'ride-010', displayId: 'R-5010', driverName: 'Maria Fischer', driverId: 'drv-004', vehiclePlate: 'JKL-012', vehicleType: 'PREMIUM', riderName: 'Luke Mifsud', pickup: 'Balzan Centre', dropoff: 'Attard Gardens', distance: '4.7 km', status: 'COMPLETED', estimatedFare: 8.00, actualFare: 8.40, baseFare: 3.50, distanceFare: 3.20, timeFare: 0.70, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: 2.00, paymentMethod: 'CARD', requestedAt: '2026-02-22T09:00:00Z', completedAt: '2026-02-22T09:15:00Z' },
+  { id: 'ride-011', displayId: 'R-5011', driverName: 'Thomas Koch', driverId: 'drv-005', vehiclePlate: 'MNO-345', vehicleType: 'XL', riderName: 'Amy Spiteri', pickup: 'Naxxar Centre', dropoff: 'San Gwann', distance: '5.8 km', status: 'COMPLETED', estimatedFare: 9.00, actualFare: 8.60, baseFare: 5.50, distanceFare: 1.80, timeFare: 0.30, bookingFee: 1.00, surgeMultiplier: 1.0, tipAmount: null, paymentMethod: 'CASH', requestedAt: '2026-02-21T15:00:00Z', completedAt: '2026-02-21T15:14:00Z' },
+  { id: 'ride-012', displayId: 'R-5012', driverName: 'Anna Schmidt', driverId: 'drv-002', vehiclePlate: 'DEF-456', vehicleType: 'PREMIUM', riderName: 'Ivan Bonnici', pickup: 'Birkirkara Bypass', dropoff: 'Msida Marina', distance: '6.0 km', status: 'IN_PROGRESS', estimatedFare: 10.00, actualFare: null, baseFare: null, distanceFare: null, timeFare: null, bookingFee: null, surgeMultiplier: 1.0, tipAmount: null, paymentMethod: 'CARD', requestedAt: '2026-02-25T10:30:00Z', completedAt: null },
 ];
 
 export const mockSupplierRideKpis: SupplierRideKpis = {
-  totalRides: 1847, completedToday: 87, activeNow: 12,
-  totalRevenue: 14450, totalTips: 1840, cancellationRate: 6.2,
+  totalRides: 1847,
+  completedRides: 1600,
+  cancelledRides: 235,
+  activeNow: 12,
 };
 
 // ── Invoice Mock Data ──

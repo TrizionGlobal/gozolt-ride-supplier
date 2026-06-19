@@ -72,10 +72,27 @@ export function UsersTab() {
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-14 rounded bg-[#27272A] animate-pulse" />
-        ))}
+      <div>
+        <div className="mb-6 flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-6 w-32 rounded bg-[#27272A] animate-pulse" />
+            <div className="h-4 w-56 rounded bg-[#27272A] animate-pulse" />
+          </div>
+          <div className="h-10 w-28 rounded-lg bg-[#27272A] animate-pulse" />
+        </div>
+        <div className="overflow-hidden rounded-lg border border-[#27272A]">
+          <div className="h-10 border-b border-[#27272A] bg-[#0A0A0A]/50" />
+          <div className="divide-y divide-[#27272A]">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center px-4 py-4">
+                <div className="w-1/4"><div className="h-4 w-24 rounded bg-[#27272A] animate-pulse" /></div>
+                <div className="w-1/4"><div className="h-4 w-40 rounded bg-[#27272A] animate-pulse" /></div>
+                <div className="w-1/4"><div className="h-6 w-16 rounded-full bg-[#27272A] animate-pulse" /></div>
+                <div className="w-1/4"><div className="h-6 w-16 rounded-full bg-[#27272A] animate-pulse" /></div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

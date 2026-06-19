@@ -66,7 +66,18 @@ export function ActiveRidesTable() {
                   <td className="px-4 py-3 text-sm text-white">{ride.driverName}</td>
                   <td className="px-4 py-3 text-sm text-white">{ride.vehiclePlate}</td>
                   <td className="px-4 py-3 text-sm text-white">{ride.riderName}</td>
-                  <td className="px-4 py-3 text-sm text-[#A1A1AA]">{ride.pickupAddress || 'Unknown'} → {ride.dropoffAddress || 'Unknown'}</td>
+                  <td className="p-4 text-sm">
+                    <div className="flex flex-col gap-1 max-w-[200px]">
+                      <div className="flex items-center gap-2 text-white">
+                        <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                        <span className="truncate" title={ride.pickup}>{ride.pickup}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[#A1A1AA]">
+                        <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                        <span className="truncate" title={ride.dropoff}>{ride.dropoff}</span>
+                      </div>
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <span className="rounded-full bg-[#22C55E]/20 px-2 py-1 text-xs text-[#22C55E]">
                       {ride.status}

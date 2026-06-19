@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
 import { driverService } from '@/services/drivers/driver.service';
 import { financialService } from '@/services/financials/financial.service';
+import { PhoneInput } from '@/components/ui/phone-input';
 import type { Driver, PerDriverEarning } from '@/types';
 import { DriverStatus } from '@/types';
 
@@ -29,10 +30,6 @@ const statusStyles: Record<string, { text: string; label: string }> = {
 export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [countryCode, setCountryCode] = useState('+356');
-  const [phoneWithoutCode, setPhoneWithoutCode] = useState(
-    driver.phone?.startsWith('+356') ? driver.phone.slice(4) : driver.phone || ''
-  );
 
   const [formData, setFormData] = useState({
     firstName: driver.firstName,
@@ -52,6 +49,9 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
         driverId: driver.id,
         driverName: driver.firstName + ' ' + driver.lastName,
         totalEarnings: 0,
+        totalTips: 0,
+        totalPaidOut: 0,
+        availableBalance: 0,
         cardEarnings: 0,
         cashEarnings: 0,
         tipEarnings: 0,
@@ -64,12 +64,23 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
   }, [driver]);
 
   const handleSave = async () => {
+    const phoneMatch = formData.phone?.match(/^(\+\d{1,4})\s?(.*)$/);
+    const phoneNational = phoneMatch ? phoneMatch[2] : formData.phone;
+    if (!phoneNational || phoneNational.trim() === '') {
+      toast.error('Phone number is required');
+      return;
+    }
+
+    const cleanPhone = formData.phone.replace(/[\s-]+/g, '');
+    const phoneRegex = /^\+[1-9]\d{1,14}$/;
+    if (!phoneRegex.test(cleanPhone)) {
+      toast.error('Invalid phone number format');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const cleanPhone = phoneWithoutCode.replace(/^0+/, '');
-      const finalPhone = `${countryCode}${cleanPhone}`;
-      const payload = { ...formData, phone: finalPhone };
-
+      const payload = { ...formData, phone: cleanPhone };
       const updated = await driverService.updateDriver(driver.id, payload);
       onUpdate?.(updated);
       toast.success('Driver details updated successfully');
@@ -96,8 +107,6 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
                     phone: driver.phone,
                     email: driver.email || '',
                   });
-                  setCountryCode('+356');
-                  setPhoneWithoutCode(driver.phone?.startsWith('+356') ? driver.phone.slice(4) : driver.phone || '');
                   setIsEditing(false);
                 }}
                 className="flex items-center justify-center rounded-md p-2 text-[#A1A1AA] hover:bg-[#27272A] hover:text-white transition-colors"
@@ -151,23 +160,12 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
           <div>
             <p className="text-xs text-[#71717A]">Phone</p>
             {isEditing ? (
-              <div className="mt-1 flex gap-2">
-                <select
-                  value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                  className="w-[100px] shrink-0 appearance-none rounded-md border border-[#3F3F46] bg-[#0A0A0A] p-2 text-sm text-white focus:border-[#FACC15] focus:outline-none"
-                >
-                  <option value="+356">🇲🇹 +356</option>
-                  <option value="+91">🇮🇳 +91</option>
-                </select>
-                <input
-                  type="text"
-                  placeholder="Enter Mobile Number"
-                  value={phoneWithoutCode}
-                  onChange={(e) => setPhoneWithoutCode(e.target.value.replace(/\D/g, ''))}
-                  className="w-full rounded-md border border-[#3F3F46] bg-[#0A0A0A] px-3 py-1.5 text-sm text-white focus:border-[#FACC15] focus:outline-none"
-                />
-              </div>
+              <PhoneInput
+                value={formData.phone}
+                onChange={(val) => setFormData({ ...formData, phone: val })}
+                placeholder="Enter Mobile Number"
+                className="!border-[#3F3F46] mt-1"
+              />
             ) : (
               <p className="mt-1 text-sm font-medium text-white">{driver.phone}</p>
             )}

@@ -39,10 +39,17 @@ export const fleetService = {
     }
 
     const res = await apiClient.get('/fleet/vehicles', { params });
-    cachedVehicles = res.data;
+    const mappedResponse = {
+      data: res.data.data,
+      total: res.data.meta?.total || 0,
+      page: res.data.meta?.page || 1,
+      limit: res.data.meta?.limit || 20,
+      totalPages: res.data.meta?.totalPages || 1,
+    };
+    cachedVehicles = mappedResponse;
     lastVehiclesParams = paramsKey;
     vehiclesCacheTimestamp = Date.now();
-    return res.data;
+    return mappedResponse;
   },
 
   async getVehicle(id: string): Promise<FleetVehicleDetail> {

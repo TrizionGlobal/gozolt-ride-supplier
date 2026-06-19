@@ -3,9 +3,8 @@
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
-import { supplierLogin, supplierRegister, logout, isDevBypassed } from '@/services/auth/auth.service';
-import { authMockData } from '@/services/auth/auth.mock';
-import type { SupplierLoginPayload, SupplierRegisterPayload } from '@/services/auth/auth.types';
+import { supplierLogin, supplierRegister, logout } from '@/services/auth/auth.service';
+import type { SupplierLoginPayload } from '@/services/auth/auth.types';
 
 export function useAuth() {
   const router = useRouter();
@@ -17,29 +16,21 @@ export function useAuth() {
       try {
         const response = await supplierLogin(payload);
 
-        if (isDevBypassed()) {
-          // In dev mode, store mock profile in localStorage and set a cookie marker
-          const profile = authMockData.supplierProfile;
-          localStorage.setItem('gozolt-supplier-dev-user', JSON.stringify(profile));
-          document.cookie = 'gozolt-supplier-dev-authenticated=true; path=/; max-age=86400';
-          setUser(profile);
-        } else {
-          // Set HTTP-only cookies via API route
-          await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              accessToken: response.accessToken,
-              refreshToken: response.refreshToken,
-            }),
-          });
+        // Set HTTP-only cookies via API route
+        await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+          }),
+        });
 
-          // Fetch the supplier profile
-          const meRes = await fetch('/api/auth/me');
-          if (meRes.ok) {
-            const data = await meRes.json();
-            setUser(data.user);
-          }
+        // Fetch the supplier profile
+        const meRes = await fetch('/api/auth/me');
+        if (meRes.ok) {
+          const data = await meRes.json();
+          setUser(data.user);
         }
         router.push('/dashboard');
       } finally {
@@ -50,7 +41,7 @@ export function useAuth() {
   );
 
   const register = useCallback(
-    async (payload: SupplierRegisterPayload) => {
+    async (payload: FormData) => {
       setLoading(true);
       try {
         const response = await supplierRegister(payload);
@@ -64,13 +55,8 @@ export function useAuth() {
 
   const handleLogout = useCallback(async () => {
     try {
-      if (isDevBypassed()) {
-        localStorage.removeItem('gozolt-supplier-dev-user');
-        document.cookie = 'gozolt-supplier-dev-authenticated=; path=/; max-age=0';
-      } else {
-        await logout();
-        await fetch('/api/auth/logout', { method: 'POST' });
-      }
+      await logout();
+      await fetch('/api/auth/logout', { method: 'POST' });
     } finally {
       clearAuth();
       router.push('/login');

@@ -9,7 +9,6 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DevBypass } from '@/components/shared/dev-bypass';
 import { useAuth } from '@/hooks/use-auth';
 
 const loginSchema = z.object({
@@ -74,7 +73,7 @@ export default function LoginPage() {
           <div className="relative">
             <Input
               type={showPassword ? 'text' : 'password'}
-              placeholder="••••••"
+              placeholder="••••••••••••"
               className="h-10 rounded-lg border-[#27272A] bg-[#0A0A0A] pr-10 text-white placeholder:text-[#71717A] focus-visible:border-[#FACC15] focus-visible:ring-[#FACC15]/20"
               {...register('password')}
             />
@@ -129,8 +128,7 @@ export default function LoginPage() {
         </Link>
       </form>
 
-      {/* Dev Bypass */}
-      <DevBypass />
+
     </div>
   );
 }

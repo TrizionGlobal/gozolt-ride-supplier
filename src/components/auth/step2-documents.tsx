@@ -5,13 +5,11 @@ import { Upload, CheckCircle, ArrowLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 const DOCUMENT_TYPES = [
-  { type: 'business_registration', label: 'Business Registration' },
-  { type: 'vat_document', label: 'VAT Document' },
-  { type: 'insurance_certificate', label: 'Insurance Certificate' },
-  { type: 'driving_license', label: 'Driving License' },
-  { type: 'passport', label: 'Passport' },
-  { type: 'malta_nationality_id', label: 'Malta Nationality ID' },
-  { type: 'others', label: 'Others' },
+  { type: 'businessRegistration', label: 'Business Registration Certificate', required: true },
+  { type: 'ownerId', label: 'Owner / Authorized Representative ID', required: true },
+  { type: 'addressProof', label: 'Proof of Business Address', required: true },
+  { type: 'bankProof', label: 'Bank Account Proof', required: true },
+  { type: 'vatCertificate', label: 'VAT Certificate', required: false },
 ];
 
 export interface DocumentFile {
@@ -52,13 +50,26 @@ export function Step2Documents({ documents, onDocumentsChange, onNext, onPreviou
     fileInputRefs.current[type]?.click();
   };
 
+  const handleNextClick = () => {
+    // Validate required documents
+    const missingDocs = DOCUMENT_TYPES.filter(
+      (doc) => doc.required && !documents.find((d) => d.type === doc.type && d.file)
+    );
+
+    if (missingDocs.length > 0) {
+      toast.error(`Please upload all required documents`);
+      return;
+    }
+
+    onNext();
+  };
+
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#0F0F0F] p-6">
       <div className="mb-6 border-b border-[#27272A] pb-4">
-        <h2 className="text-lg font-bold text-white">Step 2:Documents</h2>
+        <h2 className="text-lg font-bold text-white">Step 2: Business Documents</h2>
       </div>
 
-      {/* Document Upload Grid */}
       <div className="grid grid-cols-2 gap-4">
         {DOCUMENT_TYPES.map((doc, index) => {
           const uploaded = getDocForType(doc.type);
@@ -85,7 +96,9 @@ export function Step2Documents({ documents, onDocumentsChange, onNext, onPreviou
                   ) : (
                     <Upload className="h-6 w-6 text-[#71717A]" />
                   )}
-                  <span className="text-sm font-medium text-white">{doc.label}</span>
+                  <span className="text-sm font-medium text-white">
+                    {doc.label} {doc.required && <span className="text-[#FACC15]">*</span>}
+                  </span>
                   <span className="text-xs text-[#71717A]">
                     {uploaded?.fileName || 'PDF, JPG, PNG — max 5MB'}
                   </span>
@@ -119,10 +132,10 @@ export function Step2Documents({ documents, onDocumentsChange, onNext, onPreviou
         </button>
         <button
           type="button"
-          onClick={onNext}
+          onClick={handleNextClick}
           className="flex items-center gap-1 rounded-full bg-[#FACC15] px-6 py-2 text-sm font-semibold text-black transition-colors hover:bg-[#EAB308]"
         >
-          Done
+          Next
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>

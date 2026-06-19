@@ -10,21 +10,26 @@ export const subscriptionService = {
       const res = await apiClient.get('/suppliers/subscription');
       return res.data;
     } catch {
-      return { tier: 'STARTER', maxVehicles: 5, maxDrivers: 5, currentPeriodEnd: new Date().toISOString() };
+      return { tier: 'STARTER', maxVehicles: 5, maxDrivers: 10, maxRides: 100, currentPeriodEnd: new Date().toISOString() };
     }
   },
 
-  async getUsage(): Promise<{ totalVehicles: number; totalDrivers: number }> {
+  async getUsage(): Promise<{ totalVehicles: number; totalDrivers: number; totalRides: number }> {
     try {
       const res = await apiClient.get('/suppliers/analytics');
       const data = res.data;
-      return { totalVehicles: data.totalVehicles || 0, totalDrivers: data.totalDrivers || 0 };
+      return {
+        totalVehicles: data.totalVehicles || 0,
+        totalDrivers: data.totalDrivers || 0,
+        totalRides: data.totalRides || 0,
+      };
     } catch {
-      return { totalVehicles: 0, totalDrivers: 0 };
+      return { totalVehicles: 0, totalDrivers: 0, totalRides: 0 };
     }
   },
 
-  async changePlan(tier: 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE'): Promise<SubscriptionInfo> {    const res = await apiClient.patch('/suppliers/subscription', { tier });
+  async changePlan(tier: 'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE'): Promise<SubscriptionInfo> {
+    const res = await apiClient.patch('/suppliers/subscription', { tier });
     return res.data;
   },
 };

@@ -17,14 +17,40 @@ const LANGUAGE_OPTIONS = [
 ];
 
 export function LanguageTab() {
+  const [isLoading, setIsLoading] = useState(true);
   const [settings, setSettings] = useState<LanguageSettings>({
     appLanguage: 'English',
     driverAppLanguage: 'English',
   });
 
   useEffect(() => {
-    setSettings(settingsService.getLanguageSettings());
+    setTimeout(() => {
+      setSettings(settingsService.getLanguageSettings());
+      setIsLoading(false);
+    }, 0);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div>
+        <div className="mb-6 space-y-2">
+          <div className="h-6 w-24 rounded bg-[#27272A] animate-pulse" />
+          <div className="h-4 w-72 rounded bg-[#27272A] animate-pulse" />
+        </div>
+        <div className="space-y-5">
+          <div>
+            <div className="mb-1.5 h-4 w-32 rounded bg-[#27272A] animate-pulse" />
+            <div className="h-10 w-full rounded-lg bg-[#27272A] animate-pulse md:w-72" />
+          </div>
+          <div>
+            <div className="mb-1.5 h-4 w-40 rounded bg-[#27272A] animate-pulse" />
+            <div className="h-10 w-full rounded-lg bg-[#27272A] animate-pulse md:w-72" />
+            <div className="mt-1.5 h-3 w-64 rounded bg-[#27272A] animate-pulse" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (field: keyof LanguageSettings, value: string) => {
     const updated = { ...settings, [field]: value };

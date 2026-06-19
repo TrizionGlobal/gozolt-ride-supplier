@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AUTH_COOKIE_NAME } from '@/lib/constants';
+import { AUTH_COOKIE_NAME, REFRESH_COOKIE_NAME } from '@/lib/constants';
 
 const DEV_BYPASS = process.env.NEXT_PUBLIC_DEV_BYPASS === 'true';
 
@@ -31,7 +31,9 @@ export function middleware(request: NextRequest) {
 
   // Check for auth cookie
   const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-  if (!token) {
+  const refreshToken = request.cookies.get(REFRESH_COOKIE_NAME)?.value;
+  
+  if (!token && !refreshToken) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }

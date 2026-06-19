@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { FileText, ChevronRight } from 'lucide-react';
 import type { SupplierDocument, FleetVehicleDetail } from '@/types';
+import { DocumentStatusBadge } from '@/components/documents/document-status-badge';
 
 interface DocumentsTabProps {
   vehicle: FleetVehicleDetail;
@@ -42,6 +43,9 @@ export function DocumentsTab({ vehicle }: DocumentsTabProps) {
               <div className="flex-1">
                 <p className="text-sm font-medium text-white">{formatDocType(doc.type)}</p>
                 <p className="text-xs text-[#52525B] truncate max-w-[200px] sm:max-w-xs">{doc.fileName}</p>
+              </div>
+              <div className="mr-4">
+                <DocumentStatusBadge status={doc.status} />
               </div>
               <ChevronRight className="h-4 w-4 text-[#52525B]" />
             </div>

@@ -8,7 +8,6 @@ import { z } from 'zod';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
-import { DevBypass } from '@/components/shared/dev-bypass';
 import { useAuthStore } from '@/stores/auth.store';
 
 const forgotPasswordSchema = z.object({
@@ -19,7 +18,6 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const devBypass = useAuthStore((s) => s.devBypass);
 
   const {
     register,
@@ -35,9 +33,7 @@ export default function ForgotPasswordPage() {
   const onSubmit = async (_data: ForgotPasswordFormData) => {
     setIsSubmitting(true);
     try {
-      if (devBypass) {
-        await new Promise((r) => setTimeout(r, 800));
-      }
+      await new Promise((r) => setTimeout(r, 800));
       // Backend endpoint not ready yet — always show success
       toast.success('Password reset email sent! Check your inbox.');
     } catch {
@@ -96,8 +92,7 @@ export default function ForgotPasswordPage() {
         </Link>
       </div>
 
-      {/* Dev Bypass */}
-      <DevBypass />
+
     </div>
   );
 }

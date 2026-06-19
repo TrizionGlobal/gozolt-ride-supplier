@@ -5,6 +5,7 @@ import { FileText, Eye, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { driverService } from '@/services/drivers/driver.service';
 import type { DriverDocument } from '@/types';
+import { DocumentStatusBadge } from '@/components/documents/document-status-badge';
 
 interface DocumentsTabProps {
   driverId: string;
@@ -70,6 +71,9 @@ export function DocumentsTab({ driverId }: DocumentsTabProps) {
                 {doc.referenceNumber && doc.referenceNumber !== 'undefined' && (
                   <p className="text-[10px] text-[#52525B] mt-0.5">{doc.referenceNumber}</p>
                 )}
+              </div>
+              <div className="mr-2">
+                <DocumentStatusBadge status={doc.status || 'PENDING'} />
               </div>
               <button
                 onClick={() => {

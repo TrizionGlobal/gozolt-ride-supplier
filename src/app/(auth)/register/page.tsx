@@ -1,55 +1,111 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { RegistrationStepper } from '@/components/auth/registration-stepper';
 import { Step1CompanyInfo, type Step1FormData } from '@/components/auth/step1-company-info';
 import { Step2Documents, type DocumentFile } from '@/components/auth/step2-documents';
-import { Step3Payment } from '@/components/auth/step3-payment';
-import { Step4Plan } from '@/components/auth/step4-plan';
-import { Step5Review } from '@/components/auth/step5-review';
+import { Step3BankInfo, type Step3FormData } from '@/components/auth/step3-bank-info';
+import { Step4Terms } from '@/components/auth/step4-terms';
+import { Step4Subscription } from '@/components/auth/step4-subscription';
 import { RegistrationComplete } from '@/components/auth/registration-complete';
-import { DevBypass } from '@/components/shared/dev-bypass';
+import { supplierRegister } from '@/services/auth/auth.service';
 
-const defaultStep1: Step1FormData = {
+const defaultStep1: Partial<Step1FormData> = {
   companyName: '',
-  metroName: '',
-  sortingName: '',
-  registration: '',
-  metroNumber: '',
-  dOrder: '',
+  registrationNo: '',
   vatNumber: '',
   tinNumber: '',
-  address: '',
-  taxBase: '',
+  ownerName: '',
   email: '',
-  infoEmail: '',
-  phone: '',
+  contactPhone: '',
+  address: '',
   city: '',
-  adjustedTime: '',
-  mod: '',
   password: '',
   confirmPassword: '',
 };
 
+const defaultStep3: Partial<Step3FormData> = {
+  supplierAccountHolder: '',
+  supplierBankName: '',
+  supplierAccountNumber: '',
+  supplierSwiftCode: '',
+};
+
 export default function RegisterPage() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Step 1 state
-  const [step1Data, setStep1Data] = useState<Step1FormData>(defaultStep1);
+  const [step1Data, setStep1Data] = useState<Partial<Step1FormData>>(defaultStep1);
 
   // Step 2 state
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
 
   // Step 3 state
-  const [stripeConnected, setStripeConnected] = useState(false);
+  const [step3Data, setStep3Data] = useState<Partial<Step3FormData>>(defaultStep3);
 
   // Step 4 state
-  const [selectedPlan, setSelectedPlan] = useState<'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE'>('PROFESSIONAL');
+  const [selectedPlan, setSelectedPlan] = useState<'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE'>('PROFESSIONAL');
 
   const handleStep1Next = (data: Step1FormData) => {
     setStep1Data(data);
     setCurrentStep(2);
+  };
+
+  const handleStep3Next = (data: Step3FormData) => {
+    setStep3Data(data);
+    setCurrentStep(4);
+  };
+
+  const handleStep4Next = () => {
+    setCurrentStep(5);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setIsLoading(true);
+
+      const formData = new FormData();
+
+      // Append Step 1 Text fields
+      Object.entries(step1Data).forEach(([key, value]) => {
+        if (value && key !== 'confirmPassword') {
+          formData.append(key, value);
+        }
+      });
+
+      // Append Step 3 Text fields
+      Object.entries(step3Data).forEach(([key, value]) => {
+        if (value) {
+          formData.append(key, value);
+        }
+      });
+
+      // Append Step 2 Documents
+      documents.forEach((doc) => {
+        if (doc.file) {
+          formData.append(doc.type, doc.file);
+        }
+      });
+
+      // Append Subscription Plan
+      formData.append('subscriptionTier', selectedPlan);
+
+      // Send to API
+      await supplierRegister(formData);
+
+      toast.success('Registration successful!');
+      setRegistrationComplete(true);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Registration failed');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Show completion screen
@@ -58,7 +114,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className={`w-full py-6 ${currentStep === 4 ? 'max-w-[900px]' : 'max-w-[750px]'}`}>
+    <div className={`w-full py-6 ${currentStep === 4 ? 'max-w-[1200px]' : 'max-w-[750px]'}`}>
       {/* Stepper */}
       <RegistrationStepper currentStep={currentStep} />
 
@@ -77,36 +133,29 @@ export default function RegisterPage() {
       )}
 
       {currentStep === 3 && (
-        <Step3Payment
-          stripeConnected={stripeConnected}
-          onStripeChange={setStripeConnected}
-          onNext={() => setCurrentStep(4)}
+        <Step3BankInfo
+          defaultValues={step3Data}
+          onNext={handleStep3Next}
           onPrevious={() => setCurrentStep(2)}
         />
       )}
 
       {currentStep === 4 && (
-        <Step4Plan
-          selectedPlan={selectedPlan}
-          onPlanChange={setSelectedPlan}
-          onNext={() => setCurrentStep(5)}
+        <Step4Subscription
+          selectedTier={selectedPlan}
+          onSelectTier={setSelectedPlan}
+          onNext={handleStep4Next}
           onPrevious={() => setCurrentStep(3)}
         />
       )}
 
       {currentStep === 5 && (
-        <Step5Review
-          step1Data={step1Data}
-          documents={documents}
-          stripeConnected={stripeConnected}
-          selectedPlan={selectedPlan}
+        <Step4Terms
+          isLoading={isLoading}
+          onSubmit={handleSubmit}
           onPrevious={() => setCurrentStep(4)}
-          onComplete={() => setRegistrationComplete(true)}
         />
       )}
-
-      {/* Dev Bypass persists across all steps */}
-      <DevBypass />
     </div>
   );
 }

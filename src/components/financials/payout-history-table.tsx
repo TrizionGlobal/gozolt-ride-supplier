@@ -2,6 +2,7 @@
 
 import { Download, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import { formatCurrency, downloadCSV } from '@/lib/utils';
 import type { PayoutRecord } from '@/types';
 
@@ -34,6 +35,8 @@ function estimateRides(amount: number): number {
 }
 
 export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps) {
+  const router = useRouter();
+
   const handleStatementPDF = () => {
     toast.success('Statement PDF downloaded (dev mode)');
   };
@@ -51,7 +54,7 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
   };
 
   const handleInvoiceClick = () => {
-    toast.info('Invoice download coming soon');
+    router.push('/invoices');
   };
 
   return (
@@ -87,7 +90,7 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#27272A] bg-[#0A0A0A]/50">
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Driver</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Date</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Period</th>
                 <th className="px-4 py-3 text-center text-xs font-medium uppercase text-[#71717A]">Rides</th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Net</th>

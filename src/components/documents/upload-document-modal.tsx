@@ -75,18 +75,26 @@ export function UploadDocumentModal({
   // Apply prefill
   useEffect(() => {
     if (prefill) {
-      if (prefill.driverName) setCategory('Driver');
-      else if (prefill.vehiclePlate) setCategory('Vehicle');
-      else setCategory('Company');
+      if (prefill.driverName || prefill.driverId) {
+        setCategory('Driver');
+        if (prefill.driverId) setSelectedDriver(prefill.driverId);
+      }
+      else if (prefill.vehiclePlate || prefill.vehicleId) {
+        setCategory('Vehicle');
+        if (prefill.vehicleId) setSelectedVehicle(prefill.vehicleId);
+      }
+      else {
+        setCategory('Company');
+      }
       setDocType(prefill.type);
     } else {
       setCategory(defaultTab);
       setDocType('');
+      setSelectedDriver('');
+      setSelectedVehicle('');
     }
     setFile(null);
     setExpiryDate('');
-    setSelectedDriver('');
-    setSelectedVehicle('');
   }, [prefill, defaultTab, isOpen]);
 
   if (!isOpen) return null;

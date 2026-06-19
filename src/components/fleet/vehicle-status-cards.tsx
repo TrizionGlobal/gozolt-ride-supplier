@@ -15,7 +15,7 @@ const statusConfig = [
   { key: VehicleStatus.SUSPENDED, label: 'Suspended', color: 'bg-[#EF4444]' },
 ] as const;
 
-export function VehicleStatusCards({ vehicles }: VehicleStatusCardsProps) {
+export function VehicleStatusCards({ vehicles = [] }: VehicleStatusCardsProps) {
   const getCount = (key: string) => {
     if (key === 'total') return vehicles.length;
     return vehicles.filter((v) => v.status === key).length;

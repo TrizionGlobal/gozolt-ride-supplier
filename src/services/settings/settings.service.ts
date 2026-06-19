@@ -35,9 +35,9 @@ export const settingsService = {
 
   // ── Notifications ──
   getNotificationPreferences(): NotificationPreferences {
-    if (typeof window === 'undefined') return { email: true, sms: false, push: true };
+    if (typeof window === 'undefined') return { emailNotifications: true, smsNotifications: false, pushNotifications: true, rideAlerts: true, payoutAlerts: true };
     const stored = localStorage.getItem(STORAGE_KEYS.notifications);
-    return stored ? JSON.parse(stored) : { email: true, sms: false, push: true };
+    return stored ? JSON.parse(stored) : { emailNotifications: true, smsNotifications: false, pushNotifications: true, rideAlerts: true, payoutAlerts: true };
   },
 
   saveNotificationPreferences(prefs: NotificationPreferences): void {
@@ -46,9 +46,9 @@ export const settingsService = {
 
   // ── Privacy ──
   getPrivacySettings(): PrivacySettings {
-    if (typeof window === 'undefined') return { shareData: false, tracking: true };
+    if (typeof window === 'undefined') return { shareAnalytics: true, showDriverProfiles: true, allowMarketingEmails: false };
     const stored = localStorage.getItem(STORAGE_KEYS.privacy);
-    return stored ? JSON.parse(stored) : { shareData: false, tracking: true };
+    return stored ? JSON.parse(stored) : { shareAnalytics: true, showDriverProfiles: true, allowMarketingEmails: false };
   },
 
   savePrivacySettings(settings: PrivacySettings): void {
@@ -76,9 +76,9 @@ export const settingsService = {
 
   // ── Language ──
   getLanguageSettings(): LanguageSettings {
-    if (typeof window === 'undefined') return { language: 'en', timezone: 'UTC' };
+    if (typeof window === 'undefined') return { appLanguage: 'English', driverAppLanguage: 'English' };
     const stored = localStorage.getItem(STORAGE_KEYS.language);
-    return stored ? JSON.parse(stored) : { language: 'en', timezone: 'UTC' };
+    return stored ? JSON.parse(stored) : { appLanguage: 'English', driverAppLanguage: 'English' };
   },
 
   saveLanguageSettings(settings: LanguageSettings): void {

@@ -3,12 +3,11 @@
 import { Check } from 'lucide-react';
 
 const STEPS = [
-  { number: 1, label: 'Company Info' },
-  { number: 2, label: 'Documents' },
-  { number: 3, label: 'Payments' },
-  { number: 4, label: 'Plan' },
-  { number: 5, label: 'Review' },
-  { number: 6, label: 'Contact Info' },
+  { number: 1, label: 'Company Information' },
+  { number: 2, label: 'Business Documents' },
+  { number: 3, label: 'Bank Information' },
+  { number: 4, label: 'Subscription Plans' },
+  { number: 5, label: 'Terms & Verification' },
 ];
 
 interface RegistrationStepperProps {

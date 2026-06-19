@@ -8,46 +8,66 @@ import { PlanComparisonCards } from '@/components/subscription/plan-comparison-c
 import { RatePricingTable } from '@/components/subscription/rate-pricing-table';
 import { BillingHistoryTable } from '@/components/subscription/billing-history-table';
 import type { SubscriptionInfo, PlanDetails } from '@/types';
+import { useFleetTracking } from '@/hooks/use-fleet-tracking';
 
 const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'STARTER',
-    name: 'Starter',
+    name: 'Starter Fleet',
     price: 49,
     features: [
-      'Up to 5 vehicles',
-      'Up to 5 drivers',
-      'Basic analytics',
-      '9% commission per ride',
-      '16-day payout cycle',
-      'Email support',
+      'Up to 5 Vehicles',
+      'Up to 10 Drivers',
+      'Up to 100 Rides / Month',
+      'Fleet Management',
+      'Vehicle Assignment',
+      'Driver Management',
+      'Ride Tracking',
+      'Earnings Dashboard',
+    ],
+  },
+  {
+    tier: 'GROWTH',
+    name: 'Growth Fleet',
+    price: 149,
+    features: [
+      'Up to 20 Vehicles',
+      'Up to 40 Drivers',
+      'Up to 500 Rides / Month',
+      'Everything in Starter',
+      'Fleet Analytics',
+      'Advanced Reports',
+      'Priority Support',
     ],
   },
   {
     tier: 'PROFESSIONAL',
-    name: 'Professional',
-    price: 149,
+    name: 'Professional Fleet',
+    price: 299,
     isRecommended: true,
     features: [
-      'Up to 25 vehicles',
-      'Up to 25 drivers',
-      'GPS tracking',
-      '6% commission per ride',
-      '14-day payout cycle',
-      'Email & Phone support',
+      'Up to 50 Vehicles',
+      'Up to 100 Drivers',
+      'Up to 1,500 Rides / Month',
+      'Everything in Growth',
+      'Driver Performance Reports',
+      'Advanced Fleet Insights',
+      'Multi-Manager Access',
     ],
   },
   {
     tier: 'ENTERPRISE',
-    name: 'Enterprise',
-    price: 199,
+    name: 'Enterprise Fleet',
+    price: 499,
     features: [
-      'Unlimited vehicles',
-      'Unlimited drivers',
-      'Full analytics & GPS tracking',
-      '4% commission per ride',
-      '10-day payout cycle',
-      'Dedicated support (WhatsApp, Telegram, Chat)',
+      'Unlimited Vehicles',
+      'Unlimited Drivers',
+      'Unlimited Rides',
+      'Unlimited Fleet Management',
+      'Unlimited Driver Assignments',
+      'Unlimited Ride Operations',
+      'Dedicated Account Manager',
+      'Premium Support',
     ],
   },
 ];
@@ -78,6 +98,8 @@ export default function SubscriptionPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useFleetTracking({ onRefresh: fetchData });
 
   const handleSelectPlan = async (tier: SubscriptionInfo['tier']) => {
     if (!subscription || tier === subscription.tier) return;

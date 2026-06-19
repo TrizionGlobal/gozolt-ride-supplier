@@ -1,17 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, Bell, Users, Globe, Shield, Lock } from 'lucide-react';
+import { Building2, Bell, Users, Globe, Shield, Lock, Landmark } from 'lucide-react';
 import { CompanyProfileTab } from '@/components/settings/company-profile-tab';
 import { NotificationsTab } from '@/components/settings/notifications-tab';
 import { UsersTab } from '@/components/settings/users-tab';
 import { LanguageTab } from '@/components/settings/language-tab';
 import { PrivacyTab } from '@/components/settings/privacy-tab';
 import { SecurityTab } from '@/components/settings/security-tab';
+import { BankDetailsTab } from '@/components/settings/bank-details-tab';
 import type { SettingsTab } from '@/types';
 
 const TABS: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
   { key: 'company', label: 'Company Profile', icon: Building2 },
+  { key: 'bank', label: 'Bank Details', icon: Landmark },
   { key: 'notifications', label: 'Notifications', icon: Bell },
   { key: 'users', label: 'Users', icon: Users },
   { key: 'language', label: 'Language', icon: Globe },
@@ -48,6 +50,7 @@ export default function SettingsPage() {
       {/* Tab Content */}
       <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
         {activeTab === 'company' && <CompanyProfileTab />}
+        {activeTab === 'bank' && <BankDetailsTab />}
         {activeTab === 'notifications' && <NotificationsTab />}
         {activeTab === 'users' && <UsersTab />}
         {activeTab === 'language' && <LanguageTab />}

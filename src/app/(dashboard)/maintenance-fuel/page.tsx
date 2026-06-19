@@ -9,6 +9,8 @@ import { FuelTable } from '@/components/maintenance-fuel/fuel-table';
 import { AddEntryModal } from '@/components/maintenance-fuel/add-entry-modal';
 import { MaintenanceReminders } from '@/components/maintenance-fuel/maintenance-reminders';
 import type { MaintenanceLogEntry, FuelLogEntry } from '@/types';
+import { useFleetTracking } from '@/hooks/use-fleet-tracking';
+import { useCallback } from 'react';
 
 type TabType = 'maintenance' | 'fuel';
 
@@ -19,7 +21,7 @@ export default function MaintenanceFuelPage() {
   const [fuelLogs, setFuelLogs] = useState<FuelLogEntry[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [maint, fuel] = await Promise.all([
@@ -33,11 +35,13 @@ export default function MaintenanceFuelPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
+
+  useFleetTracking({ onRefresh: fetchData });
 
   return (
     <div className="space-y-6">

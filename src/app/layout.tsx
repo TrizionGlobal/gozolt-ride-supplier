@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
+import { AntdProvider } from '@/providers/antd-provider';
 import './globals.css';
 
 const geistSans = Geist({
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   title: 'Gozolt Supplier Portal',
   description: 'Gozolt ride-hailing supplier management portal',
   icons: {
-    icon: '/logo.svg',
+    icon: '/logo.png',
     apple: '/logo.png',
   },
 };
@@ -30,12 +31,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
-        <Toaster
-          theme="dark"
-          position="top-right"
-          richColors
-        />
+        <AntdProvider>
+          {children}
+          <Toaster
+            theme="dark"
+            position="top-right"
+            richColors
+          />
+        </AntdProvider>
       </body>
     </html>
   );

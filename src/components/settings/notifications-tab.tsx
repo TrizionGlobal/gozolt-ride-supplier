@@ -15,6 +15,7 @@ const TOGGLE_CONFIG: { key: keyof NotificationPreferences; label: string; descri
 ];
 
 export function NotificationsTab() {
+  const [isLoading, setIsLoading] = useState(true);
   const [prefs, setPrefs] = useState<NotificationPreferences>({
     emailNotifications: true,
     smsNotifications: false,
@@ -24,8 +25,33 @@ export function NotificationsTab() {
   });
 
   useEffect(() => {
-    setPrefs(settingsService.getNotificationPreferences());
+    setTimeout(() => {
+      setPrefs(settingsService.getNotificationPreferences());
+      setIsLoading(false);
+    }, 0);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div>
+        <div className="mb-6 space-y-2">
+          <div className="h-6 w-32 rounded bg-[#27272A] animate-pulse" />
+          <div className="h-4 w-64 rounded bg-[#27272A] animate-pulse" />
+        </div>
+        <div className="divide-y divide-[#27272A]">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex items-center justify-between py-4">
+              <div className="space-y-1.5">
+                <div className="h-4 w-36 rounded bg-[#27272A] animate-pulse" />
+                <div className="h-3 w-56 rounded bg-[#27272A] animate-pulse" />
+              </div>
+              <div className="h-6 w-11 rounded-full bg-[#27272A] animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const handleToggle = (key: keyof NotificationPreferences, value: boolean) => {
     const updated = { ...prefs, [key]: value };

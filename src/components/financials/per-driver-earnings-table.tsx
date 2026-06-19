@@ -1,18 +1,57 @@
 'use client';
 
-import { AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, Info, Download } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { PerDriverEarning } from '@/types';
+import { PayDriverModal } from './pay-driver-modal';
 
 interface PerDriverEarningsTableProps {
   data: PerDriverEarning[];
   isLoading: boolean;
+  onRefresh?: () => void;
 }
 
-export function PerDriverEarningsTable({ data, isLoading }: PerDriverEarningsTableProps) {
+export function PerDriverEarningsTable({ data, isLoading, onRefresh }: PerDriverEarningsTableProps) {
+  const [selectedDriver, setSelectedDriver] = useState<{ id: string; name: string; balance: number; vehicleType?: string | null } | null>(null);
+
+  const handleExportCSV = () => {
+    const headers = ['Driver Name', 'Ride Earnings', 'Tips', 'Total Paid Out', 'Owed Balance'];
+    const csvContent = [
+      headers.join(','),
+      ...data.map((row) =>
+        [
+          `"${row.driverName}"`,
+          row.totalEarnings - row.totalTips,
+          row.totalTips,
+          row.totalPaidOut,
+          row.availableBalance,
+        ].join(',')
+      ),
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', `driver_settlements_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
-      <h3 className="mb-4 text-lg font-semibold text-white">Per-Driver Earnings</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-white">Driver Settlements</h3>
+        <button
+          onClick={handleExportCSV}
+          disabled={isLoading || data.length === 0}
+          className="flex items-center gap-2 rounded-md border border-[#3F3F46] bg-[#1A1A1A] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#27272A] disabled:opacity-50 transition-colors"
+        >
+          <Download className="h-4 w-4" />
+          Export CSV
+        </button>
+      </div>
 
       {/* Tip pass-through warning */}
       <div className="mb-4 flex items-start gap-3 rounded-lg border border-[#FACC15]/30 bg-[#FACC15]/10 p-3">
@@ -34,14 +73,12 @@ export function PerDriverEarningsTable({ data, isLoading }: PerDriverEarningsTab
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#27272A] bg-[#0A0A0A]/50">
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Driver</th>
-                <th className="px-4 py-3 text-center text-xs font-medium uppercase text-[#71717A]">Rides</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Gross</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Commission</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Net</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Tips</th>
-                <th className="px-4 py-3 text-center text-xs font-medium uppercase text-[#71717A]">Tip #</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Avg/Ride</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Driver Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Ride Earnings</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Tips (100% Pass-through)</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Total Paid Out</th>
+                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Owed Balance</th>
+                <th className="px-4 py-3 text-center text-xs font-medium uppercase text-[#71717A]">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -51,18 +88,45 @@ export function PerDriverEarningsTable({ data, isLoading }: PerDriverEarningsTab
                   className="border-b border-[#27272A] last:border-b-0 transition-colors hover:bg-[#1A1A1A]/30"
                 >
                   <td className="px-4 py-3 text-sm font-medium text-white">{row.driverName}</td>
-                  <td className="px-4 py-3 text-center text-sm text-[#D4D4D8]">{row.rides}</td>
-                  <td className="px-4 py-3 text-sm text-[#D4D4D8]">{formatCurrency(row.gross)}</td>
-                  <td className="px-4 py-3 text-sm text-[#D4D4D8]">{formatCurrency(row.commission)}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-white">{formatCurrency(row.net)}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-green-400">{formatCurrency(row.tipEarnings)}</td>
-                  <td className="px-4 py-3 text-center text-sm text-[#D4D4D8]">{row.tipCount}</td>
-                  <td className="px-4 py-3 text-sm text-[#D4D4D8]">{formatCurrency(row.avgPerRide)}</td>
+                  <td className="px-4 py-3 text-sm text-[#D4D4D8]">{formatCurrency(row.totalEarnings - row.totalTips)}</td>
+                  <td className="px-4 py-3 text-sm font-medium text-green-400">{formatCurrency(row.totalTips)}</td>
+                  <td className="px-4 py-3 text-sm text-[#D4D4D8]">{formatCurrency(row.totalPaidOut)}</td>
+                  <td className="px-4 py-3 text-sm font-bold text-white">
+                    {formatCurrency(row.availableBalance)}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <button 
+                      onClick={() => setSelectedDriver({
+                        id: row.driverId,
+                        name: row.driverName,
+                        balance: row.availableBalance,
+                        vehicleType: row.vehicleType,
+                      })}
+                      className="rounded bg-[#27272A] px-3 py-1 text-xs font-medium text-white hover:bg-[#3F3F46] disabled:opacity-50 transition-colors"
+                      disabled={row.availableBalance <= 0}
+                    >
+                      Pay Driver
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      )}
+
+      {selectedDriver && (
+        <PayDriverModal
+          driverId={selectedDriver.id}
+          driverName={selectedDriver.name}
+          vehicleType={selectedDriver.vehicleType}
+          availableBalance={selectedDriver.balance}
+          onClose={() => setSelectedDriver(null)}
+          onSuccess={() => {
+            setSelectedDriver(null);
+            if (onRefresh) onRefresh();
+          }}
+        />
       )}
     </div>
   );

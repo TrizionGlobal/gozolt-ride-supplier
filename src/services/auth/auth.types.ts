@@ -5,13 +5,7 @@ export interface SupplierLoginPayload {
   password: string;
 }
 
-export interface SupplierRegisterPayload {
-  email: string;
-  password: string;
-  companyName: string;
-  vatNumber?: string;
-  contactPhone?: string;
-}
+
 
 export interface AuthSuccessResponse {
   accessToken: string;

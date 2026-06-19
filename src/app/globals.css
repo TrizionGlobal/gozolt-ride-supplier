@@ -94,6 +94,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-geist-sans), 'Inter', system-ui, -apple-system, sans-serif;
@@ -105,13 +106,21 @@
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: #0A0A0A;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #2A2A2A;
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #3A3A3A;
+}
+
+.nextjs-toast,
+nextjs-portal {
+  display: none !important;
 }

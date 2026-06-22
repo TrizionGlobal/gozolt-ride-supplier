@@ -81,10 +81,21 @@ export default function RegisterPage() {
       // Append Step 1 Text fields
       Object.entries(step1Data).forEach(([key, value]) => {
         if (value && key !== 'confirmPassword') {
-          if (key === 'contactPhone') {
-            formData.append(key, value.replace(/\s+/g, ''));
+          if (key === 'logo' && typeof value === 'string' && value.startsWith('data:image')) {
+            const arr = value.split(',');
+            const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+              u8arr[n] = bstr.charCodeAt(n);
+            }
+            const file = new File([u8arr], 'logo.png', { type: mime });
+            formData.append('logo', file);
+          } else if (key === 'contactPhone') {
+            formData.append(key, (value as string).replace(/\s+/g, ''));
           } else {
-            formData.append(key, value);
+            formData.append(key, value as string);
           }
         }
       });

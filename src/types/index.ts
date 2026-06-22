@@ -203,11 +203,14 @@ export interface SupplierPayout {
 export interface SupplierSubscription {
   id: string;
   tier: SubscriptionTier;
+  status: string;
   maxDrivers: number;
   maxVehicles: number;
-  pricePerMonth: number;
-  startedAt: string;
-  expiresAt: string;
+  maxRides: number;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SupplierAnalytics {

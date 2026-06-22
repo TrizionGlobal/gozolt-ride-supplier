@@ -5,13 +5,17 @@ import Link from 'next/link';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Eye, EyeOff, Camera } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Check, X } from 'lucide-react';
+import { Upload, Image } from 'antd';
+import { ImageCropperModal } from '@/components/ui/image-cropper-modal';
+import { toast } from 'sonner';
 
 const step1Schema = z
   .object({
+    logo: z.any().optional(),
     companyName: z.string().min(1, 'Company name is required'),
     registrationNo: z.string().min(1, 'Registration Number is required'),
     vatNumber: z.string().optional(),
@@ -46,11 +50,17 @@ export function Step1CompanyInfo({ defaultValues, onNext }: Step1Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [cropperImageSrc, setCropperImageSrc] = useState<string | null>(null);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+
   const {
     register,
     handleSubmit,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<Step1FormData>({
     resolver: zodResolver(step1Schema),
@@ -67,6 +77,12 @@ export function Step1CompanyInfo({ defaultValues, onNext }: Step1Props) {
     { label: 'One special character', met: /[^A-Za-z0-9]/.test(passwordValue) },
   ];
 
+  const handleCropComplete = (croppedImageBase64: string) => {
+    setValue('logo', croppedImageBase64, { shouldValidate: true });
+    setIsCropperOpen(false);
+    setCropperImageSrc(null);
+  };
+
   const inputClassName =
     'h-10 rounded-lg border-[#27272A] bg-[#0A0A0A] text-white placeholder:text-[#71717A] focus-visible:border-[#FACC15] focus-visible:ring-[#FACC15]/20 text-sm';
 
@@ -77,6 +93,55 @@ export function Step1CompanyInfo({ defaultValues, onNext }: Step1Props) {
       </div>
 
       <form onSubmit={handleSubmit(onNext)} className="space-y-4">
+        <div className="flex flex-col items-center mb-6">
+          <Upload
+            listType="picture-circle"
+            accept="image/*"
+            fileList={watch('logo') ? [{ uid: '-1', name: 'logo.png', status: 'done', url: watch('logo') instanceof File ? URL.createObjectURL(watch('logo') as File) : watch('logo') }] : []}
+            onPreview={(file) => {
+              setPreviewImage(file.url || file.preview as string);
+              setPreviewOpen(true);
+            }}
+            onRemove={() => {
+              setValue('logo', undefined, { shouldValidate: true });
+            }}
+            beforeUpload={(file) => {
+              if (!file.type.startsWith('image/')) {
+                toast.error('You can only upload image files!');
+                return Upload.LIST_IGNORE;
+              }
+              const reader = new FileReader();
+              reader.addEventListener('load', () => {
+                setCropperImageSrc(reader.result?.toString() || null);
+                setIsCropperOpen(true);
+              });
+              reader.readAsDataURL(file);
+              return false; // Prevent auto upload
+            }}
+          >
+            {!watch('logo') && (
+              <div className="flex flex-col items-center justify-center text-[#A1A1AA] hover:text-[#FACC15] transition-colors">
+                <Camera className="h-6 w-6 mb-2" />
+                <span className="text-xs font-medium">Upload</span>
+              </div>
+            )}
+          </Upload>
+          
+          {previewImage && (
+            <Image
+              wrapperStyle={{ display: 'none' }}
+              preview={{
+                visible: previewOpen,
+                onVisibleChange: (visible) => setPreviewOpen(visible),
+                afterOpenChange: (visible) => !visible && setPreviewImage(''),
+              }}
+              src={previewImage}
+              alt="Preview"
+            />
+          )}
+          <p className="mt-2 text-xs text-[#A1A1AA]">Company Logo (Optional)</p>
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-1.5 block text-xs text-white">
@@ -243,6 +308,17 @@ export function Step1CompanyInfo({ defaultValues, onNext }: Step1Props) {
           </button>
         </div>
       </form>
+
+      {isCropperOpen && cropperImageSrc && (
+        <ImageCropperModal
+          imageSrc={cropperImageSrc}
+          onClose={() => {
+            setIsCropperOpen(false);
+            setCropperImageSrc(null);
+          }}
+          onCropComplete={handleCropComplete}
+        />
+      )}
     </div>
   );
 }

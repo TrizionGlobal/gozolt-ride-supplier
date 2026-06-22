@@ -34,14 +34,35 @@ export const settingsService = {
   },
 
   // ── Notifications ──
-  getNotificationPreferences(): NotificationPreferences {
-    if (typeof window === 'undefined') return { emailNotifications: true, smsNotifications: false, pushNotifications: true, rideAlerts: true, payoutAlerts: true };
-    const stored = localStorage.getItem(STORAGE_KEYS.notifications);
-    return stored ? JSON.parse(stored) : { emailNotifications: true, smsNotifications: false, pushNotifications: true, rideAlerts: true, payoutAlerts: true };
+  async getNotificationPreferences(): Promise<NotificationPreferences> {
+    try {
+      const res = await apiClient.get('/suppliers/notifications/preferences');
+      const data = res.data;
+      return {
+        emailNotifications: data.emailEnabled,
+        smsNotifications: data.smsEnabled,
+        pushNotifications: data.pushEnabled,
+        rideAlerts: data.rideAlerts,
+        payoutAlerts: data.payoutAlerts,
+      };
+    } catch {
+      return { emailNotifications: true, smsNotifications: false, pushNotifications: true, rideAlerts: true, payoutAlerts: true };
+    }
   },
 
-  saveNotificationPreferences(prefs: NotificationPreferences): void {
-    localStorage.setItem(STORAGE_KEYS.notifications, JSON.stringify(prefs));
+  async saveNotificationPreferences(prefs: NotificationPreferences): Promise<void> {
+    const backendDto = {
+      emailEnabled: prefs.emailNotifications,
+      smsEnabled: prefs.smsNotifications,
+      pushEnabled: prefs.pushNotifications,
+      rideAlerts: prefs.rideAlerts,
+      payoutAlerts: prefs.payoutAlerts,
+    };
+    await apiClient.patch('/suppliers/notifications/preferences', backendDto);
+  },
+
+  async updateFcmToken(fcmToken: string): Promise<void> {
+    await apiClient.patch('/suppliers/me/fcm-token', { fcmToken });
   },
 
   // ── Privacy ──

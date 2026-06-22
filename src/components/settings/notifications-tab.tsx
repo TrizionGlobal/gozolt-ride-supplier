@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { settingsService } from '@/services/settings/settings.service';
 import { ToggleSwitch } from '@/components/settings/toggle-switch';
+import { requestNotificationPermission } from '@/lib/firebase';
 import type { NotificationPreferences } from '@/types';
 
 const TOGGLE_CONFIG: { key: keyof NotificationPreferences; label: string; description: string }[] = [
@@ -25,10 +26,15 @@ export function NotificationsTab() {
   });
 
   useEffect(() => {
-    setTimeout(() => {
-      setPrefs(settingsService.getNotificationPreferences());
-      setIsLoading(false);
-    }, 0);
+    const loadPrefs = async () => {
+      try {
+        const data = await settingsService.getNotificationPreferences();
+        setPrefs(data);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadPrefs();
   }, []);
 
   if (isLoading) {
@@ -53,11 +59,37 @@ export function NotificationsTab() {
     );
   }
 
-  const handleToggle = (key: keyof NotificationPreferences, value: boolean) => {
+  const handleToggle = async (key: keyof NotificationPreferences, value: boolean) => {
     const updated = { ...prefs, [key]: value };
     setPrefs(updated);
-    settingsService.saveNotificationPreferences(updated);
-    toast.success('Notification preferences updated');
+    
+    try {
+      await settingsService.saveNotificationPreferences(updated);
+
+      if (key === 'pushNotifications' && value) {
+        try {
+          const token = await requestNotificationPermission();
+          if (token) {
+            await settingsService.updateFcmToken(token);
+            toast.success('Push notifications enabled successfully');
+          } else {
+            // If token fetch failed, revert the toggle visually
+            setPrefs({ ...prefs, pushNotifications: false });
+            await settingsService.saveNotificationPreferences({ ...prefs, pushNotifications: false });
+            toast.error('Failed to enable push notifications');
+          }
+        } catch (error) {
+          setPrefs({ ...prefs, pushNotifications: false });
+          await settingsService.saveNotificationPreferences({ ...prefs, pushNotifications: false });
+          toast.error('Error setting up push notifications');
+        }
+      } else {
+        toast.success('Notification preferences updated');
+      }
+    } catch (error) {
+      toast.error('Failed to update notification preferences');
+      setPrefs(prefs); // Revert to old state
+    }
   };
 
   return (

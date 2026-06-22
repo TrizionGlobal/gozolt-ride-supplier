@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
+      cache: 'no-store',
     });
 
     if (!res.ok) {
@@ -23,6 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     const user = await res.json();
+    console.log('[DEBUG] GET /api/auth/me returned user:', JSON.stringify(user, null, 2));
     return NextResponse.json({ user });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

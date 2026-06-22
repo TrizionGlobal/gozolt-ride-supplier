@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { ridesService } from '@/services/rides/rides.service';
 import { RideKPICards } from '@/components/rides/ride-kpi-cards';
 import { RideTable } from '@/components/rides/ride-table';
@@ -9,19 +9,32 @@ import { ExportButton } from '@/components/ui/export-button';
 import type { SupplierRideListItem, SupplierRideKpis } from '@/types';
 import { useFleetTracking } from '@/hooks/use-fleet-tracking';
 import { useDebounce } from '@/hooks/use-debounce';
+import { useSearchParams } from 'next/navigation';
 import { Search } from 'lucide-react';
 
-export default function RidesPage() {
+function RidesContent() {
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+  
   const [isLoading, setIsLoading] = useState(true);
   const [rides, setRides] = useState<SupplierRideListItem[]>([]);
   const [kpis, setKpis] = useState<SupplierRideKpis | null>(null);
   const [selectedRide, setSelectedRide] = useState<SupplierRideListItem | null>(null);
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalRides, setTotalRides] = useState(0);
+
+  useEffect(() => {
+    const search = searchParams.get('search');
+    if (search !== null) {
+      setSearchTerm(search);
+    } else {
+      setSearchTerm('');
+    }
+  }, [searchParams]);
 
   const fetchRides = useCallback(async () => {
     setIsLoading(true);
@@ -145,5 +158,13 @@ export default function RidesPage() {
       {/* Detail Drawer */}
       <RideDetailDrawer ride={selectedRide} onClose={() => setSelectedRide(null)} />
     </div>
+  );
+}
+
+export default function RidesPage() {
+  return (
+    <Suspense fallback={<div className="text-[#A1A1AA]">Loading rides...</div>}>
+      <RidesContent />
+    </Suspense>
   );
 }

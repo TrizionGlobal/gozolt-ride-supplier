@@ -145,6 +145,7 @@ export interface SupplierProfile {
   country?: string | null;
   postalCode?: string | null;
   logoUrl?: string | null;
+  editBankDetails?: boolean;
   createdAt: string;
 }
 
@@ -449,6 +450,17 @@ export interface PayoutRecord {
   createdAt: string;
 }
 
+export interface PayoutSettings {
+  schedule: 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY';
+  isStripeConnected: boolean;
+  paymentMethod: {
+    brand: string;
+    last4: string;
+    expMonth: number;
+    expYear: number;
+  } | null;
+}
+
 export interface SupplierStatement {
   id: string;
   statementNo: string;
@@ -479,6 +491,9 @@ export interface PlanDetails {
   tier: 'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE';
   name: string;
   price: number;
+  maxVehicles: number;
+  maxDrivers: number;
+  maxRides: number;
   features: string[];
   isRecommended?: boolean;
 }

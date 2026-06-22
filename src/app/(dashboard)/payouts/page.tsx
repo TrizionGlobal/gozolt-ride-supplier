@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { financialService } from '@/services/financials/financial.service';
 import { PayoutHistoryTable } from '@/components/financials/payout-history-table';
 import { apiClient } from '@/lib/api-client';
-import type { PayoutRecord } from '@/types';
+import type { PayoutRecord, PayoutSettings } from '@/types';
 
 export default function PayoutsPage() {
   const [schedule, setSchedule] = useState<'WEEKLY' | 'BIWEEKLY' | 'MONTHLY'>('BIWEEKLY');
@@ -14,6 +14,7 @@ export default function PayoutsPage() {
   
   const [isStripeConnected, setIsStripeConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PayoutSettings['paymentMethod'] | null>(null);
   
   const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
   const [isLoadingPayouts, setIsLoadingPayouts] = useState(true);
@@ -21,11 +22,13 @@ export default function PayoutsPage() {
   const fetchData = useCallback(async () => {
     setIsLoadingPayouts(true);
     try {
-      const [profileRes, payoutsData] = await Promise.all([
-        apiClient.get('/suppliers/me'),
+      const [settingsData, payoutsData] = await Promise.all([
+        financialService.getPayoutSettings(),
         financialService.getPayoutHistory()
       ]);
-      setIsStripeConnected(!!profileRes.data.stripeAccountId);
+      setIsStripeConnected(settingsData.isStripeConnected);
+      setSchedule(settingsData.schedule);
+      setPaymentMethod(settingsData.paymentMethod);
       setPayouts(payoutsData);
     } catch {
       toast.error('Failed to load payout data');
@@ -53,9 +56,14 @@ export default function PayoutsPage() {
 
   const handleSave = async () => {
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setSaving(false);
-    toast.success('Payout settings saved successfully');
+    try {
+      await financialService.updatePayoutSettings(schedule);
+      toast.success('Payout settings saved successfully');
+    } catch {
+      toast.error('Failed to save payout settings');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -139,21 +147,33 @@ export default function PayoutsPage() {
         <p className="mb-4 text-sm text-[#A1A1AA]">
           This card is used for your monthly platform subscription fees.
         </p>
-        <div className="flex items-center justify-between rounded-lg border border-[#27272A] bg-[#0A0A0A] p-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-16 items-center justify-center rounded bg-white">
-              {/* Visa Logo placeholder */}
-              <span className="font-bold text-blue-900">VISA</span>
+        {paymentMethod ? (
+          <div className="flex items-center justify-between rounded-lg border border-[#27272A] bg-[#0A0A0A] p-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-16 items-center justify-center rounded bg-white">
+                <span className="font-bold text-blue-900 uppercase">{paymentMethod.brand}</span>
+              </div>
+              <div>
+                <p className="font-medium text-white">•••• •••• •••• {paymentMethod.last4}</p>
+                <p className="text-sm text-[#A1A1AA]">
+                  Expires {paymentMethod.expMonth.toString().padStart(2, '0')}/{paymentMethod.expYear.toString().slice(-2)}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-white">•••• •••• •••• 4242</p>
-              <p className="text-sm text-[#A1A1AA]">Expires 12/26</p>
-            </div>
+            <button className="text-sm font-medium text-[#FACC15] hover:text-[#EAB308]">
+              Update Card
+            </button>
           </div>
-          <button className="text-sm font-medium text-[#FACC15] hover:text-[#EAB308]">
-            Update Card
-          </button>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between rounded-lg border border-[#27272A] bg-[#0A0A0A] p-4">
+             <div className="flex items-center gap-4">
+                <p className="text-sm text-[#A1A1AA]">No active payment method found.</p>
+             </div>
+             <button className="text-sm font-medium text-[#FACC15] hover:text-[#EAB308]">
+              Add Card
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Payout History Table */}

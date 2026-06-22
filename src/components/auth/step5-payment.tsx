@@ -18,15 +18,16 @@ interface Step5PaymentProps {
   companyCity?: string;
   ownerName?: string;
   initialValues: CardData;
+  isSubmitting?: boolean;
   onNext: (cardData: CardData) => void;
-  onPrevious: () => void;
+  onPrevious?: () => void;
 }
 
 const PLAN_INFO = {
   STARTER: { name: 'Starter Fleet', price: 49 },
-  GROWTH: { name: 'Growth Fleet', price: 149 },
-  PROFESSIONAL: { name: 'Professional Fleet', price: 199 },
-  ENTERPRISE: { name: 'Enterprise Fleet', price: 299 },
+  GROWTH: { name: 'Growth Fleet', price: 99 },
+  PROFESSIONAL: { name: 'Professional Fleet', price: 149 },
+  ENTERPRISE: { name: 'Enterprise Fleet', price: 199 },
 };
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
@@ -37,6 +38,7 @@ function Step5PaymentForm({
   companyCity = '',
   ownerName = '',
   initialValues,
+  isSubmitting = false,
   onNext,
   onPrevious,
 }: Step5PaymentProps) {
@@ -46,8 +48,8 @@ function Step5PaymentForm({
   const plan = PLAN_INFO[selectedTier] || PLAN_INFO.PROFESSIONAL;
 
   const [cardName, setCardName] = useState(initialValues.cardName || ownerName);
-  const [billingAddress, setBillingAddress] = useState(companyAddress);
-  const [billingCity, setBillingCity] = useState(companyCity);
+  const [billingAddress, setBillingAddress] = useState('');
+  const [billingCity, setBillingCity] = useState('');
   const [billingCountry] = useState('Malta');
 
   const [useSavedToken, setUseSavedToken] = useState(!!initialValues.paymentMethodId);
@@ -149,7 +151,7 @@ function Step5PaymentForm({
 
       <div className="mb-6 border-b border-[#27272A] pb-4 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-bold text-white">Step 5: Payment Details</h2>
+          <h2 className="text-lg font-bold text-white">Payment Details</h2>
           <p className="text-xs text-[#71717A] mt-0.5">Subscribe to your selected plan</p>
         </div>
         <div className="flex items-center gap-1 text-[10px] bg-[#1A1A1A] text-green-400 font-medium px-2 py-1 rounded-md border border-green-500/20">
@@ -303,21 +305,34 @@ function Step5PaymentForm({
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between pt-4 border-t border-[#27272A]">
-          <button
-            type="button"
-            onClick={onPrevious}
-            className="flex items-center gap-1 text-sm text-[#A1A1AA] hover:text-white transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Previous
-          </button>
+          {onPrevious ? (
+            <button
+              type="button"
+              onClick={onPrevious}
+              className="flex items-center gap-1 text-sm text-[#A1A1AA] hover:text-white transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Previous
+            </button>
+          ) : (
+            <div />
+          )}
           <button
             type="submit"
-            disabled={!isFormValid || isTokenizing}
+            disabled={!isFormValid || isTokenizing || isSubmitting}
             className="flex items-center gap-1.5 rounded-full bg-[#635BFF] hover:bg-[#5851DB] px-6 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#635BFF]/20"
           >
-            {useSavedToken ? 'Continue' : 'Verify & Continue'}
-            <ChevronRight className="h-4 w-4" />
+            {(isTokenizing || isSubmitting) ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                Processing...
+              </>
+            ) : (
+              <>
+                {useSavedToken ? 'Continue' : 'Verify & Continue'}
+                <ChevronRight className="h-4 w-4" />
+              </>
+            )}
           </button>
         </div>
       </form>

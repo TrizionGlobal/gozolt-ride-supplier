@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/auth.store';
 import { apiClient } from '@/lib/api-client';
-import { Landmark, Loader2 } from 'lucide-react';
+import { Landmark, Loader2, Lock } from 'lucide-react';
 
 export function BankDetailsTab() {
   const { user, setUser } = useAuthStore();
@@ -95,8 +95,14 @@ export function BankDetailsTab() {
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <h4 className="text-md font-semibold text-white">Settlement Information</h4>
+        {user?.editBankDetails === false && (
+          <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-500 border border-red-500/20">
+            <Lock className="h-4 w-4" />
+            <span>Bank details locked for security</span>
+          </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -109,8 +115,9 @@ export function BankDetailsTab() {
               name="supplierAccountHolder"
               value={formData.supplierAccountHolder}
               onChange={handleChange}
+              disabled={user?.editBankDetails === false}
               placeholder="Enter Holder Name"
-              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors"
+              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -122,8 +129,9 @@ export function BankDetailsTab() {
               name="supplierBankName"
               value={formData.supplierBankName}
               onChange={handleChange}
+              disabled={user?.editBankDetails === false}
               placeholder="Enter Bank Name"
-              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors"
+              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -135,8 +143,9 @@ export function BankDetailsTab() {
               name="supplierAccountNumber"
               value={formData.supplierAccountNumber}
               onChange={handleChange}
+              disabled={user?.editBankDetails === false}
               placeholder="MTXX XXXX XXXX XXXX"
-              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors uppercase"
+              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors uppercase disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -148,21 +157,24 @@ export function BankDetailsTab() {
               name="supplierSwiftCode"
               value={formData.supplierSwiftCode}
               onChange={handleChange}
+              disabled={user?.editBankDetails === false}
               placeholder="XXXXX"
-              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors uppercase"
+              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors uppercase disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-[#27272A]">
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="flex items-center gap-2 rounded-lg bg-[#FACC15] px-6 py-2.5 text-sm font-semibold text-black hover:bg-[#E5B800] transition-colors disabled:opacity-50"
-          >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Bank Details'}
-          </button>
-        </div>
+        {user?.editBankDetails !== false && (
+          <div className="flex justify-end pt-4 border-t border-[#27272A]">
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="flex items-center gap-2 rounded-lg bg-[#FACC15] px-6 py-2.5 text-sm font-semibold text-black hover:bg-[#E5B800] transition-colors disabled:opacity-50"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Bank Details'}
+            </button>
+          </div>
+        )}
       </form>
     </div>
   );

@@ -21,23 +21,23 @@ export function PlanComparisonCards({ plans, currentTier, isChanging, onSelectPl
           return (
             <div
               key={plan.tier}
-              className={`relative flex flex-col rounded-xl p-6 ${
-                isRecommended
-                  ? 'border-2 border-[#FACC15] bg-[#1E3A5F]'
-                  : 'border border-[#3F3F46] bg-[#1A1A1A]'
+              className={`relative flex flex-col rounded-xl p-6 transition-all duration-300 ${
+                isCurrent
+                  ? 'border-2 border-[#FACC15] bg-[#1E3A5F] scale-[1.02] shadow-xl shadow-[#FACC15]/10 z-10'
+                  : 'border border-[#3F3F46] bg-[#1A1A1A] hover:border-[#52525B]'
               }`}
             >
-              {/* Recommended badge */}
-              {isRecommended && (
-                <div className="mb-3 flex justify-center">
-                  <span className="rounded-full bg-[#FACC15] px-3 py-1 text-xs font-bold uppercase text-black">
-                    Recommended
+              {/* Badge */}
+              {(isCurrent || isRecommended) && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="whitespace-nowrap rounded-full bg-[#FACC15] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-black shadow-sm shadow-[#FACC15]/20">
+                    {isCurrent ? 'Your Current Plan' : 'Recommended'}
                   </span>
                 </div>
               )}
 
               {/* Plan name + price */}
-              <h3 className="text-center text-xl font-bold text-white">{plan.name}</h3>
+              <h3 className="mt-3 text-center text-xl font-bold text-white">{plan.name}</h3>
               <p className="mt-2 text-center text-3xl font-bold text-[#FACC15]">
                 € {plan.price}/mo
               </p>
@@ -51,11 +51,6 @@ export function PlanComparisonCards({ plans, currentTier, isChanging, onSelectPl
                   </li>
                 ))}
               </ul>
-
-              {/* Know more link */}
-              <p className="mt-4 cursor-pointer text-center text-xs font-medium uppercase tracking-wide text-[#FACC15] hover:underline">
-                Know More
-              </p>
 
               {/* Select / Current button */}
               <button

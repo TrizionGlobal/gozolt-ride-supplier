@@ -34,10 +34,10 @@ export function CurrentPlanBanner({ subscription, usage, plans, isLoading }: Cur
       })
     : 'N/A';
 
-  const vehiclePercent = Math.min((usage.totalVehicles / subscription.maxVehicles) * 100, 100);
-  const driverPercent = Math.min((usage.totalDrivers / subscription.maxDrivers) * 100, 100);
-  const ridePercent = subscription.maxRides
-    ? Math.min(((usage.totalRides || 0) / subscription.maxRides) * 100, 100)
+  const vehiclePercent = Math.min((usage.totalVehicles / (currentPlan?.maxVehicles || 9999)) * 100, 100);
+  const driverPercent = Math.min((usage.totalDrivers / (currentPlan?.maxDrivers || 9999)) * 100, 100);
+  const ridePercent = currentPlan?.maxRides
+    ? Math.min(((usage.totalRides || 0) / currentPlan.maxRides) * 100, 100)
     : 0;
 
   return (
@@ -63,7 +63,7 @@ export function CurrentPlanBanner({ subscription, usage, plans, isLoading }: Cur
         {/* Vehicles */}
         <div className="flex-1">
           <p className="mb-2 text-sm text-[#D4D4D8]">
-            Vehicles: {usage.totalVehicles} / {subscription.maxVehicles > 9000 ? '∞' : subscription.maxVehicles}
+            Vehicles: {usage.totalVehicles} / {(currentPlan?.maxVehicles || 9999) > 9000 ? 'Unlimited' : currentPlan?.maxVehicles}
           </p>
           <div className="h-2 w-full rounded-full bg-[#3F3F46]">
             <div
@@ -75,7 +75,7 @@ export function CurrentPlanBanner({ subscription, usage, plans, isLoading }: Cur
         {/* Drivers */}
         <div className="flex-1">
           <p className="mb-2 text-sm text-[#D4D4D8]">
-            Drivers: {usage.totalDrivers} / {subscription.maxDrivers > 9000 ? '∞' : subscription.maxDrivers}
+            Drivers: {usage.totalDrivers} / {(currentPlan?.maxDrivers || 9999) > 9000 ? 'Unlimited' : currentPlan?.maxDrivers}
           </p>
           <div className="h-2 w-full rounded-full bg-[#3F3F46]">
             <div
@@ -87,7 +87,7 @@ export function CurrentPlanBanner({ subscription, usage, plans, isLoading }: Cur
         {/* Rides */}
         <div className="flex-1">
           <p className="mb-2 text-sm text-[#D4D4D8]">
-            Rides: {usage.totalRides || 0} / {subscription.maxRides > 900000 ? '∞' : subscription.maxRides}
+            Rides: {usage.totalRides || 0} / {(currentPlan?.maxRides || 999999) > 900000 ? 'Unlimited' : currentPlan?.maxRides}
           </p>
           <div className="h-2 w-full rounded-full bg-[#3F3F46]">
             <div

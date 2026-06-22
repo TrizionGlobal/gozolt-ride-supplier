@@ -1,13 +1,15 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Search, Bell } from 'lucide-react';
+import { Search, Bell, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/auth.store';
+import { useAuth } from '@/hooks/use-auth';
 
 export function Topbar() {
   const pathname = usePathname();
   const user = useAuthStore((s) => s.user);
+  const { logout } = useAuth();
 
   // Build breadcrumb from pathname
   const segments = pathname.split('/').filter(Boolean);
@@ -52,6 +54,17 @@ export function Topbar() {
           </div>
           <span className="text-sm text-white">{user?.companyName || 'Malta Taxis Ltd'}</span>
         </div>
+
+        {/* Logout button (visible when on subscription page since sidebar is hidden) */}
+        {pathname === '/subscription' && (
+          <button
+            onClick={logout}
+            className="ml-2 flex items-center justify-center rounded-full bg-red-500/10 p-2 text-red-500 hover:bg-red-500/20 hover:text-red-400 transition-colors"
+            title="Logout"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        )}
 
       </div>
     </header>

@@ -9,7 +9,7 @@ interface RatePricingTableProps {
 export function RatePricingTable({ data }: RatePricingTableProps) {
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
-      <h3 className="mb-4 text-lg font-semibold text-white">Billing History</h3>
+      <h3 className="mb-4 text-lg font-semibold text-white">Vehicle Rate Pricing</h3>
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>

@@ -1,7 +1,7 @@
 'use client';
 
 import { apiClient } from '@/lib/api-client';
-import type { FinancialKPIs, PerDriverEarning, PayoutRecord, RevenueTrendPoint } from '@/types';
+import type { FinancialKPIs, PerDriverEarning, PayoutRecord, RevenueTrendPoint, PayoutSettings } from '@/types';
 
 
 export const financialService = {
@@ -102,6 +102,23 @@ export const financialService = {
   async payDriver(driverId: string, amount: number, deductions?: number, notes?: string): Promise<void> {
     try {
       await apiClient.post(`/suppliers/payouts/driver/${driverId}`, { amount, deductions, notes });
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  async getPayoutSettings(): Promise<PayoutSettings> {
+    try {
+      const res = await apiClient.get('/suppliers/payouts/settings');
+      return res.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  async updatePayoutSettings(schedule: string): Promise<void> {
+    try {
+      await apiClient.put('/suppliers/payouts/settings', { schedule });
     } catch (error: any) {
       throw error;
     }

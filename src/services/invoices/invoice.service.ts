@@ -3,14 +3,15 @@
 import { apiClient } from '@/lib/api-client';
 import type { SupplierStatement, InvoiceKpis } from '@/types';
 
-
 export const invoiceService = {
-  async getStatements(): Promise<SupplierStatement[]> {
+  async getStatements(page = 1, limit = 10): Promise<{ data: SupplierStatement[], total: number }> {
     try {
-      const res = await apiClient.get('/suppliers/invoices');
-      return res.data;
+      const res = await apiClient.get('/suppliers/invoices', { params: { page, limit } });
+      const statements = res.data.data || res.data || [];
+      const total = res.data.meta?.total || statements.length;
+      return { data: statements, total };
     } catch {
-      return [];
+      return { data: [], total: 0 };
     }
   },
 

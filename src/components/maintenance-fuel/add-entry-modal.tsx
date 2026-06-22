@@ -21,6 +21,7 @@ export function AddEntryModal({ isOpen, onClose, onAdded, activeTab }: AddEntryM
 
   // Maintenance fields
   const [maintType, setMaintType] = useState('');
+  const [maintCustomType, setMaintCustomType] = useState('');
   const [maintDate, setMaintDate] = useState('');
   const [maintMileage, setMaintMileage] = useState('');
   const [maintCost, setMaintCost] = useState('');
@@ -41,13 +42,15 @@ export function AddEntryModal({ isOpen, onClose, onAdded, activeTab }: AddEntryM
   useEffect(() => {
     // Reset form on open
     setSelectedVehicle('');
+    const today = new Date().toISOString().split('T')[0];
     setMaintType('');
-    setMaintDate('');
+    setMaintCustomType('');
+    setMaintDate(today);
     setMaintMileage('');
     setMaintCost('');
     setMaintDescription('');
     setMaintNextDue('');
-    setFuelDate('');
+    setFuelDate(today);
     setFuelLiters('');
     setFuelCost('');
     setFuelOdometer('');
@@ -64,15 +67,17 @@ export function AddEntryModal({ isOpen, onClose, onAdded, activeTab }: AddEntryM
     setIsSubmitting(true);
     try {
       if (activeTab === 'maintenance') {
-        if (!maintType || !maintDate) {
+        const finalType = maintType === 'Other' ? maintCustomType : maintType;
+        if (!finalType || !maintDate) {
           toast.error('Please fill in required fields');
           setIsSubmitting(false);
           return;
         }
         await maintenanceFuelService.addMaintenanceEntry(selectedVehicle, {
-          type: maintType,
+          type: finalType,
           performedAt: new Date(maintDate).toISOString(),
           cost: maintCost ? Number(maintCost) : undefined,
+          odometer: maintMileage ? Number(maintMileage) : undefined,
           description: maintDescription || undefined,
           nextDueAt: maintNextDue ? new Date(maintNextDue).toISOString() : undefined,
         });
@@ -136,14 +141,32 @@ export function AddEntryModal({ isOpen, onClose, onAdded, activeTab }: AddEntryM
           <>
             <div className="mb-4">
               <label className={labelCls}>Type *</label>
-              <input
-                type="text"
+              <select
                 value={maintType}
                 onChange={(e) => setMaintType(e.target.value)}
-                placeholder="e.g. Oil Change"
-                className={inputCls}
-              />
+                className={`${inputCls} appearance-none`}
+              >
+                <option value="">Select type...</option>
+                <option value="Oil Change">Oil Change</option>
+                <option value="Tire Replacement">Tire Replacement</option>
+                <option value="Brake Pad Replacement">Brake Pad Replacement</option>
+                <option value="Engine Service">Engine Service</option>
+                <option value="General Inspection">General Inspection</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
+            {maintType === 'Other' && (
+              <div className="mb-4">
+                <label className={labelCls}>Specify Type *</label>
+                <input
+                  type="text"
+                  value={maintCustomType}
+                  onChange={(e) => setMaintCustomType(e.target.value)}
+                  placeholder="e.g. Battery Replacement"
+                  className={inputCls}
+                />
+              </div>
+            )}
             <div className="mb-4">
               <label className={labelCls}>Date *</label>
               <input type="date" value={maintDate} onChange={(e) => setMaintDate(e.target.value)} className={inputCls} />
@@ -151,11 +174,11 @@ export function AddEntryModal({ isOpen, onClose, onAdded, activeTab }: AddEntryM
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className={labelCls}>Mileage (Km)</label>
-                <input type="number" value={maintMileage} onChange={(e) => setMaintMileage(e.target.value)} placeholder="45200" className={inputCls} />
+                <input type="number" value={maintMileage} onChange={(e) => setMaintMileage(e.target.value)} placeholder="0" className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Cost (€)</label>
-                <input type="number" value={maintCost} onChange={(e) => setMaintCost(e.target.value)} placeholder="85" className={inputCls} />
+                <input type="number" value={maintCost} onChange={(e) => setMaintCost(e.target.value)} placeholder="0.00" className={inputCls} />
               </div>
             </div>
             <div className="mb-4">
@@ -176,16 +199,16 @@ export function AddEntryModal({ isOpen, onClose, onAdded, activeTab }: AddEntryM
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className={labelCls}>Liters *</label>
-                <input type="number" value={fuelLiters} onChange={(e) => setFuelLiters(e.target.value)} placeholder="45" className={inputCls} />
+                <input type="number" value={fuelLiters} onChange={(e) => setFuelLiters(e.target.value)} placeholder="0.00" className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Cost (€) *</label>
-                <input type="number" value={fuelCost} onChange={(e) => setFuelCost(e.target.value)} placeholder="72" className={inputCls} />
+                <input type="number" value={fuelCost} onChange={(e) => setFuelCost(e.target.value)} placeholder="0.00" className={inputCls} />
               </div>
             </div>
             <div className="mb-6">
               <label className={labelCls}>Odometer (Km)</label>
-              <input type="number" value={fuelOdometer} onChange={(e) => setFuelOdometer(e.target.value)} placeholder="49800" className={inputCls} />
+              <input type="number" value={fuelOdometer} onChange={(e) => setFuelOdometer(e.target.value)} placeholder="0" className={inputCls} />
             </div>
           </>
         )}

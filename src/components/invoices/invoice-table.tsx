@@ -1,68 +1,127 @@
 'use client';
 
-import { Download } from 'lucide-react';
+import { useState } from 'react';
+import { Download, Eye } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { invoiceService } from '@/services/invoices/invoice.service';
 import type { SupplierStatement } from '@/types';
+import { useAuthStore } from '@/stores/auth.store';
+import { InvoicePreviewModal } from './invoice-preview-modal';
+import { ServerSideTable, ColumnDef } from '@/components/ui/server-side-table';
 
 interface InvoiceTableProps {
   data: SupplierStatement[];
   isLoading: boolean;
+  page: number;
+  total: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
 }
 
-export function InvoiceTable({ data, isLoading }: InvoiceTableProps) {
+export function InvoiceTable({ 
+  data, 
+  isLoading,
+  page,
+  total,
+  limit,
+  onPageChange,
+  onLimitChange
+}: InvoiceTableProps) {
+  const [selectedStatement, setSelectedStatement] = useState<SupplierStatement | null>(null);
+  const { user } = useAuthStore();
+
   const formatPeriod = (start: string, end: string) => {
     const s = new Date(start);
     return s.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
-  return (
-    <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
-      <h3 className="mb-4 text-lg font-semibold text-white">Statements</h3>
+  const columns: ColumnDef<SupplierStatement>[] = [
+    { 
+      key: 'statementNo', 
+      title: 'Invoice #', 
+      render: (row) => <span className="text-[#FACC15] font-medium">{row.statementNo}</span>,
+      className: 'font-medium' 
+    },
+    { 
+      key: 'period', 
+      title: 'Period', 
+      render: (row) => <span className="text-[#D4D4D8]">{formatPeriod(row.periodStart, row.periodEnd)}</span> 
+    },
+    { 
+      key: 'rides', 
+      title: 'Rides', 
+      dataIndex: 'totalRides', 
+      className: 'text-[#D4D4D8] text-center' 
+    },
+    { 
+      key: 'gross', 
+      title: 'Gross', 
+      render: (row) => <span className="text-[#D4D4D8]">{formatCurrency(row.grossRevenue)}</span> 
+    },
+    { 
+      key: 'commission', 
+      title: 'Commission', 
+      render: (row) => <span className="text-[#D4D4D8]">{formatCurrency(row.commissionEarned)}</span> 
+    },
+    { 
+      key: 'net', 
+      title: 'Net', 
+      render: (row) => <span className="text-white font-medium">{formatCurrency(row.netBalance)}</span> 
+    },
+    {
+      key: 'actions',
+      title: 'Actions',
+      className: 'text-right',
+      render: (row) => (
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectedStatement(row);
+            }}
+            className="rounded-lg p-1.5 text-[#71717A] hover:bg-[#FACC15] hover:text-black transition-colors"
+            title="View & Print Invoice"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              invoiceService.downloadStatement(row.id);
+            }}
+            className="rounded-lg p-1.5 text-[#71717A] hover:bg-[#27272A] hover:text-white transition-colors"
+            title="Download raw PDF"
+          >
+            <Download className="h-4 w-4" />
+          </button>
+        </div>
+      )
+    }
+  ];
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-12 rounded bg-[#27272A] animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[#27272A] bg-[#0A0A0A]/50">
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Invoice #</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Period</th>
-                <th className="px-4 py-3 text-center text-xs font-medium uppercase text-[#71717A]">Rides</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Gross</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Commission</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Net</th>
-                <th className="px-4 py-3 text-right text-xs font-medium uppercase text-[#71717A]">Download</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row) => (
-                <tr key={row.id} className="border-b border-[#27272A] last:border-b-0 transition-colors hover:bg-[#1A1A1A]/30">
-                  <td className="px-4 py-3 text-sm font-medium text-[#FACC15]">{row.statementNo}</td>
-                  <td className="px-4 py-3 text-sm text-[#D4D4D8]">{formatPeriod(row.periodStart, row.periodEnd)}</td>
-                  <td className="px-4 py-3 text-center text-sm text-[#D4D4D8]">{row.totalRides}</td>
-                  <td className="px-4 py-3 text-sm text-[#D4D4D8]">{formatCurrency(row.grossRevenue)}</td>
-                  <td className="px-4 py-3 text-sm text-[#D4D4D8]">{formatCurrency(row.commissionEarned)}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-white">{formatCurrency(row.netBalance)}</td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => invoiceService.downloadStatement(row.id)}
-                      className="rounded-lg p-1.5 text-[#71717A] hover:bg-[#27272A] hover:text-white transition-colors"
-                    >
-                      <Download className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+  return (
+    <div className="rounded-lg border border-[#27272A] bg-[#111111] overflow-hidden">
+      <div className="p-6 pb-4 border-b border-[#27272A]">
+        <h3 className="text-lg font-semibold text-white">Statements</h3>
+      </div>
+      <ServerSideTable
+        columns={columns}
+        data={data}
+        isLoading={isLoading}
+        page={page}
+        limit={limit}
+        total={total}
+        onPageChange={onPageChange}
+        onLimitChange={onLimitChange}
+        emptyText="No invoices found."
+      />
+      <InvoicePreviewModal
+        isOpen={!!selectedStatement}
+        onClose={() => setSelectedStatement(null)}
+        statement={selectedStatement}
+        supplier={user}
+      />
     </div>
   );
 }

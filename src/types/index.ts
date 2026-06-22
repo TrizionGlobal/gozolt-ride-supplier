@@ -523,16 +523,18 @@ export interface MaintenanceLogEntry {
   id: string;
   vehicle: string;
   type: string;
+  rawDate?: string;
   date: string;
   mileage: string;
   cost: number;
   status: 'Completed' | 'Scheduled' | 'Pending' | 'Overdue';
+  nextDueAt?: string;
 }
 
 export interface FuelLogEntry {
   id: string;
   vehicle: string;
-  driver: string;
+  rawDate?: string;
   date: string;
   liters: number;
   cost: number;

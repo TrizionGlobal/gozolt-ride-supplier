@@ -5,59 +5,59 @@ import type { MaintenanceLogEntry, FuelLogEntry } from '@/types';
 
 
 export const maintenanceFuelService = {
-  async getMaintenanceLogs(): Promise<MaintenanceLogEntry[]> {
+  async getMaintenanceLogs(page = 1, limit = 10, search = ''): Promise<{ data: MaintenanceLogEntry[], total: number }> {
     try {
-      // Backend only has per-vehicle endpoints.
-      // Fetch all vehicles then aggregate their maintenance logs.
-      const vehiclesRes = await apiClient.get('/fleet/vehicles', { params: { page: 1, limit: 100 } });
-      const vehicles = vehiclesRes.data.data || vehiclesRes.data;
-      const all: MaintenanceLogEntry[] = [];
-
-      for (const v of vehicles) {
-        const res = await apiClient.get(`/fleet/vehicles/${v.id}/maintenance`, { params: { page: 1, limit: 50 } });
-        const logs = res.data.data || res.data;
-        for (const log of logs) {
-          all.push({
-            id: log.id,
-            vehicle: v.plateNumber,
-            type: log.type,
-            date: new Date(log.performedAt).toLocaleDateString('en-CA'),
-            mileage: '—',
-            cost: log.cost || 0,
-            status: log.nextDueAt && new Date(log.nextDueAt) > new Date() ? 'Scheduled' : 'Completed',
-          });
+      const res = await apiClient.get('/fleet/maintenance', { params: { page, limit, search } });
+      const logs = res.data.data || res.data || [];
+      const total = res.data.meta?.total || logs.length;
+      
+      const data = logs.map((log: any) => {
+        let status = 'Completed';
+        if (log.nextDueAt) {
+          const due = new Date(log.nextDueAt);
+          if (due < new Date()) {
+            status = 'Overdue';
+          } else {
+            status = 'Scheduled';
+          }
         }
-      }
-      return all;
+        
+        return {
+          id: log.id,
+          vehicle: log.vehiclePlateNumber || '—',
+          type: log.type,
+          rawDate: log.performedAt,
+          date: new Date(log.performedAt).toLocaleDateString('en-GB'),
+          nextDueAt: log.nextDueAt ? new Date(log.nextDueAt).toLocaleDateString('en-GB') : undefined,
+          mileage: log.odometer ? `${Number(log.odometer).toLocaleString()} Km` : '—',
+          cost: log.cost || 0,
+          status,
+        };
+      });
+      return { data, total };
     } catch {
-      return [];
+      return { data: [], total: 0 };
     }
   },
 
-  async getFuelLogs(): Promise<FuelLogEntry[]> {
+  async getFuelLogs(page = 1, limit = 10, search = ''): Promise<{ data: FuelLogEntry[], total: number }> {
     try {
-      const vehiclesRes = await apiClient.get('/fleet/vehicles', { params: { page: 1, limit: 100 } });
-      const vehicles = vehiclesRes.data.data || vehiclesRes.data;
-      const all: FuelLogEntry[] = [];
-
-      for (const v of vehicles) {
-        const res = await apiClient.get(`/fleet/vehicles/${v.id}/fuel`, { params: { page: 1, limit: 50 } });
-        const logs = res.data.data || res.data;
-        for (const log of logs) {
-          all.push({
-            id: log.id,
-            vehicle: v.plateNumber,
-            driver: v.assignedDriverName || '—',
-            date: new Date(log.filledAt).toLocaleDateString('en-CA'),
-            liters: log.liters,
-            cost: log.cost,
-            mileage: log.odometer ? `${Number(log.odometer).toLocaleString()} Km` : '—',
-          });
-        }
-      }
-      return all;
+      const res = await apiClient.get('/fleet/fuel', { params: { page, limit, search } });
+      const logs = res.data.data || res.data || [];
+      const total = res.data.meta?.total || logs.length;
+      
+      const data = logs.map((log: any) => ({
+        id: log.id,
+        vehicle: log.vehiclePlateNumber || '—',
+        rawDate: log.filledAt,
+        date: new Date(log.filledAt).toLocaleDateString('en-GB'),
+        liters: log.liters,
+        cost: log.cost,
+        mileage: log.odometer ? `${Number(log.odometer).toLocaleString()} Km` : '—',
+      }));
+      return { data, total };
     } catch {
-      return [];
+      return { data: [], total: 0 };
     }
   },
 
@@ -65,6 +65,7 @@ export const maintenanceFuelService = {
     type: string;
     performedAt: string;
     cost?: number;
+    odometer?: number;
     description?: string;
     nextDueAt?: string;
   }): Promise<void> {

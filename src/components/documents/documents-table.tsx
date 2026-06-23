@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, Upload as UploadIcon } from 'lucide-react';
+import { FileText, Upload as UploadIcon, Eye } from 'lucide-react';
 import { DocumentStatusBadge } from './document-status-badge';
 import { formatDocumentType } from '@/lib/utils';
 import type { DocumentCenterItem, DocumentTab } from '@/types';
@@ -92,17 +92,32 @@ export function DocumentsTable({
     {
       key: 'action',
       title: 'Action',
+      className: 'text-center',
       render: (doc) => (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onReUpload(doc);
-          }}
-          className="flex items-center gap-1.5 text-sm text-[#FACC15] hover:underline"
-        >
-          <UploadIcon className="h-3.5 w-3.5" />
-          Re-Upload
-        </button>
+        <div className="flex items-center justify-center gap-4">
+          {doc.fileUrl && (
+            <a
+              href={doc.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm text-[#38BDF8] hover:text-[#7DD3FC] transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              View
+            </a>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onReUpload(doc);
+            }}
+            className="flex items-center gap-1.5 text-sm text-[#FACC15] hover:text-[#FEF08A] transition-colors"
+          >
+            <UploadIcon className="h-3.5 w-3.5" />
+            Re-Upload
+          </button>
+        </div>
       ),
     },
   ];

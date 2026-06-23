@@ -48,8 +48,6 @@ export const SIDEBAR_ITEMS = [
   { label: 'Maintenance & Fuel', href: ROUTES.MAINTENANCE, icon: Wrench },
   { label: 'Analytics', href: ROUTES.ANALYTICS, icon: BarChart3 },
   { label: 'Payouts', href: ROUTES.PAYOUTS, icon: Banknote },
-  { label: 'Subscription', href: ROUTES.SUBSCRIPTION, icon: CreditCard },
-  { label: 'Settings', href: ROUTES.SETTINGS, icon: Settings },
 ] as const;
 
 export const SIGNOUT_ITEM = {

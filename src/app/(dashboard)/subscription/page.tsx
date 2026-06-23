@@ -124,7 +124,7 @@ export default function SubscriptionPage() {
 
   const handleSelectPlan = async (tier: SubscriptionInfo['tier']) => {
     if (subscription && !isExpired && tier === subscription.tier) return;
-    
+
     if (!subscription || isExpired) {
       setShowPaymentModal(tier);
     } else {
@@ -161,7 +161,6 @@ export default function SubscriptionPage() {
         setSubscription(updated);
         toast.success(`Subscription updated to ${planName}`);
         setShowPaymentModal(null);
-        router.push('/dashboard');
       }
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to update subscription');
@@ -176,7 +175,7 @@ export default function SubscriptionPage() {
     try {
       await subscriptionService.cancelSubscription();
       toast.success('Subscription cancelled successfully. Logging out...');
-      
+
       await fetch('/api/auth/logout', { method: 'POST' });
       await new Promise((resolve) => setTimeout(resolve, 2000));
       clearAuth();
@@ -195,10 +194,10 @@ export default function SubscriptionPage() {
         paymentMethodId: paymentData.paymentMethodId,
       });
       toast.success('Subscription setup successful!');
-      
+
       // Update auth store to reflect the new subscription
       await hydrateFromSession();
-      
+
       // Fetch the dashboard data
       await fetchData(false);
 
@@ -232,7 +231,7 @@ export default function SubscriptionPage() {
             Your payment was successful and your subscription plan is now active. You can now use this plan and access your Gozolt Supplier Portal.
           </p>
           <button
-            onClick={() => router.push('/dashboard')}
+            onClick={() => router.push('/')}
             className="rounded-full bg-[#FACC15] px-8 py-3 text-sm font-semibold text-black transition-colors hover:bg-[#EAB308] shadow-lg shadow-[#FACC15]/20"
           >
             Go to Dashboard

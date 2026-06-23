@@ -41,38 +41,42 @@ export function InvoiceTable({
       key: 'statementNo', 
       title: 'Invoice #', 
       render: (row) => <span className="text-[#FACC15] font-medium">{row.statementNo}</span>,
-      className: 'font-medium' 
+      className: 'font-medium text-sm' 
     },
     { 
       key: 'period', 
       title: 'Period', 
-      render: (row) => <span className="text-[#D4D4D8]">{formatPeriod(row.periodStart, row.periodEnd)}</span> 
+      render: (row) => <span className="text-[#D4D4D8]">{formatPeriod(row.periodStart, row.periodEnd)}</span>,
+      className: 'text-sm'
     },
     { 
       key: 'rides', 
       title: 'Rides', 
       dataIndex: 'totalRides', 
-      className: 'text-[#D4D4D8] text-center' 
+      className: 'text-[#D4D4D8] text-center text-sm' 
     },
     { 
       key: 'gross', 
       title: 'Gross', 
-      render: (row) => <span className="text-[#D4D4D8]">{formatCurrency(row.grossRevenue)}</span> 
+      render: (row) => <span className="text-[#D4D4D8]">{formatCurrency(row.grossRevenue)}</span>,
+      className: 'text-sm'
     },
     { 
       key: 'commission', 
       title: 'Commission', 
-      render: (row) => <span className="text-[#D4D4D8]">{formatCurrency(row.commissionEarned)}</span> 
+      render: (row) => <span className="text-[#D4D4D8]">{formatCurrency(row.commissionEarned)}</span>,
+      className: 'text-sm'
     },
     { 
       key: 'net', 
       title: 'Net', 
-      render: (row) => <span className="text-white font-medium">{formatCurrency(row.netBalance)}</span> 
+      render: (row) => <span className="text-white font-medium">{formatCurrency(row.netBalance)}</span>,
+      className: 'text-sm'
     },
     {
       key: 'actions',
       title: 'Actions',
-      className: 'text-right',
+      className: 'text-right text-sm',
       render: (row) => (
         <div className="flex justify-end gap-2">
           <button

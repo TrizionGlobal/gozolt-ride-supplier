@@ -87,14 +87,15 @@ export function UploadDocumentModal({
         setCategory('Company');
       }
       setDocType(prefill.type);
+      setExpiryDate(prefill.expiresAt ? prefill.expiresAt.split('T')[0] : '');
     } else {
       setCategory(defaultTab);
       setDocType('');
       setSelectedDriver('');
       setSelectedVehicle('');
+      setExpiryDate('');
     }
     setFile(null);
-    setExpiryDate('');
   }, [prefill, defaultTab, isOpen]);
 
   if (!isOpen) return null;
@@ -133,9 +134,11 @@ export function UploadDocumentModal({
         fileName: file.name,
         mimeType: file.type,
         fileSize: file.size,
+        file: file,
         driverId: category === 'Driver' ? selectedDriver : undefined,
         vehicleId: category === 'Vehicle' ? selectedVehicle : undefined,
         expiresAt: expiryDate || undefined,
+        documentId: prefill?.id,
       });
       toast.success('Document uploaded successfully');
       onUploaded();

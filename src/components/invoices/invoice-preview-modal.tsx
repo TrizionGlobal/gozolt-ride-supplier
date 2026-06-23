@@ -56,9 +56,9 @@ export function InvoicePreviewModal({ isOpen, onClose, statement, supplier }: In
         </div>
 
         {/* Scrollable Preview Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-neutral-900 flex justify-center custom-scrollbar">
+        <div className="flex-1 overflow-auto p-4 sm:p-8 bg-neutral-900 flex justify-center custom-scrollbar">
           {/* We wrap the document in a container that looks like a page on screen */}
-          <div className="shadow-xl ring-1 ring-black/5 rounded-sm overflow-hidden bg-white max-w-[210mm] w-full">
+          <div className="shadow-xl ring-1 ring-black/5 rounded-sm overflow-x-auto bg-white max-w-[210mm] w-full">
              <InvoiceDocument ref={contentRef} statement={statement} supplier={supplier} />
           </div>
         </div>

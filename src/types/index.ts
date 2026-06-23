@@ -385,6 +385,7 @@ export interface DocumentCenterItem {
   driverName?: string;
   driverId?: string;
   vehicleId?: string;
+  fileUrl?: string | null;
 }
 
 export interface UploadDocumentPayload {
@@ -397,6 +398,7 @@ export interface UploadDocumentPayload {
   expiresAt?: string;
   file?: File;
   entityType?: string;
+  documentId?: string;
 }
 
 // GPS Fleet Tracking interfaces

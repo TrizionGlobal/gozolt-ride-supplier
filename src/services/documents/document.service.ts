@@ -145,10 +145,19 @@ export const documentService = {
 
     // Determine entityType based on IDs, fallback to payload.entityType or SUPPLIER
     let entityType = payload.entityType || 'SUPPLIER';
-    if (payload.driverId) entityType = 'DRIVER';
-    if (payload.vehicleId) entityType = 'VEHICLE';
+    let entityId = undefined;
+    
+    if (payload.driverId) {
+      entityType = 'DRIVER';
+      entityId = payload.driverId;
+    } else if (payload.vehicleId) {
+      entityType = 'SUPPLIER'; // Vehicle docs are owned by the supplier
+    }
 
     formData.append('entityType', entityType);
+    if (entityId) {
+      formData.append('entityId', entityId);
+    }
 
     if (payload.file) {
       formData.append('file', payload.file);
@@ -156,11 +165,11 @@ export const documentService = {
     if (payload.vehicleId) {
       formData.append('vehicleId', payload.vehicleId);
     }
-    if (payload.driverId) {
-      formData.append('driverId', payload.driverId);
-    }
     if (payload.expiresAt) {
       formData.append('expiresAt', payload.expiresAt);
+    }
+    if (payload.documentId) {
+      formData.append('documentId', payload.documentId);
     }
 
     const res = await apiClient.post('/documents/upload', formData, {

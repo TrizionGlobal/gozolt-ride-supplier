@@ -22,53 +22,46 @@ export default function AnalyticsPage() {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [rides, revenue, perf, dist, tips, kpis] = await Promise.allSettled([
-        apiClient.get('/suppliers/analytics/rides-trend'),
-        apiClient.get('/suppliers/analytics/revenue-trend'),
-        apiClient.get('/suppliers/analytics/driver-performance'),
-        apiClient.get('/suppliers/analytics/system-distribution'),
-        apiClient.get('/suppliers/analytics/tips-trend'),
-        apiClient.get('/suppliers/analytics')
-      ]);
+      const response = await apiClient.get('/suppliers/analytics/dashboard');
+      const data = response.data;
       
       const formatDay = (dateStr: string) => {
         const d = new Date(dateStr);
         return d.toLocaleDateString('en-US', { weekday: 'short' });
       };
 
-      if (rides.status === 'fulfilled') {
-        const data = (rides.value.data || []).map((b: any) => ({
+      if (data.ridesTrend) {
+        setRidesData(data.ridesTrend.map((b: any) => ({
           day: formatDay(b.periodStart),
           value: b.total,
-        }));
-        setRidesData(data);
+        })));
       }
       
-      if (revenue.status === 'fulfilled') {
-        const data = (revenue.value.data || []).map((b: any) => ({
+      if (data.revenueTrend) {
+        setRevenueData(data.revenueTrend.map((b: any) => ({
           day: formatDay(b.periodStart),
           value: b.revenue,
-        }));
-        setRevenueData(data);
+        })));
       }
       
-      if (perf.status === 'fulfilled') {
-        setDriverPerfData(perf.value.data || []);
+      if (data.driverPerformance) {
+        setDriverPerfData(data.driverPerformance);
       }
       
-      if (dist.status === 'fulfilled') {
-        setSystemDistData(dist.value.data || []);
+      if (data.systemDistribution) {
+        setSystemDistData(data.systemDistribution);
       }
       
-      if (tips.status === 'fulfilled') {
-        const data = (tips.value.data || []).map((b: any) => ({
+      if (data.tipsTrend) {
+        setTipsData(data.tipsTrend.map((b: any) => ({
           day: formatDay(b.periodStart),
-          value: b.value,
-        }));
-        setTipsData(data);
+          value: b.tipAmount || b.value || 0,
+        })));
       }
       
-      if (kpis.status === 'fulfilled') setKpiData(kpis.value.data || null);
+      if (data.kpis) {
+        setKpiData(data.kpis);
+      }
     } catch (err) {
       console.error('Failed to load analytics', err);
     } finally {

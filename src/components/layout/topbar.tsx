@@ -5,6 +5,7 @@ import { Bell, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuth } from '@/hooks/use-auth';
 import { NotificationDropdown } from './notification-dropdown';
+import { ProfileDropdown } from './profile-dropdown';
 
 export function Topbar() {
   const pathname = usePathname();
@@ -38,17 +39,8 @@ export function Topbar() {
         {/* Notification dropdown */}
         <NotificationDropdown />
 
-        {/* User avatar + name */}
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 overflow-hidden items-center justify-center rounded-full bg-[#FACC15]">
-            {user?.logoUrl ? (
-              <img src={user.logoUrl} alt="Company Logo" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-xs font-bold text-black">{initials}</span>
-            )}
-          </div>
-          <span className="text-sm text-white">{user?.companyName || 'Malta Taxis Ltd'}</span>
-        </div>
+        {/* Profile Dropdown */}
+        <ProfileDropdown />
 
         {/* Logout button (visible when on subscription page since sidebar is hidden) */}
         {isSubscriptionSetup && (

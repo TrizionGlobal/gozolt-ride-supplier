@@ -28,9 +28,14 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
     const status = error.response?.status;
 
-    // Only attempt token refresh for genuine 401 Unauthorized errors.
+    // Never intercept auth endpoints (login, register, etc.).
+    // A 401 on /auth/* means "wrong credentials" — the UI must show the error, not a silent refresh.
+    const isAuthRoute = originalRequest?.url?.startsWith('/auth/') || 
+                        originalRequest?.url?.includes('/auth/');
+
+    // Only attempt token refresh for genuine 401 Unauthorized errors from protected endpoints.
     // 4xx errors like 400 Bad Request are NOT auth issues — never auto-logout for those.
-    if (status === 401 && !originalRequest._retry) {
+    if (status === 401 && !originalRequest._retry && !isAuthRoute) {
       originalRequest._retry = true;
 
       try {

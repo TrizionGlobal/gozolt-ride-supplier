@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, AlertCircle, Clock, ShieldOff, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,9 +18,88 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+type ErrorType = 'invalid_credentials' | 'under_review' | 'suspended' | 'rejected' | 'generic';
+
+interface LoginError {
+  type: ErrorType;
+  message: string;
+}
+
+function getErrorDetails(rawMessage: string): LoginError {
+  const msg = rawMessage.toLowerCase();
+
+  if (msg.includes('invalid credentials')) {
+    return {
+      type: 'invalid_credentials',
+      message: 'Invalid email or password. Please double-check your credentials and try again.',
+    };
+  }
+  if (msg.includes('under review') || msg.includes('pending verification')) {
+    return {
+      type: 'under_review',
+      message: rawMessage,
+    };
+  }
+  if (msg.includes('suspended')) {
+    return {
+      type: 'suspended',
+      message: rawMessage,
+    };
+  }
+  if (msg.includes('rejected')) {
+    return {
+      type: 'rejected',
+      message: rawMessage,
+    };
+  }
+  return { type: 'generic', message: rawMessage };
+}
+
+const errorConfig: Record<
+  ErrorType,
+  { icon: React.ReactNode; borderColor: string; bgColor: string; titleColor: string; title: string }
+> = {
+  invalid_credentials: {
+    icon: <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 shrink-0" />,
+    borderColor: 'border-red-500/40',
+    bgColor: 'bg-red-500/10',
+    titleColor: 'text-red-400',
+    title: 'Invalid Credentials',
+  },
+  under_review: {
+    icon: <Clock className="h-5 w-5 text-amber-400 mt-0.5 shrink-0" />,
+    borderColor: 'border-amber-500/40',
+    bgColor: 'bg-amber-500/10',
+    titleColor: 'text-amber-400',
+    title: 'Account Under Review',
+  },
+  suspended: {
+    icon: <ShieldOff className="h-5 w-5 text-orange-400 mt-0.5 shrink-0" />,
+    borderColor: 'border-orange-500/40',
+    bgColor: 'bg-orange-500/10',
+    titleColor: 'text-orange-400',
+    title: 'Account Suspended',
+  },
+  rejected: {
+    icon: <XCircle className="h-5 w-5 text-red-400 mt-0.5 shrink-0" />,
+    borderColor: 'border-red-500/40',
+    bgColor: 'bg-red-500/10',
+    titleColor: 'text-red-400',
+    title: 'Account Rejected',
+  },
+  generic: {
+    icon: <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 shrink-0" />,
+    borderColor: 'border-red-500/40',
+    bgColor: 'bg-red-500/10',
+    titleColor: 'text-red-400',
+    title: 'Login Failed',
+  },
+};
+
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState<LoginError | null>(null);
   const { login } = useAuth();
 
   const {
@@ -37,13 +116,17 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
+    setLoginError(null);
     try {
       await login(data);
       toast.success('Login successful');
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : 'Login failed. Please check your credentials.';
-      toast.error(message);
+    } catch (error: any) {
+      const rawMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Login failed. Please check your credentials.';
+      const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : rawMessage;
+      setLoginError(getErrorDetails(message));
     } finally {
       setIsSubmitting(false);
     }
@@ -53,6 +136,22 @@ export default function LoginPage() {
     <div className="w-full max-w-[400px] rounded-lg border border-[#27272A] bg-[#0F0F0F] p-8">
       {/* Form */}
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {/* Inline error banner */}
+        {loginError && (() => {
+          const cfg = errorConfig[loginError.type];
+          return (
+            <div
+              className={`flex gap-3 rounded-lg border p-3.5 ${cfg.borderColor} ${cfg.bgColor}`}
+            >
+              {cfg.icon}
+              <div className="space-y-0.5">
+                <p className={`text-sm font-semibold ${cfg.titleColor}`}>{cfg.title}</p>
+                <p className="text-xs text-[#A1A1AA] leading-relaxed">{loginError.message}</p>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Email */}
         <div className="space-y-2">
           <label className="text-sm text-white">Email Address</label>
@@ -132,3 +231,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+

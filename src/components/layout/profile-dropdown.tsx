@@ -31,7 +31,9 @@ export function ProfileDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2.5 hover:opacity-80 transition-opacity focus:outline-none"
+        className={`flex items-center gap-2.5 p-1 pr-3 rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-[#FACC15]/50 ${
+          isOpen ? 'bg-[#1A1A1A] border-[#3F3F46]' : 'bg-[#111111] border-[#27272A] hover:border-[#3F3F46] hover:bg-[#1A1A1A]'
+        }`}
       >
         <div className="flex h-8 w-8 overflow-hidden items-center justify-center rounded-full bg-[#FACC15]">
           {user?.logoUrl ? (
@@ -42,7 +44,7 @@ export function ProfileDropdown() {
         </div>
         <div className="hidden sm:flex items-center gap-2">
           <span className="text-sm font-medium text-white leading-tight">{user?.companyName || 'Malta Taxis Ltd'}</span>
-          <ChevronDown className={`h-4 w-4 text-[#71717A] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`h-4 w-4 text-[#A1A1AA] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
         </div>
       </button>
 

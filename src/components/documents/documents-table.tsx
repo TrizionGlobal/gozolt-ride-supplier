@@ -73,7 +73,19 @@ export function DocumentsTable({
     {
       key: 'status',
       title: 'Status',
-      render: (doc) => <DocumentStatusBadge status={doc.status} />,
+      render: (doc) => (
+        <div className="flex flex-col gap-1 items-start">
+          <DocumentStatusBadge status={doc.status} />
+          {doc.status === 'REJECTED' && doc.rejectionReason && (
+            <span 
+              className="text-xs text-red-400/90 max-w-[180px] leading-tight" 
+              title={doc.rejectionReason}
+            >
+              {doc.rejectionReason}
+            </span>
+          )}
+        </div>
+      ),
     },
     {
       key: 'expiry',

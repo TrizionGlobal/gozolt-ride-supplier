@@ -385,6 +385,7 @@ export interface DocumentCenterItem {
   driverName?: string;
   driverId?: string;
   vehicleId?: string;
+  rejectionReason?: string | null;
   fileUrl?: string | null;
 }
 

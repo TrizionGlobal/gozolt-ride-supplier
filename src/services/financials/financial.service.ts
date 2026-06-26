@@ -22,7 +22,7 @@ export const financialService = {
       const payouts = payoutsRes.data.data || payoutsRes.data;
 
       const grossRevenue = analytics.totalRevenue || 0;
-      const commissionRate = profile.commissionRate || 15;
+      const commissionRate = profile.defaultDriverCommission || 0;
       const commissionAmount = grossRevenue * (commissionRate / 100);
       const netRevenue = grossRevenue - commissionAmount;
       const pendingPayout = payouts
@@ -38,7 +38,21 @@ export const financialService = {
 
   async getRevenueTrend(from?: string, to?: string): Promise<RevenueTrendPoint[]> {
     try {
-      const params: any = { range: 'month', period: 'daily' };
+      let period = 'daily';
+      if (from) {
+        const startDate = new Date(from);
+        const endDate = to ? new Date(to) : new Date();
+        const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        
+        if (diffDays > 180) {
+          period = 'monthly';
+        } else if (diffDays > 35) {
+          period = 'weekly';
+        }
+      }
+
+      const params: any = { range: 'month', period };
       if (from) params.from = from;
       if (to) params.to = to;
 
@@ -52,16 +66,30 @@ export const financialService = {
     }
   },
 
-  async getPerDriverEarnings(from?: string, to?: string): Promise<PerDriverEarning[]> {
+  async getPerDriverEarnings(from?: string, to?: string, page = 1, limit = 20, search?: string): Promise<any> {
+    try {
+      const params: any = { page, limit };
+      if (from) params.from = from;
+      if (to) params.to = to;
+      if (search) params.search = search;
+
+      const res = await apiClient.get('/suppliers/analytics/driver-earnings', { params });
+      return res.data;
+    } catch {
+      return { data: [], total: 0 };
+    }
+  },
+
+  async getDriverSettlementsKpis(from?: string, to?: string): Promise<{ totalOwed: number, totalCash: number, totalCard: number, totalPaid: number }> {
     try {
       const params: any = {};
       if (from) params.from = from;
       if (to) params.to = to;
 
-      const res = await apiClient.get('/suppliers/analytics/driver-earnings', { params });
+      const res = await apiClient.get('/suppliers/analytics/driver-earnings-kpis', { params });
       return res.data;
     } catch {
-      return [];
+      return { totalOwed: 0, totalCash: 0, totalCard: 0, totalPaid: 0 };
     }
   },
 
@@ -93,6 +121,20 @@ export const financialService = {
   async connectStripeAccount(): Promise<{ message: string; stripeAccountId: string }> {
     try {
       const res = await apiClient.post('/suppliers/payouts/connect');
+      return res.data;
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  async getDriverPayoutLogs(page = 1, limit = 20, search?: string): Promise<any> {
+    try {
+      const params: any = { page, limit };
+      if (search) params.search = search;
+      
+      const res = await apiClient.get('/suppliers/payouts/driver-logs', {
+        params,
+      });
       return res.data;
     } catch (error: any) {
       throw error;

@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { PanelLeftClose, PanelLeft } from 'lucide-react';
-import { SIDEBAR_ITEMS } from '@/lib/constants';
+import { SIDEBAR_ITEMS, ROUTES } from '@/lib/constants';
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
@@ -59,7 +59,12 @@ export function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
         {SIDEBAR_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          let isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+
+          // Prevent "Drivers" from being active when in "Driver Settlements"
+          if (item.href === ROUTES.DRIVERS && pathname.startsWith(ROUTES.DRIVER_SETTLEMENTS)) {
+            isActive = false;
+          }
 
           return (
             <Link

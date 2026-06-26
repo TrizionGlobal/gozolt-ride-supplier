@@ -88,7 +88,7 @@ export default function SubscriptionPage() {
   // Setup Flow States
   const { user, hydrateFromSession, clearAuth } = useAuthStore();
   const router = useRouter();
-  const [setupStep, setSetupStep] = useState<1 | 2>(1);
+  const [setupStep, setSetupStep] = useState<number>(1);
   const [selectedTier, setSelectedTier] = useState<'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE'>('STARTER');
   const [cardData, setCardData] = useState<{ paymentMethodId: string; cardName: string; last4: string; brand: string; }>({
     paymentMethodId: '', cardName: '', last4: '', brand: ''

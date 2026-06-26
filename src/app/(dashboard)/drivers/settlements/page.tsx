@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, ChevronDown, BarChart3, Users, History } from 'lucide-react';
+import { Calendar, ChevronDown } from 'lucide-react';
 import { financialService } from '@/services/financials/financial.service';
-import { FinancialKPICards } from '@/components/financials/financial-kpi-cards';
-import { RevenueTrendChart } from '@/components/financials/revenue-trend-chart';
+import { PerDriverEarningsTable } from '@/components/financials/per-driver-earnings-table';
+import { SettlementKPICards } from '@/components/financials/settlement-kpi-cards';
+import { DriverPayoutHistoryTable, type DriverPayoutLog } from '@/components/financials/driver-payout-history-table';
+import { Users, History } from 'lucide-react';
 import { DatePicker, ConfigProvider, theme } from 'antd';
 import dayjs from 'dayjs';
-import type { FinancialKPIs, RevenueTrendPoint } from '@/types';
+import type { PerDriverEarning } from '@/types';
 import { useFleetTracking } from '@/hooks/use-fleet-tracking';
 
 const { RangePicker } = DatePicker;
@@ -20,11 +22,13 @@ const periodOptions = [
   'Custom Range',
 ];
 
-export default function FinancialsPage() {
+type ActiveTab = 'settlements' | 'history';
+
+export default function DriverSettlementsPage() {
+  const [activeTab, setActiveTab] = useState<ActiveTab>('settlements');
   const [isLoading, setIsLoading] = useState(true);
-  const [period, setPeriod] = useState('This Month');
-  const [kpis, setKpis] = useState<FinancialKPIs | null>(null);
-  const [revenueTrend, setRevenueTrend] = useState<RevenueTrendPoint[]>([]);
+  const [period, setPeriod] = useState('Today');
+  const [kpis, setKpis] = useState({ totalOwed: 0, totalCash: 0, totalCard: 0, totalPaid: 0 });
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
 
@@ -60,19 +64,14 @@ export default function FinancialsPage() {
       const fromStr = fromDate ? fromDate.toISOString() : undefined;
       const toStr = toDate ? toDate.toISOString() : undefined;
 
-      const [kpiData, trendData] = await Promise.all([
-        financialService.getFinancialKPIs(fromStr, toStr),
-        financialService.getRevenueTrend(fromStr, toStr),
-      ]);
-      
+      const kpiData = await financialService.getDriverSettlementsKpis(fromStr, toStr);
       setKpis(kpiData);
-      setRevenueTrend(trendData);
     } catch {
       // handled in services
     } finally {
       setIsLoading(false);
     }
-  }, [period]);
+  }, [period, customFrom, customTo]);
 
   useEffect(() => {
     // Only load if not Custom Range, or if Custom Range has both dates selected
@@ -88,9 +87,9 @@ export default function FinancialsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Payments & Finance</h1>
+          <h1 className="text-2xl font-bold text-white">Driver Settlements</h1>
           <p className="text-sm text-[#A1A1AA] mt-1">
-            Manage driver settlements, track earnings trend, and view payment payouts.
+            Manage your drivers' earnings, view cash & card transactions, and settle payments.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -132,10 +131,41 @@ export default function FinancialsPage() {
         </div>
       </div>
 
-      <div className="space-y-6">
-        <FinancialKPICards kpis={kpis} isLoading={isLoading} />
-        <RevenueTrendChart data={revenueTrend} isLoading={isLoading} />
+      <SettlementKPICards data={kpis} isLoading={isLoading} />
+
+      {/* Tabs */}
+      <div className="flex border-b border-[#27272A] gap-4">
+        <button
+          onClick={() => setActiveTab('settlements')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all -mb-px ${
+            activeTab === 'settlements'
+              ? 'border-[#FACC15] text-[#FACC15]'
+              : 'border-transparent text-[#A1A1AA] hover:text-white'
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          Driver Settlements
+        </button>
+        <button
+          onClick={() => setActiveTab('history')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-all -mb-px ${
+            activeTab === 'history'
+              ? 'border-[#FACC15] text-[#FACC15]'
+              : 'border-transparent text-[#A1A1AA] hover:text-white'
+          }`}
+        >
+          <History className="h-4 w-4" />
+          Payout History
+        </button>
       </div>
+
+      {activeTab === 'settlements' && (
+        <PerDriverEarningsTable />
+      )}
+
+      {activeTab === 'history' && (
+        <DriverPayoutHistoryTable />
+      )}
     </div>
   );
 }

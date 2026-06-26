@@ -1,56 +1,167 @@
 'use client';
 
-import { useState } from 'react';
-import { AlertTriangle, Info, Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { AlertTriangle, Download, Search, Filter } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { exportToExcel } from '@/lib/export-excel';
+import { useDebounce } from '@/hooks/use-debounce';
+import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
 import type { PerDriverEarning } from '@/types';
 import { PayDriverModal } from './pay-driver-modal';
 
+import { toast } from 'sonner';
+
 interface PerDriverEarningsTableProps {
-  data: PerDriverEarning[];
-  isLoading: boolean;
   onRefresh?: () => void;
 }
 
-export function PerDriverEarningsTable({ data, isLoading, onRefresh }: PerDriverEarningsTableProps) {
+export function PerDriverEarningsTable({ onRefresh }: PerDriverEarningsTableProps) {
+  const [data, setData] = useState<PerDriverEarning[]>([]);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedDriver, setSelectedDriver] = useState<{ id: string; name: string; balance: number; vehicleType?: string | null } | null>(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Payment Due' | 'Settled'>('All');
 
-  const handleExportCSV = () => {
-    const headers = ['Driver Name', 'Ride Earnings', 'Tips', 'Total Paid Out', 'Owed Balance'];
-    const csvContent = [
-      headers.join(','),
-      ...data.map((row) =>
-        [
-          `"${row.driverName}"`,
-          row.totalEarnings - row.totalTips,
-          row.totalTips,
-          row.totalPaidOut,
-          row.availableBalance,
-        ].join(',')
+  const fetchTableData = async () => {
+    setIsLoading(true);
+    try {
+      const { financialService } = await import('@/services/financials/financial.service');
+      const res = await financialService.getPerDriverEarnings(undefined, undefined, page, limit, debouncedSearch || undefined);
+      setData(res.data || []);
+      setTotal(res.total || 0);
+    } catch (err) {
+      toast.error('Failed to load driver settlements');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTableData();
+  }, [page, limit, debouncedSearch]);
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter]);
+
+  const paginatedData = data.filter((row) => {
+    let matchesStatus = true;
+    if (statusFilter === 'Payment Due') matchesStatus = row.availableBalance > 0;
+    if (statusFilter === 'Settled') matchesStatus = row.availableBalance <= 0;
+    return matchesStatus;
+  });
+
+  const columns: ColumnDef<PerDriverEarning>[] = [
+    {
+      key: 'driverName',
+      title: 'Driver Name',
+      render: (row) => <span className="font-medium text-white">{row.driverName}</span>,
+    },
+    {
+      key: 'totalCashReceived',
+      title: 'Total Cash',
+      render: (row) => <span className="text-[#D4D4D8]">{formatCurrency(row.totalCashReceived || 0)}</span>,
+    },
+    {
+      key: 'totalCardReceived',
+      title: 'Card Money',
+      render: (row) => <span className="text-[#D4D4D8]">{formatCurrency(row.totalCardReceived || 0)}</span>,
+    },
+    {
+      key: 'totalPaidOut',
+      title: 'Total Paid Out',
+      render: (row) => <span className="text-[#D4D4D8]">{formatCurrency(row.totalPaidOut)}</span>,
+    },
+    {
+      key: 'availableBalance',
+      title: 'Owed Balance',
+      render: (row) => <span className="font-bold text-green-400">{formatCurrency(row.availableBalance)}</span>,
+    },
+    {
+      key: 'lastPaymentDate',
+      title: 'Last Payment',
+      render: (row) => <span className="text-[#71717A]">{row.lastPaymentDate ? new Date(row.lastPaymentDate).toLocaleDateString() : 'Never'}</span>,
+    },
+    {
+      key: 'action',
+      title: 'Action',
+      className: 'text-center',
+      render: (row) => (
+        <button 
+          onClick={() => setSelectedDriver({
+            id: row.driverId,
+            name: row.driverName,
+            balance: row.availableBalance,
+            vehicleType: row.vehicleType,
+          })}
+          className="rounded bg-[#FACC15] px-4 py-1.5 text-xs font-semibold text-black hover:bg-[#EAB308] disabled:bg-[#27272A] disabled:text-[#71717A] disabled:cursor-not-allowed transition-all shadow-sm"
+          disabled={row.availableBalance <= 0}
+        >
+          Pay Driver
+        </button>
       ),
-    ].join('\n');
+    },
+  ];
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', `driver_settlements_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleExportExcel = () => {
+    const excelData = paginatedData.map((row) => ({
+      'Driver Name': row.driverName,
+      'Ride Earnings': row.totalCashReceived || 0,
+      'Tips': row.totalCardReceived || 0,
+      'Total Paid Out': row.totalPaidOut,
+      'Owed Balance': row.availableBalance,
+      'Last Payment Date': row.lastPaymentDate ? new Date(row.lastPaymentDate).toLocaleDateString() : 'Never',
+    }));
+    exportToExcel(excelData, `driver_settlements_${new Date().toISOString().split('T')[0]}`);
   };
 
   return (
-    <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">Driver Settlements</h3>
-        <button
-          onClick={handleExportCSV}
-          disabled={isLoading || data.length === 0}
-          className="flex items-center gap-2 rounded-md border border-[#3F3F46] bg-[#1A1A1A] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#27272A] disabled:opacity-50 transition-colors"
-        >
-          <Download className="h-4 w-4" />
-          Export CSV
-        </button>
+    <div className="relative overflow-hidden rounded-xl border border-[#27272A] bg-[#111111]/80 p-6 backdrop-blur-xl">
+      <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-transparent via-[#FACC15] to-transparent opacity-20" />
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white">Driver Settlements</h3>
+        </div>
+        
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#71717A]" />
+            <input
+              type="text"
+              placeholder="Search driver name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] pl-9 pr-4 py-2 text-sm text-white placeholder:text-[#52525B] focus:border-[#FACC15] focus:outline-none sm:w-[200px]"
+            />
+          </div>
+
+          <div className="relative flex items-center">
+            <Filter className="absolute left-3 h-4 w-4 text-[#71717A]" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="appearance-none rounded-lg border border-[#27272A] bg-[#0A0A0A] pl-9 pr-8 py-2 text-sm text-white focus:border-[#FACC15] focus:outline-none sm:w-[150px] cursor-pointer"
+            >
+              <option value="All">All Status</option>
+              <option value="Payment Due">Payment Due</option>
+              <option value="Settled">Settled / Paid</option>
+            </select>
+          </div>
+
+          <button
+            onClick={handleExportExcel}
+            disabled={isLoading || paginatedData.length === 0}
+            className="flex items-center justify-center gap-1.5 rounded-lg bg-[#FACC15] px-4 py-2 text-sm font-medium text-black hover:bg-[#EAB308] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export Excel
+          </button>
+        </div>
       </div>
 
       {/* Tip pass-through warning */}
@@ -62,58 +173,18 @@ export function PerDriverEarningsTable({ data, isLoading, onRefresh }: PerDriver
         </p>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-10 rounded bg-[#27272A] animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[#27272A] bg-[#0A0A0A]/50">
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Driver Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Ride Earnings</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Tips (100% Pass-through)</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Total Paid Out</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Owed Balance</th>
-                <th className="px-4 py-3 text-center text-xs font-medium uppercase text-[#71717A]">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row, idx) => (
-                <tr
-                  key={idx}
-                  className="border-b border-[#27272A] last:border-b-0 transition-colors hover:bg-[#1A1A1A]/30"
-                >
-                  <td className="px-4 py-3 text-sm font-medium text-white">{row.driverName}</td>
-                  <td className="px-4 py-3 text-sm text-[#D4D4D8]">{formatCurrency(row.totalEarnings - row.totalTips)}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-green-400">{formatCurrency(row.totalTips)}</td>
-                  <td className="px-4 py-3 text-sm text-[#D4D4D8]">{formatCurrency(row.totalPaidOut)}</td>
-                  <td className="px-4 py-3 text-sm font-bold text-white">
-                    {formatCurrency(row.availableBalance)}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <button 
-                      onClick={() => setSelectedDriver({
-                        id: row.driverId,
-                        name: row.driverName,
-                        balance: row.availableBalance,
-                        vehicleType: row.vehicleType,
-                      })}
-                      className="rounded bg-[#27272A] px-3 py-1 text-xs font-medium text-white hover:bg-[#3F3F46] disabled:opacity-50 transition-colors"
-                      disabled={row.availableBalance <= 0}
-                    >
-                      Pay Driver
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <ServerSideTable
+        columns={columns}
+        data={paginatedData}
+        isLoading={isLoading}
+        page={page}
+        limit={limit}
+        total={total}
+        onPageChange={setPage}
+        onLimitChange={(l) => { setLimit(l); setPage(1); }}
+        emptyText="No driver settlements found."
+        rowKey="driverId"
+      />
 
       {selectedDriver && (
         <PayDriverModal
@@ -124,7 +195,8 @@ export function PerDriverEarningsTable({ data, isLoading, onRefresh }: PerDriver
           onClose={() => setSelectedDriver(null)}
           onSuccess={() => {
             setSelectedDriver(null);
-            if (onRefresh) onRefresh();
+            fetchTableData(); // Refresh the table
+            if (onRefresh) onRefresh(); // Refresh KPI cards
           }}
         />
       )}

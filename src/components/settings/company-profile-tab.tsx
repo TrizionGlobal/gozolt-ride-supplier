@@ -91,6 +91,7 @@ export function CompanyProfileTab() {
         city: form.city,
         country: form.country,
         postalCode: form.postalCode,
+        defaultDriverCommission: Number(form.defaultDriverCommission) || 0,
         logoUrl: form.logoUrl,
       };
       const response = await settingsService.updateCompanyProfile(payload as any) as any;
@@ -160,6 +161,7 @@ export function CompanyProfileTab() {
     { label: 'City', key: 'city' },
     { label: 'Country', key: 'country' },
     { label: 'Postal Code', key: 'postalCode' },
+    { label: 'Company Percentage (%)', key: 'defaultDriverCommission', type: 'number' },
   ];
 
   return (
@@ -243,11 +245,13 @@ export function CompanyProfileTab() {
               </label>
               <input
                 type={type || 'text'}
-                value={form[key] as string}
+                value={form[key] as string | number}
                 placeholder={`Enter ${label}`}
                 onChange={(e) => handleChange(key, e.target.value)}
                 className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15] transition-colors"
                 disabled={key === 'email'}
+                min={type === 'number' ? 0 : undefined}
+                max={type === 'number' ? 100 : undefined}
               />
             </div>
           );

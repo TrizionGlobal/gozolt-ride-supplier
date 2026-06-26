@@ -439,6 +439,9 @@ export interface PerDriverEarning {
   totalTips: number;
   totalPaidOut: number;
   availableBalance: number;
+  totalCashReceived?: number;
+  totalCardReceived?: number;
+  lastPaymentDate?: string;
   cardEarnings?: number;
   cashEarnings?: number;
   tipEarnings?: number;

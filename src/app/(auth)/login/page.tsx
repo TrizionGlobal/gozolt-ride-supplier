@@ -157,7 +157,7 @@ export default function LoginPage() {
           <label className="text-sm text-white">Email Address</label>
           <Input
             type="email"
-            placeholder="Supplier@company.com"
+            placeholder="Email Address"
             className="h-10 rounded-lg border-[#27272A] bg-[#0A0A0A] text-white placeholder:text-[#71717A] focus-visible:border-[#FACC15] focus-visible:ring-[#FACC15]/20"
             {...register('email')}
           />
@@ -172,7 +172,7 @@ export default function LoginPage() {
           <div className="relative">
             <Input
               type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••••••"
+              placeholder="Enter your password"
               className="h-10 rounded-lg border-[#27272A] bg-[#0A0A0A] pr-10 text-white placeholder:text-[#71717A] focus-visible:border-[#FACC15] focus-visible:ring-[#FACC15]/20"
               {...register('password')}
             />

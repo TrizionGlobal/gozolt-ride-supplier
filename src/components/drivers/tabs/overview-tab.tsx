@@ -45,7 +45,7 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
   useEffect(() => {
     async function loadEarnings() {
       const data = await financialService.getPerDriverEarnings();
-      const driverEarnings = data.find(d => d.driverId === driver.id) || {
+      const driverEarnings = data.find((d: any) => d.driverId === driver.id) || {
         driverId: driver.id,
         driverName: driver.firstName + ' ' + driver.lastName,
         totalEarnings: 0,

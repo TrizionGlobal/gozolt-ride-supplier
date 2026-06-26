@@ -58,9 +58,13 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
   };
 
   return (
-    <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Payout History</h3>
+    <div className="relative overflow-hidden rounded-xl border border-[#27272A] bg-[#111111]/80 p-6 backdrop-blur-xl">
+      <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-transparent via-[#FACC15] to-transparent opacity-20" />
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white">Platform Payout History</h3>
+          <p className="text-xs text-[#71717A] mt-0.5">Record of all payouts from Gozolt to your account.</p>
+        </div>
         <div className="flex gap-2">
           <button
             onClick={handleStatementPDF}

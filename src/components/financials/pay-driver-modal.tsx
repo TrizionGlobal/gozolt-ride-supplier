@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Euro, Info } from 'lucide-react';
+import { X, Euro, Info, Check, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/utils';
 import { financialService } from '@/services/financials/financial.service';
@@ -37,6 +37,8 @@ export function PayDriverModal({
   const [deductions, setDeductions] = useState<string>(defaultDeduction > 0 ? defaultDeduction.toFixed(2) : '0');
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successDetails, setSuccessDetails] = useState<{ amount: number, remaining: number } | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const numAmount = parseFloat(amount) || 0;
   const numDeductions = parseFloat(deductions) || 0;
@@ -45,26 +47,54 @@ export function PayDriverModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
     if (totalDeducted > availableBalance) {
-      toast.error('Total amount + deductions cannot exceed available balance.');
+      setErrorMsg('Total amount + deductions cannot exceed available balance.');
       return;
     }
     if (numAmount <= 0) {
-      toast.error('Payment amount must be greater than 0');
+      setErrorMsg('Payment amount must be greater than 0');
       return;
     }
 
     setIsSubmitting(true);
     try {
       await financialService.payDriver(driverId, numAmount, numDeductions, notes);
-      toast.success('Driver payout recorded successfully');
-      onSuccess();
+      setSuccessDetails({ amount: numAmount, remaining: remainingBalance });
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Failed to record payout');
+      setErrorMsg(error?.response?.data?.message || 'Failed to record payout. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (successDetails) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="w-full max-w-md rounded-xl border border-[#27272A] bg-[#111111] shadow-2xl p-6 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10 mb-4">
+            <Check className="h-7 w-7 text-green-500" />
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">Payment Successful!</h2>
+          <p className="text-[#A1A1AA] mb-6 text-sm leading-relaxed">
+            You have successfully recorded a payout of <span className="text-white font-medium">{formatCurrency(successDetails.amount)}</span> to <strong>{driverName}</strong>. An email receipt has been sent to your registered email address.
+          </p>
+          <div className="rounded-lg border border-[#27272A] bg-[#1A1A1A] p-4 text-left mb-8">
+            <div className="flex justify-between text-sm">
+              <span className="text-[#A1A1AA]">Remaining Owed Balance</span>
+              <span className="font-medium text-white">{formatCurrency(successDetails.remaining)}</span>
+            </div>
+          </div>
+          <button
+            onClick={onSuccess}
+            className="w-full rounded-lg bg-[#FACC15] py-2.5 text-sm font-semibold text-black transition-colors hover:bg-[#EAB308]"
+          >
+            Close & Refresh
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -80,6 +110,13 @@ export function PayDriverModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {errorMsg && (
+            <div className="flex items-start gap-2 rounded-lg bg-red-500/10 p-3 text-sm text-red-500 border border-red-500/20">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>{errorMsg}</p>
+            </div>
+          )}
+
           <div className="rounded-lg border border-[#27272A] bg-[#1A1A1A] p-3 text-sm">
             <div className="flex justify-between text-[#A1A1AA] mb-1">
               <span>Driver:</span>
@@ -103,9 +140,8 @@ export function PayDriverModal({
                 min="0"
                 max={availableBalance}
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full rounded-lg border border-[#27272A] bg-[#1A1A1A] pl-9 py-2 text-white placeholder:text-[#52525B] focus:border-[#FACC15] focus:outline-none"
-                required
+                readOnly
+                className="w-full rounded-lg border border-[#27272A] bg-[#1A1A1A]/50 pl-9 py-2 text-[#A1A1AA] cursor-not-allowed focus:outline-none"
               />
             </div>
           </div>
@@ -126,8 +162,8 @@ export function PayDriverModal({
                 step="0.01"
                 min="0"
                 value={deductions}
-                onChange={(e) => setDeductions(e.target.value)}
-                className="w-full rounded-lg border border-[#27272A] bg-[#1A1A1A] pl-9 py-2 text-white placeholder:text-[#52525B] focus:border-[#FACC15] focus:outline-none"
+                readOnly
+                className="w-full rounded-lg border border-[#27272A] bg-[#1A1A1A]/50 pl-9 py-2 text-[#A1A1AA] cursor-not-allowed focus:outline-none"
               />
             </div>
           </div>

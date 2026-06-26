@@ -43,7 +43,10 @@ export function RevenueTrendChart({ data, isLoading }: RevenueTrendChartProps) {
               tick={{ fill: '#71717A', fontSize: 12 }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v: number) => `€${((v ?? 0) / 1000).toFixed(0)}k`}
+              tickFormatter={(v: number) => {
+                if (v >= 1000) return `€${(v / 1000).toFixed(1)}k`;
+                return `€${v}`;
+              }}
             />
             <Tooltip
               contentStyle={{

@@ -309,6 +309,7 @@ export interface Driver {
   isOnline: boolean;
   avgRating: number;
   totalRides: number;
+  editBankDetails?: boolean;
   createdAt: string;
 }
 
@@ -457,6 +458,7 @@ export interface PayoutRecord {
   periodEnd: string | null;
   processedAt: string | null;
   createdAt: string;
+  details?: Record<string, any>;
 }
 
 export interface PayoutSettings {
@@ -475,9 +477,9 @@ export interface SupplierStatement {
   statementNo: string;
   periodStart: string;
   periodEnd: string;
-  totalRides: number;
-  grossRevenue: number;
-  commissionEarned: number;
+  totalRides: number | null;
+  grossRevenue: number | null;
+  commissionEarned: number | null;
   netBalance: number;
   pdfUrl: string | null;
 }

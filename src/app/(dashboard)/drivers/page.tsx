@@ -152,6 +152,7 @@ export default function DriversPage() {
           setLimit(l);
           setPage(1);
         }}
+        onRefresh={fetchDrivers}
       />
     </div>
   );

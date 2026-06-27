@@ -1,10 +1,13 @@
 'use client';
 
-import { Download, FileText } from 'lucide-react';
+import { Download, FileText, Printer } from 'lucide-react';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
+import React, { useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
 import { formatCurrency, downloadCSV } from '@/lib/utils';
-import type { PayoutRecord } from '@/types';
+import { InvoiceDocument } from '@/components/invoices/invoice-document';
+import { useAuth } from '@/hooks/use-auth';
+import type { PayoutRecord, SupplierStatement, SupplierProfile } from '@/types';
 
 interface PayoutHistoryTableProps {
   data: PayoutRecord[];
@@ -18,10 +21,11 @@ const statusStyles: Record<string, { bg: string; text: string; label: string }> 
   FAILED: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Failed' },
 };
 
-function formatPeriod(periodStart: string | null): string {
-  if (!periodStart) return '——';
-  const d = new Date(periodStart);
-  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+function formatPeriodFull(start: string | null, end: string | null): string {
+  if (!start || !end) return '——';
+  const d1 = new Date(start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const d2 = new Date(end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return `${d1} - ${d2}`;
 }
 
 function formatDate(dateStr: string | null): string {
@@ -29,13 +33,47 @@ function formatDate(dateStr: string | null): string {
   return new Date(dateStr).toLocaleDateString('en-CA');
 }
 
-// Mock rides count derived from amount (no direct API field)
-function estimateRides(amount: number): number {
-  return Math.round(amount / 35);
+function PrintRowButton({ row, supplier }: { row: PayoutRecord; supplier: SupplierProfile | null }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: contentRef,
+    documentTitle: `Gozolt_Payout_Invoice_${row.id.substring(0, 8)}`,
+  });
+
+  // Create a pseudo-statement from the payout record
+  const gross = row.details?.totalSettledEarned ?? null;
+  const net = row.amount;
+  const comm = gross != null ? Math.max(0, gross - net) : null;
+
+  const pseudoStatement: SupplierStatement = {
+    id: row.id,
+    statementNo: row.id.substring(0, 8).toUpperCase(),
+    periodStart: row.periodStart || row.createdAt,
+    periodEnd: row.periodEnd || row.processedAt || row.createdAt,
+    totalRides: row.details?.totalRides ?? null,
+    grossRevenue: gross,
+    commissionEarned: comm,
+    netBalance: net,
+    pdfUrl: null,
+  };
+
+  return (
+    <>
+      <button
+        onClick={() => handlePrint()}
+        className="inline-flex items-center justify-center text-[#A1A1AA] hover:text-white transition-colors"
+      >
+        <Printer className="h-4 w-4" />
+      </button>
+      <div className="hidden">
+        <InvoiceDocument ref={contentRef} statement={pseudoStatement} supplier={supplier} />
+      </div>
+    </>
+  );
 }
 
 export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps) {
-  const router = useRouter();
+  const { user } = useAuth();
 
   const handleStatementPDF = () => {
     toast.success('Statement PDF downloaded (dev mode)');
@@ -43,18 +81,16 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
 
   const handleCSVExport = () => {
     const csvData = data.map((p) => ({
-      Date: formatDate(p.periodEnd),
-      Period: formatPeriod(p.periodStart),
-      Rides: estimateRides(p.amount),
+      Date: formatDate(p.processedAt || p.createdAt),
+      Period: formatPeriodFull(p.periodStart, p.periodEnd),
+      Rides: p.details?.totalRides ?? '--',
+      Gross: p.details?.totalSettledEarned ?? '--',
+      Cash: p.details?.totalCashCollected ?? '--',
       Net: p.amount,
       Status: statusStyles[p.status]?.label || p.status,
     }));
     downloadCSV(csvData, 'payout-history');
-    toast.success('CSV exported successfully');
-  };
-
-  const handleInvoiceClick = () => {
-    router.push('/invoices');
+    toast.success('Excel exported successfully');
   };
 
   return (
@@ -78,7 +114,7 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
             className="flex items-center gap-1.5 rounded-lg bg-[#FACC15] px-4 py-2 text-sm font-medium text-black hover:bg-[#EAB308] transition-colors"
           >
             <Download className="h-3.5 w-3.5" />
-            CSV
+            Export Excel
           </button>
         </div>
       </div>
@@ -94,12 +130,14 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#27272A] bg-[#0A0A0A]/50">
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Period</th>
-                <th className="px-4 py-3 text-center text-xs font-medium uppercase text-[#71717A]">Rides</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Net</th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase text-[#71717A]">Status</th>
-                <th className="px-4 py-3 text-center text-xs font-medium uppercase text-[#71717A]">Invoice</th>
+                  <th className="px-4 py-3 text-left font-medium text-[#71717A]">DATE</th>
+                  <th className="px-4 py-3 text-left font-medium text-[#71717A]">PERIOD</th>
+                  <th className="px-4 py-3 text-center font-medium text-[#71717A]">RIDES</th>
+                  <th className="px-4 py-3 text-left font-medium text-[#71717A]">GROSS</th>
+                  <th className="px-4 py-3 text-left font-medium text-[#71717A]">CASH</th>
+                  <th className="px-4 py-3 text-left font-medium text-[#71717A]">NET</th>
+                  <th className="px-4 py-3 text-left font-medium text-[#71717A]">STATUS</th>
+                  <th className="px-4 py-3 text-center font-medium text-[#71717A]">INVOICE</th>
               </tr>
             </thead>
             <tbody>
@@ -111,13 +149,19 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
                     className="border-b border-[#27272A] last:border-b-0 transition-colors hover:bg-[#1A1A1A]/30"
                   >
                     <td className="px-4 py-3 text-sm text-[#D4D4D8]">
-                      {formatDate(row.periodEnd)}
+                      {formatDate(row.processedAt || row.createdAt)}
                     </td>
                     <td className="px-4 py-3 text-sm text-[#D4D4D8]">
-                      {formatPeriod(row.periodStart)}
+                      {formatPeriodFull(row.periodStart, row.periodEnd)}
                     </td>
                     <td className="px-4 py-3 text-center text-sm text-[#D4D4D8]">
-                      {estimateRides(row.amount)}
+                      {row.details?.totalRides ?? '--'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[#D4D4D8]">
+                      {row.details?.totalSettledEarned != null ? formatCurrency(row.details.totalSettledEarned) : '--'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[#D4D4D8]">
+                      {row.details?.totalCashCollected != null ? formatCurrency(row.details.totalCashCollected) : '--'}
                     </td>
                     <td className="px-4 py-3 text-sm font-medium text-white">
                       {formatCurrency(row.amount)}
@@ -128,12 +172,7 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={handleInvoiceClick}
-                        className="inline-flex items-center justify-center text-[#A1A1AA] hover:text-white transition-colors"
-                      >
-                        <FileText className="h-4 w-4" />
-                      </button>
+                      <PrintRowButton row={row} supplier={user} />
                     </td>
                   </tr>
                 );

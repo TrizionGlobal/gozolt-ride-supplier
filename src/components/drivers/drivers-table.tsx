@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, AlertTriangle, MoreVertical } from 'lucide-react';
+import { Star, AlertTriangle, MoreVertical, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { driverService } from '@/services/drivers/driver.service';
+import { Switch } from '@/components/ui/switch';
 import type { Driver } from '@/types';
 import { DriverStatus } from '@/types';
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
@@ -18,6 +19,7 @@ interface DriversTableProps {
   total: number;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
+  onRefresh?: () => void;
 }
 
 const statusStyles: Record<string, { bg: string; text: string; label: string }> = {
@@ -40,11 +42,13 @@ export function DriversTable({
   total,
   onPageChange,
   onLimitChange,
+  onRefresh,
 }: DriversTableProps) {
   const router = useRouter();
   const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [updatingBankDetailsId, setUpdatingBankDetailsId] = useState<string | null>(null);
 
   useEffect(() => {
     const closeDropdown = () => setOpenDropdownId(null);
@@ -58,7 +62,9 @@ export function DriversTable({
     try {
       await driverService.deleteDriver(driverToDelete.id);
       toast.success('Driver removed successfully');
-      window.location.reload();
+      if (onRefresh) onRefresh();
+      setDriverToDelete(null);
+      setIsDeleting(false);
     } catch (err) {
       toast.error('Failed to remove driver');
       setIsDeleting(false);
@@ -77,12 +83,7 @@ export function DriversTable({
         </div>
       ),
     },
-    {
-      key: 'phone',
-      title: 'Phone',
-      dataIndex: 'phone',
-      render: (row) => <span className="text-sm text-[#A1A1AA]">{row.phone}</span>,
-    },
+
     {
       key: 'driverStatus',
       title: 'Driver Status',
@@ -216,6 +217,37 @@ export function DriversTable({
       },
     },
     {
+      key: 'editBankDetails',
+      title: 'Edit Bank Details',
+      className: 'text-center',
+      render: (row) => {
+        const isUpdating = updatingBankDetailsId === row.id;
+        const handleToggleBankDetails = async (checked: boolean) => {
+          setUpdatingBankDetailsId(row.id);
+          try {
+            await driverService.toggleBankDetailsPermission(row.id, checked);
+            toast.success(checked ? 'Bank edit enabled' : 'Bank edit disabled');
+            if (onRefresh) onRefresh();
+          } catch {
+            toast.error('Failed to update permission');
+          } finally {
+            setUpdatingBankDetailsId(null);
+          }
+        };
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <Switch
+              checked={row.editBankDetails || false}
+              onCheckedChange={handleToggleBankDetails}
+              disabled={isUpdating}
+              aria-label="Toggle bank details edit"
+            />
+            {isUpdating && <Loader2 className="h-4 w-4 animate-spin text-[#9CA3AF]" />}
+          </div>
+        );
+      },
+    },
+    {
       key: 'actions',
       title: 'Actions',
       className: 'text-center',
@@ -245,7 +277,7 @@ export function DriversTable({
                       try {
                         await driverService.supplierApproveDriver(row.id);
                         toast.success('Driver approved');
-                        window.location.reload();
+                        if (onRefresh) onRefresh();
                       } catch (err) {
                         toast.error('Failed to approve driver');
                       }
@@ -261,7 +293,7 @@ export function DriversTable({
                       try {
                         await driverService.supplierSuspendDriver(row.id);
                         toast.success('Driver suspended');
-                        window.location.reload();
+                        if (onRefresh) onRefresh();
                       } catch (err) {
                         toast.error('Failed to suspend driver');
                       }
@@ -310,7 +342,6 @@ export function DriversTable({
         total={total}
         onPageChange={onPageChange}
         onLimitChange={onLimitChange}
-        onRowClick={(row) => router.push(`/drivers/${row.id}`)}
         rowKey="id"
         emptyText="No drivers found"
       />

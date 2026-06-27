@@ -106,6 +106,7 @@ export const financialService = {
         periodEnd: p.periodEnd,
         processedAt: p.processedAt,
         createdAt: p.createdAt,
+        details: p.details,
       }));
     } catch {
       return [];

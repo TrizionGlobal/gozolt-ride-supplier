@@ -72,6 +72,12 @@ export const driverService = {
     return res.data;
   },
 
+  async toggleBankDetailsPermission(id: string, editBankDetails: boolean): Promise<Driver> {
+    const res = await apiClient.patch(`/suppliers/drivers/${id}`, { editBankDetails });
+    clearDriversCache();
+    return res.data;
+  },
+
   async createDriver(payload: CreateDriverPayload): Promise<DriverCredentials> {
     // 1. Create the driver directly via proxy (JSON payload)
     const createPayload: Record<string, any> = { ...payload };

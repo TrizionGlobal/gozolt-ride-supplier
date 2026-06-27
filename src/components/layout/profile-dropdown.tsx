@@ -32,7 +32,7 @@ export function ProfileDropdown() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2.5 p-1 pr-3 rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-[#FACC15]/50 ${
-          isOpen ? 'bg-[#1A1A1A] border-[#3F3F46]' : 'bg-[#111111] border-[#27272A] hover:border-[#3F3F46] hover:bg-[#1A1A1A]'
+          isOpen ? 'bg-[#1A1A1A] border-[#FACC15]' : 'bg-[#111111] border-[#FACC15]/50 hover:border-[#FACC15] hover:bg-[#1A1A1A]'
         }`}
       >
         <div className="flex h-8 w-8 overflow-hidden items-center justify-center rounded-full bg-[#FACC15]">

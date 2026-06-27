@@ -96,7 +96,7 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
               Total Rides
             </p>
-            <p className="font-semibold text-gray-800">{statement.totalRides.toLocaleString()}</p>
+            <p className="font-semibold text-gray-800">{statement.totalRides != null ? statement.totalRides.toLocaleString() : 'N/A'}</p>
           </div>
         </div>
 
@@ -116,13 +116,13 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             <tr className="border-b border-gray-100">
               <td className="py-5 font-medium">Gross Ride Revenue</td>
               <td className="py-5 text-right font-medium">
-                {formatCurrency(statement.grossRevenue)}
+                {statement.grossRevenue != null ? formatCurrency(statement.grossRevenue) : 'N/A'}
               </td>
             </tr>
             <tr className="border-b border-gray-100">
               <td className="py-5 font-medium">Platform Commission (Deduction)</td>
               <td className="py-5 text-right font-medium text-red-600">
-                -{formatCurrency(statement.commissionEarned)}
+                {statement.commissionEarned != null ? `-${formatCurrency(statement.commissionEarned)}` : 'N/A'}
               </td>
             </tr>
           </tbody>
@@ -133,7 +133,7 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
           <div className="w-1/2">
             <div className="flex justify-between py-3 border-b border-gray-100 text-gray-600 font-medium">
               <span>Subtotal</span>
-              <span>{formatCurrency(statement.grossRevenue - statement.commissionEarned)}</span>
+              <span>{statement.grossRevenue != null && statement.commissionEarned != null ? formatCurrency(statement.grossRevenue - statement.commissionEarned) : 'N/A'}</span>
             </div>
             <div className="flex justify-between py-4 mt-2 bg-gray-50 px-4 rounded-lg font-bold text-xl text-gray-900 border border-gray-200">
               <span>Net Balance</span>

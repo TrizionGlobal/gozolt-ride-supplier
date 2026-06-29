@@ -8,6 +8,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
 import type { PerDriverEarning } from '@/types';
 import { PayDriverModal } from './pay-driver-modal';
+import { SettleDebtModal } from './settle-debt-modal';
 
 import { toast } from 'sonner';
 
@@ -20,6 +21,7 @@ export function PerDriverEarningsTable({ onRefresh }: PerDriverEarningsTableProp
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDriver, setSelectedDriver] = useState<{ id: string; name: string; balance: number; vehicleType?: string | null } | null>(null);
+  const [selectedDebtDriver, setSelectedDebtDriver] = useState<{ id: string; name: string; balance: number } | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
@@ -80,7 +82,11 @@ export function PerDriverEarningsTable({ onRefresh }: PerDriverEarningsTableProp
     {
       key: 'availableBalance',
       title: 'Owed Balance',
-      render: (row) => <span className="font-bold text-green-400">{formatCurrency(row.availableBalance)}</span>,
+      render: (row) => (
+        <span className={`font-bold ${row.availableBalance < 0 ? 'text-red-400' : 'text-green-400'}`}>
+          {row.availableBalance < 0 ? `-€${Math.abs(row.availableBalance).toFixed(2)}` : formatCurrency(row.availableBalance)}
+        </span>
+      ),
     },
     {
       key: 'lastPaymentDate',
@@ -91,20 +97,37 @@ export function PerDriverEarningsTable({ onRefresh }: PerDriverEarningsTableProp
       key: 'action',
       title: 'Action',
       className: 'text-center',
-      render: (row) => (
-        <button 
-          onClick={() => setSelectedDriver({
-            id: row.driverId,
-            name: row.driverName,
-            balance: row.availableBalance,
-            vehicleType: row.vehicleType,
-          })}
-          className="rounded bg-[#FACC15] px-4 py-1.5 text-xs font-semibold text-black hover:bg-[#EAB308] disabled:bg-[#27272A] disabled:text-[#71717A] disabled:cursor-not-allowed transition-all shadow-sm"
-          disabled={row.availableBalance <= 0}
-        >
-          Pay Driver
-        </button>
-      ),
+      render: (row) => {
+        if (row.availableBalance < 0) {
+          return (
+            <button 
+              onClick={() => setSelectedDebtDriver({
+                id: row.driverId,
+                name: row.driverName,
+                balance: row.availableBalance,
+              })}
+              className="rounded bg-red-500/20 px-4 py-1.5 text-xs font-semibold text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-all shadow-sm"
+            >
+              Receive Cash
+            </button>
+          );
+        }
+
+        return (
+          <button 
+            onClick={() => setSelectedDriver({
+              id: row.driverId,
+              name: row.driverName,
+              balance: row.availableBalance,
+              vehicleType: row.vehicleType,
+            })}
+            className="rounded bg-[#FACC15] px-4 py-1.5 text-xs font-semibold text-black hover:bg-[#EAB308] disabled:bg-[#27272A] disabled:text-[#71717A] disabled:cursor-not-allowed transition-all shadow-sm"
+            disabled={row.availableBalance === 0}
+          >
+            Pay Driver
+          </button>
+        );
+      },
     },
   ];
 
@@ -195,6 +218,18 @@ export function PerDriverEarningsTable({ onRefresh }: PerDriverEarningsTableProp
           onClose={() => setSelectedDriver(null)}
           onSuccess={() => {
             setSelectedDriver(null);
+            fetchTableData(); // Refresh the table
+            if (onRefresh) onRefresh(); // Refresh KPI cards
+          }}
+        />
+      )}
+
+      {selectedDebtDriver && (
+        <SettleDebtModal
+          isOpen={!!selectedDebtDriver}
+          onClose={() => setSelectedDebtDriver(null)}
+          driver={selectedDebtDriver}
+          onSuccess={() => {
             fetchTableData(); // Refresh the table
             if (onRefresh) onRefresh(); // Refresh KPI cards
           }}

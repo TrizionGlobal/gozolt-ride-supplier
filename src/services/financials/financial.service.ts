@@ -142,9 +142,17 @@ export const financialService = {
     }
   },
 
-  async payDriver(driverId: string, amount: number, deductions?: number, notes?: string): Promise<void> {
+  async payDriver(driverId: string, amount: number, deductions?: number, totalRides?: number, totalFare?: number, notes?: string): Promise<void> {
     try {
-      await apiClient.post(`/suppliers/payouts/driver/${driverId}`, { amount, deductions, notes });
+      await apiClient.post(`/suppliers/payouts/driver/${driverId}`, { amount, deductions, totalRides, totalFare, notes });
+    } catch (error: any) {
+      throw error;
+    }
+  },
+
+  async settleDriverDebt(driverId: string, amount: number, notes?: string): Promise<void> {
+    try {
+      await apiClient.post(`/suppliers/payouts/settle-debt/${driverId}`, { amount, notes });
     } catch (error: any) {
       throw error;
     }

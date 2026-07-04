@@ -26,8 +26,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         user.subscription?.currentPeriodEnd &&
         new Date(user.subscription.currentPeriodEnd) < new Date();
 
-      if ((isMissingSubscription || isExpired) && pathname !== '/subscription') {
-        router.push('/subscription');
+      // if ((isMissingSubscription || isExpired) && pathname !== '/subscription') {
+      //   router.push('/subscription');
+      // }
+
+      // BYPASS SUBSCRIPTION logic completely
+      if (pathname === '/subscription') {
+        router.push('/');
       }
     }
   }, [user, isLoading, pathname, router]);
@@ -45,10 +50,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // If the user has no active subscription or is expired, we render only the topbar and the main content (no sidebar)
   const isExpired = user?.subscription?.currentPeriodEnd && new Date(user.subscription.currentPeriodEnd) < new Date();
-  
+
   // They only need the setup page without sidebar if they lack an ACTIVE subscription
   const needsSubscriptionSetup = !user?.subscription || isExpired;
-  
+
   const isSubscriptionSetup = pathname === '/subscription' && needsSubscriptionSetup;
 
   if (isSubscriptionSetup) {

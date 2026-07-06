@@ -68,12 +68,10 @@ export function DocumentsTab({ driverId }: DocumentsTabProps) {
                     {doc.fileName}
                   </p>
                 )}
-                {doc.referenceNumber && doc.referenceNumber !== 'undefined' && (
-                  <p className="text-[10px] text-[#52525B] mt-0.5">{doc.referenceNumber}</p>
-                )}
+
               </div>
               <div className="mr-2">
-                <DocumentStatusBadge status={doc.status || 'PENDING'} />
+                <DocumentStatusBadge status="APPROVED" />
               </div>
               <button
                 onClick={() => {

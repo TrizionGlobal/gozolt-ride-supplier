@@ -6,6 +6,12 @@ import { Star, AlertTriangle, MoreVertical, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { driverService } from '@/services/drivers/driver.service';
 import { Switch } from '@/components/ui/switch';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import type { Driver } from '@/types';
 import { DriverStatus } from '@/types';
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
@@ -47,14 +53,7 @@ export function DriversTable({
   const router = useRouter();
   const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [updatingBankDetailsId, setUpdatingBankDetailsId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const closeDropdown = () => setOpenDropdownId(null);
-    window.addEventListener('click', closeDropdown);
-    return () => window.removeEventListener('click', closeDropdown);
-  }, []);
 
   const confirmDelete = async () => {
     if (!driverToDelete) return;
@@ -252,81 +251,59 @@ export function DriversTable({
       title: 'Actions',
       className: 'text-center',
       render: (row) => (
-        <div className="relative inline-block text-left">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpenDropdownId(openDropdownId === row.id ? null : row.id);
-            }}
-            className="p-1 rounded-md text-[#A1A1AA] hover:bg-[#27272A] hover:text-white transition-colors"
-          >
-            <MoreVertical className="h-4 w-4" />
-          </button>
-
-          {openDropdownId === row.id && (
-            <div
-              className="absolute right-0 mt-1 w-32 origin-top-right rounded-md border border-[#27272A] bg-[#18181B] shadow-2xl focus:outline-none z-50 py-1"
-              onClick={(e) => e.stopPropagation()}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-1 rounded-md text-[#A1A1AA] hover:bg-[#27272A] hover:text-white transition-colors outline-none">
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-32 border-[#27272A] bg-[#18181B]">
+            {row.status === DriverStatus.NEW_DRIVER && (
+              <>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    try {
+                      await driverService.supplierApproveDriver(row.id);
+                      toast.success('Driver approved');
+                      if (onRefresh) onRefresh();
+                    } catch (err) {
+                      toast.error('Failed to approve driver');
+                    }
+                  }}
+                  className="text-green-500 focus:text-green-500 focus:bg-[#2A2A2A] cursor-pointer"
+                >
+                  Approve
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={async () => {
+                    try {
+                      await driverService.supplierSuspendDriver(row.id);
+                      toast.success('Driver suspended');
+                      if (onRefresh) onRefresh();
+                    } catch (err) {
+                      toast.error('Failed to suspend driver');
+                    }
+                  }}
+                  className="text-orange-500 focus:text-orange-500 focus:bg-[#2A2A2A] cursor-pointer"
+                >
+                  Suspend
+                </DropdownMenuItem>
+              </>
+            )}
+            <DropdownMenuItem
+              onClick={() => router.push(`/drivers/${row.id}`)}
+              className="text-[#FACC15] focus:text-[#FACC15] focus:bg-[#2A2A2A] cursor-pointer"
             >
-              {row.status === DriverStatus.NEW_DRIVER && (
-                <>
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      setOpenDropdownId(null);
-                      try {
-                        await driverService.supplierApproveDriver(row.id);
-                        toast.success('Driver approved');
-                        if (onRefresh) onRefresh();
-                      } catch (err) {
-                        toast.error('Failed to approve driver');
-                      }
-                    }}
-                    className="block w-full px-4 py-2 text-left text-xs font-medium text-green-500 hover:bg-[#2A2A2A]"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      setOpenDropdownId(null);
-                      try {
-                        await driverService.supplierSuspendDriver(row.id);
-                        toast.success('Driver suspended');
-                        if (onRefresh) onRefresh();
-                      } catch (err) {
-                        toast.error('Failed to suspend driver');
-                      }
-                    }}
-                    className="block w-full px-4 py-2 text-left text-xs font-medium text-orange-500 hover:bg-[#2A2A2A]"
-                  >
-                    Suspend
-                  </button>
-                </>
-              )}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenDropdownId(null);
-                  router.push(`/drivers/${row.id}`);
-                }}
-                className="block w-full px-4 py-2 text-left text-xs font-medium text-[#FACC15] hover:bg-[#2A2A2A]"
-              >
-                View
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenDropdownId(null);
-                  setDriverToDelete(row);
-                }}
-                className="block w-full px-4 py-2 text-left text-xs font-medium text-red-500 hover:bg-[#2A2A2A]"
-              >
-                Remove
-              </button>
-            </div>
-          )}
-        </div>
+              View
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setDriverToDelete(row)}
+              className="text-red-500 focus:text-red-500 focus:bg-[#2A2A2A] cursor-pointer"
+            >
+              Remove
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];

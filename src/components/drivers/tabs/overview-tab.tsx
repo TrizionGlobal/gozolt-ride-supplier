@@ -44,21 +44,26 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
 
   useEffect(() => {
     async function loadEarnings() {
-      const data = await financialService.getPerDriverEarnings();
-      const driverEarnings = data.find((d: any) => d.driverId === driver.id) || {
-        driverId: driver.id,
-        driverName: driver.firstName + ' ' + driver.lastName,
-        totalEarnings: 0,
-        totalTips: 0,
-        totalPaidOut: 0,
-        availableBalance: 0,
-        cardEarnings: 0,
-        cashEarnings: 0,
-        tipEarnings: 0,
-        tipCount: 0,
-        ridesCompleted: driver.totalRides || 0,
-      };
-      setEarnings(driverEarnings);
+      try {
+        const res = await financialService.getPerDriverEarnings();
+        const earningsList = res.data || (Array.isArray(res) ? res : []);
+        const driverEarnings = earningsList.find((d: any) => d.driverId === driver.id) || {
+          driverId: driver.id,
+          driverName: driver.firstName + ' ' + driver.lastName,
+          totalEarnings: 0,
+          totalTips: 0,
+          totalPaidOut: 0,
+          availableBalance: 0,
+          cardEarnings: 0,
+          cashEarnings: 0,
+          tipEarnings: 0,
+          tipCount: 0,
+          ridesCompleted: driver.totalRides || 0,
+        };
+        setEarnings(driverEarnings);
+      } catch (err) {
+        console.error('Failed to load earnings:', err);
+      }
     }
     loadEarnings();
   }, [driver]);
@@ -208,7 +213,7 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
       {/* Earnings Breakdown */}
       {earnings ? (
         <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
-          <h3 className="mb-4 text-lg font-semibold text-white">Earnings Breakdown (MTD)</h3>
+          <h3 className="mb-4 text-lg font-semibold text-white">Earnings Breakdown</h3>
           <div className="grid grid-cols-3 gap-4">
             <div className="rounded-lg border border-[#27272A] bg-[#0A0A0A] p-4">
               <div className="flex items-center gap-2">
@@ -231,25 +236,17 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
             <div className="rounded-lg border border-[#27272A] bg-[#0A0A0A] p-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/20">
-                  <HandCoins className="h-4 w-4 text-green-400" />
+                  <DollarSign className="h-4 w-4 text-green-400" />
                 </div>
-                <p className="text-xs text-[#A1A1AA]">Tips Earned</p>
+                <p className="text-xs text-[#A1A1AA]">Cash Earnings</p>
               </div>
-              <p className="mt-2 text-2xl font-bold text-green-400">{formatCurrency(earnings.tipEarnings)}</p>
+              <p className="mt-2 text-2xl font-bold text-green-400">{formatCurrency(earnings.cashEarnings)}</p>
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-4">
-            <div>
-              <p className="text-xs text-[#71717A]">Cash Earnings</p>
-              <p className="mt-1 text-sm font-medium text-white">{formatCurrency(earnings.cashEarnings)}</p>
-            </div>
+          <div className="mt-4 flex gap-8">
             <div>
               <p className="text-xs text-[#71717A]">Rides Completed</p>
               <p className="mt-1 text-sm font-medium text-white">{earnings.ridesCompleted}</p>
-            </div>
-            <div>
-              <p className="text-xs text-[#71717A]">Tip Count</p>
-              <p className="mt-1 text-sm font-medium text-white">{earnings.tipCount}</p>
             </div>
           </div>
         </div>

@@ -130,14 +130,14 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
           <table className="w-full">
             <thead>
               <tr className="border-b border-[#27272A] bg-[#0A0A0A]/50">
-                  <th className="px-4 py-3 text-left font-medium text-[#71717A]">DATE</th>
-                  <th className="px-4 py-3 text-left font-medium text-[#71717A]">PERIOD</th>
-                  <th className="px-4 py-3 text-center font-medium text-[#71717A]">RIDES</th>
-                  <th className="px-4 py-3 text-left font-medium text-[#71717A]">GROSS</th>
-                  <th className="px-4 py-3 text-left font-medium text-[#71717A]">CASH</th>
-                  <th className="px-4 py-3 text-left font-medium text-[#71717A]">NET</th>
-                  <th className="px-4 py-3 text-left font-medium text-[#71717A]">STATUS</th>
-                  <th className="px-4 py-3 text-center font-medium text-[#71717A]">INVOICE</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">DATE</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">PERIOD</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-[#71717A]">RIDES</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">GROSS</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">CASH</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">NET</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">STATUS</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-[#71717A]">INVOICE</th>
               </tr>
             </thead>
             <tbody>

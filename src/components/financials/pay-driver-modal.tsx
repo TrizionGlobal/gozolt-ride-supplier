@@ -12,6 +12,8 @@ interface PayDriverModalProps {
   driverName: string;
   vehicleType?: string | null;
   availableBalance: number;
+  userCancellationFees: number;
+  totalRides: number;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -21,6 +23,8 @@ export function PayDriverModal({
   driverName,
   vehicleType,
   availableBalance,
+  userCancellationFees,
+  totalRides: initialTotalRides,
   onClose,
   onSuccess,
 }: PayDriverModalProps) {
@@ -29,14 +33,16 @@ export function PayDriverModal({
   
   const defaultCommRate = globalCommRate;
   
+  // Calculate combined total: Owed Balance + User Cancellation Fees
+  const combinedTotal = availableBalance + userCancellationFees;
+
   // Calculate default deduction and amount based on rate
-  const defaultDeduction = (availableBalance * defaultCommRate) / 100;
-  const defaultAmount = availableBalance - defaultDeduction;
+  const defaultDeduction = (combinedTotal * defaultCommRate) / 100;
+  const defaultAmount = combinedTotal - defaultDeduction;
 
   const [amount, setAmount] = useState<string>(defaultAmount > 0 ? defaultAmount.toFixed(2) : '0');
   const [deductions, setDeductions] = useState<string>(defaultDeduction > 0 ? defaultDeduction.toFixed(2) : '0');
-  const [totalRides, setTotalRides] = useState<string>('');
-  const [totalFare, setTotalFare] = useState<string>('');
+  const [totalRides, setTotalRides] = useState<string>(initialTotalRides > 0 ? initialTotalRides.toString() : '0');
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successDetails, setSuccessDetails] = useState<{ amount: number, remaining: number } | null>(null);
@@ -45,25 +51,20 @@ export function PayDriverModal({
   const numAmount = parseFloat(amount) || 0;
   const numDeductions = parseFloat(deductions) || 0;
   const numTotalRides = parseInt(totalRides) || undefined;
-  const numTotalFare = parseFloat(totalFare) || undefined;
   const totalDeducted = numAmount + numDeductions;
-  const remainingBalance = availableBalance - totalDeducted;
+  const remainingBalance = combinedTotal - totalDeducted;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    if (totalDeducted > availableBalance) {
-      setErrorMsg('Total amount + deductions cannot exceed available balance.');
-      return;
-    }
-    if (numAmount <= 0) {
-      setErrorMsg('Payment amount must be greater than 0');
+    if (numAmount <= 0 && numDeductions <= 0) {
+      setErrorMsg('Total payout and deductions cannot both be zero.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await financialService.payDriver(driverId, numAmount, numDeductions, numTotalRides, numTotalFare, notes);
+      await financialService.payDriver(driverId, numAmount, numDeductions, numTotalRides, undefined, notes);
       setSuccessDetails({ amount: numAmount, remaining: remainingBalance });
     } catch (error: any) {
       setErrorMsg(error?.response?.data?.message || 'Failed to record payout. Please try again.');
@@ -126,9 +127,17 @@ export function PayDriverModal({
               <span>Driver:</span>
               <span className="font-medium text-white">{driverName}</span>
             </div>
-            <div className="flex justify-between text-[#A1A1AA]">
-              <span>Owed Balance:</span>
+            <div className="flex justify-between text-[#A1A1AA] mb-1">
+              <span>Ride Owed Balance:</span>
               <span className="font-medium text-white">{formatCurrency(availableBalance)}</span>
+            </div>
+            <div className="flex justify-between text-[#A1A1AA] mb-1">
+              <span>User Cancellation Fees:</span>
+              <span className="font-medium text-white">{formatCurrency(userCancellationFees)}</span>
+            </div>
+            <div className="flex justify-between text-[#A1A1AA] pt-1 border-t border-[#27272A]">
+              <span>Total Available Balance:</span>
+              <span className="font-medium text-green-400">{formatCurrency(combinedTotal)}</span>
             </div>
           </div>
 
@@ -142,7 +151,6 @@ export function PayDriverModal({
                 type="number"
                 step="0.01"
                 min="0"
-                max={availableBalance}
                 value={amount}
                 readOnly
                 className="w-full rounded-lg border border-[#27272A] bg-[#1A1A1A]/50 pl-9 py-2 text-[#A1A1AA] cursor-not-allowed focus:outline-none"
@@ -172,50 +180,25 @@ export function PayDriverModal({
             </div>
           </div>
 
-          {totalDeducted > availableBalance && (
-            <div className="flex items-start gap-2 rounded bg-red-500/10 p-2 text-sm text-red-500">
-              <Info className="mt-0.5 h-4 w-4 shrink-0" />
-              <p>Amount and deductions exceed available balance.</p>
-            </div>
-          )}
 
-          {remainingBalance > 0 && totalDeducted <= availableBalance && (
+
+          {remainingBalance > 0 && totalDeducted <= combinedTotal && (
             <div className="text-xs text-[#71717A] italic text-right">
               {formatCurrency(remainingBalance)} will remain in Owed Balance
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-[#A1A1AA]">
-                Total Rides (Optional)
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={totalRides}
-                onChange={(e) => setTotalRides(e.target.value)}
-                placeholder="e.g. 15"
-                className="w-full rounded-lg border border-[#27272A] bg-[#1A1A1A] px-3 py-2 text-[#A1A1AA] focus:outline-none focus:border-[#FACC15]"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-[#A1A1AA]">
-                Total Fares (Optional)
-              </label>
-              <div className="relative">
-                <Euro className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#71717A]" />
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={totalFare}
-                  onChange={(e) => setTotalFare(e.target.value)}
-                  placeholder="e.g. 120.50"
-                  className="w-full rounded-lg border border-[#27272A] bg-[#1A1A1A] pl-9 py-2 text-[#A1A1AA] focus:outline-none focus:border-[#FACC15]"
-                />
-              </div>
-            </div>
+          <div className="mb-4">
+            <label className="mb-1.5 block text-sm font-medium text-[#A1A1AA]">
+              Total Rides
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={totalRides}
+              readOnly
+              className="w-full rounded-lg border border-[#27272A] bg-[#1A1A1A]/50 px-3 py-2 text-[#A1A1AA] cursor-not-allowed focus:outline-none"
+            />
           </div>
 
           <div>
@@ -241,7 +224,7 @@ export function PayDriverModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || totalDeducted > availableBalance}
+              disabled={isSubmitting}
               className="rounded-lg bg-[#FACC15] px-4 py-2 text-sm font-medium text-black hover:bg-[#EAB308] disabled:opacity-50 transition-colors flex items-center"
             >
               {isSubmitting ? 'Processing...' : 'Confirm Payout'}

@@ -437,6 +437,7 @@ export interface PerDriverEarning {
   driverName: string;
   vehicleType?: string | null;
   totalEarnings: number;
+  userCancellationFees?: number;
   totalTips: number;
   totalPaidOut: number;
   availableBalance: number;
@@ -448,6 +449,7 @@ export interface PerDriverEarning {
   tipEarnings?: number;
   tipCount?: number;
   ridesCompleted?: number;
+  totalRides?: number;
 }
 
 export interface PayoutRecord {

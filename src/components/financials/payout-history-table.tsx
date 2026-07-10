@@ -133,8 +133,9 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">DATE</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">PERIOD</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-[#71717A]">RIDES</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">GROSS</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">CASH</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">GROSS EARNINGS</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">CANCELLATION FEES</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">CASH COLLECTED</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">NET</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">STATUS</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-[#71717A]">INVOICE</th>
@@ -159,6 +160,11 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
                     </td>
                     <td className="px-4 py-3 text-sm text-[#D4D4D8]">
                       {row.details?.totalSettledEarned != null ? formatCurrency(row.details.totalSettledEarned) : '--'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[#D4D4D8]">
+                      {(row.details?.userCancellationFees ?? row.details?.totalPenaltyEarned) != null 
+                        ? formatCurrency((row.details?.userCancellationFees ?? row.details?.totalPenaltyEarned) as number) 
+                        : '--'}
                     </td>
                     <td className="px-4 py-3 text-sm text-[#D4D4D8]">
                       {row.details?.totalCashCollected != null ? formatCurrency(row.details.totalCashCollected) : '--'}

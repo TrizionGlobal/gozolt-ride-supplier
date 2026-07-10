@@ -51,6 +51,7 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
           driverId: driver.id,
           driverName: driver.firstName + ' ' + driver.lastName,
           totalEarnings: 0,
+          userCancellationFees: 0,
           totalTips: 0,
           totalPaidOut: 0,
           availableBalance: 0,
@@ -214,7 +215,7 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
       {earnings ? (
         <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
           <h3 className="mb-4 text-lg font-semibold text-white">Earnings Breakdown</h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             <div className="rounded-lg border border-[#27272A] bg-[#0A0A0A] p-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#8B5CF6]/20">
@@ -231,7 +232,7 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
                 </div>
                 <p className="text-xs text-[#A1A1AA]">Card Earnings</p>
               </div>
-              <p className="mt-2 text-2xl font-bold text-white">{formatCurrency(earnings.cardEarnings)}</p>
+              <p className="mt-2 text-2xl font-bold text-white">{formatCurrency(earnings.cardEarnings || earnings.totalCardReceived || 0)}</p>
             </div>
             <div className="rounded-lg border border-[#27272A] bg-[#0A0A0A] p-4">
               <div className="flex items-center gap-2">
@@ -240,7 +241,16 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
                 </div>
                 <p className="text-xs text-[#A1A1AA]">Cash Earnings</p>
               </div>
-              <p className="mt-2 text-2xl font-bold text-green-400">{formatCurrency(earnings.cashEarnings)}</p>
+              <p className="mt-2 text-2xl font-bold text-green-400">{formatCurrency(earnings.cashEarnings || earnings.totalCashReceived || 0)}</p>
+            </div>
+            <div className="rounded-lg border border-[#27272A] bg-[#0A0A0A] p-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/20">
+                  <TrendingUp className="h-4 w-4 text-red-400" />
+                </div>
+                <p className="text-xs text-[#A1A1AA]">User Cancellation Fees</p>
+              </div>
+              <p className="mt-2 text-2xl font-bold text-red-400">{formatCurrency(earnings.userCancellationFees || 0)}</p>
             </div>
           </div>
           <div className="mt-4 flex gap-8">

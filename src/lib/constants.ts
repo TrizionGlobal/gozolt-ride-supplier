@@ -22,6 +22,7 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   FLEET: '/fleet',
   DRIVERS: '/drivers',
+  NEW_DRIVERS: '/new-drivers',
   DRIVER_SETTLEMENTS: '/drivers/settlements',
   RIDES: '/rides',
   FLEET_DRIVERS: '/fleet/drivers',
@@ -40,7 +41,8 @@ export const ROUTES = {
 export const SIDEBAR_ITEMS = [
   { label: 'Dashboard', href: ROUTES.DASHBOARD, icon: LayoutDashboard },
   { label: 'Fleet', href: ROUTES.FLEET, icon: Truck },
-  { label: 'Drivers', href: ROUTES.DRIVERS, icon: Users },
+  { label: 'My Fleet Drivers', href: ROUTES.DRIVERS, icon: Users },
+  { label: 'Find New Drivers', href: ROUTES.NEW_DRIVERS, icon: Users },
   { label: 'Driver Settlements', href: ROUTES.DRIVER_SETTLEMENTS, icon: Wallet },
   { label: 'Rides', href: ROUTES.RIDES, icon: Navigation },
   { label: 'GPS Tracking', href: ROUTES.GPS_TRACKING, icon: MapPin },

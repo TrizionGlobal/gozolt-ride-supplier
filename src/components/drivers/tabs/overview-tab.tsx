@@ -102,8 +102,9 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
     <div className="space-y-6">
       {/* Driver Details */}
       <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6 relative">
-        <div className="absolute top-4 right-4 flex items-center gap-2">
-          {isEditing ? (
+        {driver.status !== DriverStatus.NEW_DRIVER && (
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            {isEditing ? (
             <>
               <button
                 onClick={() => {
@@ -137,6 +138,7 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
             </button>
           )}
         </div>
+        )}
 
         <div className="grid grid-cols-3 gap-6 pt-2">
           <div>
@@ -212,7 +214,7 @@ export function OverviewTab({ driver, vehicle, onUpdate }: OverviewTabProps) {
       </div>
 
       {/* Earnings Breakdown */}
-      {earnings ? (
+      {earnings && driver.status !== DriverStatus.NEW_DRIVER ? (
         <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
           <h3 className="mb-4 text-lg font-semibold text-white">Earnings Breakdown</h3>
           <div className="grid grid-cols-4 gap-4">

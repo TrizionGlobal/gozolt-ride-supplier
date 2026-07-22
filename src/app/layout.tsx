@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
 import { AntdProvider } from '@/providers/antd-provider';
+import { NetworkStatusModal } from '@/components/ui/network-status-modal';
 import './globals.css';
 
 const geistSans = Geist({
@@ -38,6 +39,7 @@ export default function RootLayout({
             position="top-right"
             richColors
           />
+          <NetworkStatusModal />
         </AntdProvider>
       </body>
     </html>

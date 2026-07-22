@@ -25,6 +25,34 @@ const clearDriversCache = () => {
 };
 
 export const driverService = {
+  async getDriverPool(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+  }): Promise<{
+    data: Driver[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
+    const res = await apiClient.get('/suppliers/drivers/pool', { params });
+    const mappedResponse = {
+      data: res.data.data || res.data,
+      total: res.data.meta?.total || res.data.total || 0,
+      page: res.data.meta?.page || res.data.page || 1,
+      limit: res.data.meta?.limit || res.data.limit || 10,
+      totalPages: res.data.meta?.totalPages || res.data.totalPages || 1,
+    };
+    return mappedResponse;
+  },
+
+  async claimDriver(driverId: string): Promise<any> {
+    const res = await apiClient.post(`/suppliers/drivers/${driverId}/claim`);
+    clearDriversCache();
+    return res.data;
+  },
+
   async getDrivers(params?: {
     page?: number;
     limit?: number;

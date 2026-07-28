@@ -309,6 +309,7 @@ export interface Driver {
   isOnline: boolean;
   avgRating: number;
   totalRides: number;
+  avatarUrl?: string | null;
   editBankDetails?: boolean;
   createdAt: string;
 }

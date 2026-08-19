@@ -1,18 +1,27 @@
 'use client';
 
 /* eslint-disable @next/next/no-img-element */
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { PanelLeftClose, PanelLeft } from 'lucide-react';
 import { SIDEBAR_ITEMS, ROUTES } from '@/lib/constants';
 import { useSidebarStore } from '@/stores/sidebar.store';
+import { useCarRentalsStore } from '@/stores/car-rentals.store';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isCollapsed, toggle } = useSidebarStore();
+  const { isCollapsed, toggle, activeModule } = useSidebarStore();
   const { logout } = useAuth();
+  
+  const [source, setSource] = useState<string | null>(null);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    setSource(urlParams.get('source'));
+  }, [pathname]);
 
   return (
     <aside
@@ -57,19 +66,55 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-        {SIDEBAR_ITEMS.map((item) => {
+        {SIDEBAR_ITEMS.filter((item) => item.module === activeModule || !activeModule).map((item) => {
           const Icon = item.icon;
           let isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          const isBookingSubPage = pathname.match(/^\/car-rentals\/[a-zA-Z0-9-]+\/(details|handover|return)$/);
 
           // Prevent "Drivers" from being active when in "Driver Settlements"
           if (item.href === ROUTES.DRIVERS && pathname.startsWith(ROUTES.DRIVER_SETTLEMENTS)) {
             isActive = false;
           }
 
+          // Prevent "Car Rentals" from being active when in its distinct sub-modules
+          if (
+            item.href === ROUTES.CAR_RENTALS &&
+            (pathname.startsWith('/car-rentals/dashboard') ||
+             pathname.startsWith('/car-rentals/fleet') ||
+             pathname.startsWith('/car-rentals/reviews') ||
+             pathname.startsWith('/car-rentals/workers') ||
+             pathname.startsWith('/car-rentals/bookings') ||
+             pathname.startsWith('/car-rentals/operational') ||
+             pathname === '/car-rentals/new' ||
+             pathname.match(/^\/car-rentals\/[a-zA-Z0-9-]+\/edit$/) ||
+             (isBookingSubPage && source === 'bookings'))
+          ) {
+            isActive = false;
+          }
+
+          if (item.href === ROUTES.CAR_RENTALS && isBookingSubPage && source !== 'bookings') {
+            isActive = true;
+          }
+
+          // Make "Fleet" active for new vehicle and edit vehicle pages
+          if (item.href === '/car-rentals/fleet' && (pathname === '/car-rentals/new' || pathname.match(/^\/car-rentals\/[a-zA-Z0-9-]+\/edit$/))) {
+            isActive = true;
+          }
+
+          // Make "Booking Management" active for details, handover, and return pages
+          if (item.href === '/car-rentals/bookings' && isBookingSubPage && source === 'bookings') {
+            isActive = true;
+          }
+
           return (
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => {
+                if (item.href === '/car-rentals/bookings') {
+                  useCarRentalsStore.getState().setManagementFilters(1, 20, '', 'today');
+                }
+              }}
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors',
                 isActive
@@ -89,6 +134,12 @@ export function Sidebar() {
 
       {/* Footer */}
       <div className={cn("border-t border-[#27272A] px-4 py-3", isCollapsed && "px-2")}>
+        {!isCollapsed && (
+          <Link href="/module-selection" className="mb-4 flex items-center justify-center gap-2 rounded-lg border border-[#27272A] bg-[#111111] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[#1A1A1A]">
+            <PanelLeftClose className="h-4 w-4 rotate-180" />
+            Switch Module
+          </Link>
+        )}
         {!isCollapsed ? (
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">

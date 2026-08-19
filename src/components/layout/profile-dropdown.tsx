@@ -4,14 +4,17 @@ import { useState, useRef, useEffect } from 'react';
 import { LogOut, Settings, CreditCard, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
+import { useSidebarStore } from '@/stores/sidebar.store';
 
 export function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const user = useAuthStore((s) => s.user);
+  const { activeModule } = useSidebarStore();
   const { logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   const initials = user?.companyName
     ? user.companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
@@ -56,20 +59,24 @@ export function ProfileDropdown() {
           </div>
           
           <div className="py-1">
-            <button
-              onClick={() => { setIsOpen(false); router.push('/settings'); }}
-              className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
-            >
-              <Settings className="h-4 w-4 mr-3 text-[#A1A1AA]" />
-              Settings & Team
-            </button>
-            <button
-              onClick={() => { setIsOpen(false); router.push('/subscription'); }}
-              className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
-            >
-              <CreditCard className="h-4 w-4 mr-3 text-[#A1A1AA]" />
-              Billing & Subscription
-            </button>
+            {activeModule === 'CAB' && pathname !== '/module-selection' && (
+              <>
+                <button
+                  onClick={() => { setIsOpen(false); router.push('/settings'); }}
+                  className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
+                >
+                  <Settings className="h-4 w-4 mr-3 text-[#A1A1AA]" />
+                  Settings & Team
+                </button>
+                <button
+                  onClick={() => { setIsOpen(false); router.push('/subscription'); }}
+                  className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
+                >
+                  <CreditCard className="h-4 w-4 mr-3 text-[#A1A1AA]" />
+                  Billing & Subscription
+                </button>
+              </>
+            )}
           </div>
           
           <div className="border-t border-[#27272A] py-1">

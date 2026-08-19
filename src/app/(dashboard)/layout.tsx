@@ -20,6 +20,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [hydrateFromSession]);
 
   useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+  }, [isLoading, user, router]);
+
+  useEffect(() => {
     if (!isLoading && user && user.status === 'ACTIVE') {
       const isMissingSubscription = !user.subscription;
       const isExpired =
@@ -33,6 +39,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       // BYPASS SUBSCRIPTION logic completely
       if (pathname === '/subscription') {
         router.push('/');
+      }
+
+      const activeModule = useSidebarStore.getState().activeModule;
+      if (!activeModule) {
+        router.push('/module-selection');
       }
     }
   }, [user, isLoading, pathname, router]);

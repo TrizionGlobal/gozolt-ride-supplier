@@ -8,6 +8,7 @@ import { app } from '@/lib/firebase';
 import { getMessaging, isSupported } from 'firebase/messaging';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { io, Socket } from 'socket.io-client';
 
 export function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -93,6 +94,43 @@ export function NotificationDropdown() {
       }
     };
   }, [isOpen]);
+
+  // Listen to Socket.IO for real-time notifications
+  useEffect(() => {
+    const token = localStorage.getItem('supplier_token') || sessionStorage.getItem('supplier_token');
+    if (!token) return;
+
+    const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+    const socket: Socket = io(`${API_URL}/supplier`, {
+      auth: { token },
+      transports: ['websocket'],
+    });
+
+    socket.on('notification:in_app', (notification: Record<string, string>) => {
+      const newNotif: NotificationItem = {
+        id: notification.id || Math.random().toString(36).substr(2, 9),
+        title: notification.title,
+        body: notification.body,
+        type: notification.type || 'SYSTEM',
+        isRead: false,
+        createdAt: notification.createdAt || new Date().toISOString(),
+      };
+
+      // Play a sound or show a toast if needed
+      setUnreadCount((prev) => prev + 1);
+      
+      // Update list if already fetched
+      setNotifications((prev) => {
+        // Prevent duplicates
+        if (prev.some((n) => n.id === newNotif.id)) return prev;
+        return [newNotif, ...prev];
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   // Mark all as read
   const handleMarkAllRead = async () => {

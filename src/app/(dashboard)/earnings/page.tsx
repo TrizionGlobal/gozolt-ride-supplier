@@ -102,42 +102,56 @@ export default function EarningsPage() {
     {
       key: 'amount',
       title: 'Rental Amount',
-      dataIndex: 'rentalAmount',
-      render: (row) => <span className="text-white">€{row.rentalAmount.toFixed(2)}</span>
+      dataIndex: 'originalAmount',
+      className: 'text-center',
+      render: (row) => (
+        <span className="text-white font-medium">
+          €{(row.originalAmount || row.rentalAmount).toFixed(2)}
+        </span>
+      )
     },
     {
-      key: 'commission',
-      title: 'Commission',
-      dataIndex: 'platformCommission',
-      render: (row) => <span className="text-red-400">-€{row.platformCommission.toFixed(2)}</span>
+      key: 'refund',
+      title: 'Refund Amount',
+      dataIndex: 'refundAmount',
+      className: 'text-center',
+      render: (row) => (
+        <span className={row.refundAmount > 0 ? "text-red-400" : "text-gray-500"}>
+          {row.refundAmount > 0 ? `-€${row.refundAmount.toFixed(2)}` : '€0.00'}
+        </span>
+      )
     },
-    {
-      key: 'penalty',
-      title: 'Damage Penalty',
-      dataIndex: 'deductions',
-      render: (row) => <span className="text-red-400">-€{row.deductions.toFixed(2)}</span>
-    },
+
+
     {
       key: 'net',
       title: 'Net Earnings',
       dataIndex: 'netEarnings',
-      render: (row) => <span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">€{row.netEarnings.toFixed(2)}</span>
+      className: 'text-center',
+      render: (row) => <div className="flex justify-center"><span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">€{row.netEarnings.toFixed(2)}</span></div>
     },
     {
       key: 'status',
       title: 'Status',
       dataIndex: 'status',
-      render: (row) => (
-        <span className="text-xs font-semibold px-2 py-1 rounded bg-[#27272A] text-gray-300">
-          {row.status}
-        </span>
-      )
+      className: 'text-center',
+      render: (row) => {
+        const isCancelled = row.status === 'CANCELLED';
+        return (
+          <div className="flex justify-center">
+            <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded border ${isCancelled ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-[#27272A] text-gray-300 border-[#3F3F46]'}`}>
+              {isCancelled ? 'CANCELLED (FEE)' : row.status}
+            </span>
+          </div>
+        );
+      }
     },
     {
       key: 'date',
       title: 'Date',
       dataIndex: 'earningDate',
-      render: (row) => <span className="text-gray-400 text-sm">{format(new Date(row.earningDate), 'MMM dd, yyyy')}</span>
+      className: 'text-center',
+      render: (row) => <div className="flex justify-center"><span className="text-gray-400 text-sm">{format(new Date(row.earningDate), 'MMM dd, yyyy')}</span></div>
     }
   ];
 
@@ -146,7 +160,7 @@ export default function EarningsPage() {
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white mb-2">Earnings</h1>
-          <p className="text-gray-400">Track your completed rental earnings and commissions.</p>
+          <p className="text-gray-400">Track your completed rental earnings.</p>
         </div>
         
         <div className="flex items-center gap-2">

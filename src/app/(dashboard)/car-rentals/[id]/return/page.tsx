@@ -46,8 +46,12 @@ export default function VehicleReturnPage() {
       setTotalDays(tDays);
       setRemainingDays(rDays);
       
-      const dailyRate = Number(booking.vehicleTotal) / tDays;
-      const calcRefund = Math.round(rDays * dailyRate * 100) / 100;
+      let calcRefund = 0;
+      if (booking.isFlexible) {
+        const dailyRate = Number(booking.vehicleTotal) / tDays;
+        calcRefund = Math.round(rDays * dailyRate * 100) / 100;
+      }
+      
       setMaxRefund(calcRefund);
       setFormData(prev => ({ ...prev, refundAmount: calcRefund.toString() }));
     }
@@ -263,7 +267,7 @@ export default function VehicleReturnPage() {
               )}
             </div>
             
-            {remainingDays > 0 && (
+            {remainingDays > 0 && booking?.isFlexible && (
               <div className="col-span-2 bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl mt-4">
                 <h3 className="text-yellow-500 font-semibold mb-2">Early Return Refund</h3>
                 <div className="flex justify-between text-sm text-gray-300 mb-1">

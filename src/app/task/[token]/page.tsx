@@ -13,14 +13,14 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
   const [error, setError] = useState('');
   const [step, setStep] = useState<'VERIFY' | 'SCAN' | 'FORM' | 'SUCCESS'>('VERIFY');
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
-  const [formData, setFormData] = useState({ fuelLevel: 'FULL', odometerReading: '', vehicleCondition: 'Good', damageNotes: '', refundAmount: '' });
+  const [formData, setFormData] = useState({ fuelLevel: 'FULL', odometerReading: '', vehicleCondition: 'Good', damageNotes: '', refundAmount: '', refundAccountNumber: '', customerSignature: '', supplierSignature: '' });
   const [photos, setPhotos] = useState<string[]>([]);
   const [maxRefund, setMaxRefund] = useState(0);
   const [remainingDays, setRemainingDays] = useState(0);
   const [totalDays, setTotalDays] = useState(0);
 
   useEffect(() => {
-    if (task?.taskType === 'RETURN' && task?.booking?.isFlexible) {
+    if (task?.taskType === 'RETURN' && task?.booking) {
       const start = new Date(task.booking.startDate);
       const end = new Date(task.booking.endDate);
       const now = new Date();
@@ -79,7 +79,12 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+    if (!formData.odometerReading || !formData.customerSignature || !formData.supplierSignature) {
+      alert("Please fill in all required fields (Odometer and Signatures)");
+      setLoading(false);
+      return;
+    }
+
     // In a real app we would upload photos to S3 here.
     const payload = {
       fuelLevel: formData.fuelLevel,
@@ -87,6 +92,9 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
       vehicleCondition: formData.vehicleCondition,
       damageNotes: formData.damageNotes,
       refundAmount: formData.refundAmount,
+      refundAccountNumber: formData.refundAccountNumber,
+      customerSignature: formData.customerSignature,
+      supplierSignature: formData.supplierSignature,
       photos,
     };
 
@@ -135,21 +143,30 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
 
       {task && (step === 'SCAN' || step === 'FORM') && (
         <div className="mb-6 space-y-4">
-          <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 flex gap-4 items-center">
-            <div className="w-20 h-20 bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center shrink-0">
-              {task.booking.vehicle.images?.[0] ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={task.booking.vehicle.images[0]} alt="Car" className="w-full h-full object-cover" />
-              ) : (
-                <Camera className="h-6 w-6 text-gray-500" />
-              )}
+          <div className="grid grid-cols-1 md:grid-cols-[1fr,auto] gap-4 mb-8">
+            <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 flex gap-4 items-center">
+              <div className="w-20 h-20 bg-black rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+                {task.booking.vehicle?.images?.[0] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={task.booking.vehicle.images[0]} alt="Car" className="w-full h-full object-cover" />
+                ) : (
+                  <Camera className="h-6 w-6 text-gray-500" />
+                )}
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg text-white">{task.booking.vehicle?.name}</h3>
+                <p className="text-sm text-gray-400">
+                  {task.booking.vehicle?.category} {task.booking.vehicle?.year ? `• ${task.booking.vehicle.year}` : ''}
+                </p>
+                <p className="text-xs text-[#FACC15] mt-1 font-medium">Plate: {task.booking.vehicle?.registrationNo || 'N/A'}</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg">{task.booking.vehicle.name}</h3>
-              <p className="text-sm text-gray-400">
-                {task.booking.vehicle.category} {task.booking.vehicle.year ? `• ${task.booking.vehicle.year}` : ''}
+            
+            <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 flex flex-col justify-center">
+              <p className="text-xs text-gray-500 mb-1">Total Amount Paid</p>
+              <p className="text-2xl font-bold text-emerald-500">
+                EUR {task.booking?.grandTotal ? Number(task.booking.grandTotal).toFixed(2) : '0.00'}
               </p>
-              <p className="text-xs text-[#FACC15] mt-1 font-medium">Plate: {task.booking.vehicle.registrationNo || 'N/A'}</p>
             </div>
           </div>
           
@@ -258,14 +275,14 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
               </select>
             </div>
             
-            {task?.taskType === 'RETURN' && (
+            {formData.vehicleCondition !== 'Good' && (
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Damage Notes</label>
                 <textarea 
                   value={formData.damageNotes}
                   onChange={e => setFormData({...formData, damageNotes: e.target.value})}
                   className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#FACC15] outline-none h-24"
-                  placeholder="Any scratches, dents, or issues?"
+                  placeholder="Describe the damage..."
                 />
               </div>
             )}
@@ -294,9 +311,9 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
               )}
             </div>
 
-            {task?.taskType === 'RETURN' && task?.booking?.isFlexible && (
+            {task?.taskType === 'RETURN' && remainingDays > 0 && (
               <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl mt-4">
-                <h3 className="text-yellow-500 font-semibold mb-2">Stay Flexible Refund</h3>
+                <h3 className="text-yellow-500 font-semibold mb-2">Early Return Refund</h3>
                 <div className="flex justify-between text-sm text-gray-300 mb-1">
                   <span>Total Booked Days:</span>
                   <span>{totalDays} days</span>
@@ -306,21 +323,57 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
                   <span>{remainingDays} days</span>
                 </div>
                 <div className="flex justify-between text-sm text-white font-medium mb-3">
-                  <span>Max Refund Amount:</span>
+                  <span>Calculated Refund:</span>
                   <span>EUR {maxRefund.toFixed(2)}</span>
                 </div>
-                <label className="block text-sm text-yellow-500/80 mb-1">Enter Refund Amount (EUR)</label>
-                <input 
-                  type="number" 
-                  step="0.01"
-                  required 
-                  max={maxRefund}
-                  value={formData.refundAmount}
-                  onChange={e => setFormData({...formData, refundAmount: e.target.value})}
-                  className="w-full bg-gray-900 border border-yellow-500/30 rounded-lg p-3 text-white focus:border-yellow-500 outline-none"
-                />
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-yellow-500/80 mb-1">Enter Final Refund Amount (EUR)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      required 
+                      max={maxRefund}
+                      value={formData.refundAmount}
+                      onChange={e => setFormData({...formData, refundAmount: e.target.value})}
+                      className="w-full bg-gray-900 border border-yellow-500/30 rounded-lg p-3 text-white focus:border-yellow-500 outline-none"
+                    />
+                  </div>
+                  <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                    <span className="text-sm text-blue-200">Refund will be automatically processed to the customer's original payment method.</span>
+                  </div>
+                </div>
               </div>
             )}
+
+            <div className="border-t border-gray-800 pt-6 mt-6">
+              <h3 className="text-lg font-semibold text-white mb-4">Digital Signatures</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Customer Signature (Type Name)</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={formData.customerSignature}
+                    onChange={e => setFormData({...formData, customerSignature: e.target.value})}
+                    className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#FACC15] outline-none"
+                    placeholder="Customer's full name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Staff Signature (Type Name)</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={formData.supplierSignature}
+                    onChange={e => setFormData({...formData, supplierSignature: e.target.value})}
+                    className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#FACC15] outline-none"
+                    placeholder="Staff agent name"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <button 

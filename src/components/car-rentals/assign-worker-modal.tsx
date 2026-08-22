@@ -19,8 +19,9 @@ export function AssignWorkerModal({ bookingId, taskType, onClose, onAssigned }: 
   useEffect(() => {
     apiClient.get('/car-rentals/supplier/workers')
       .then(res => {
-        setWorkers(res.data);
-        if (res.data.length > 0) setSelectedWorkerId(res.data[0].id);
+        const workersArray = res.data.data || [];
+        setWorkers(workersArray);
+        if (workersArray.length > 0) setSelectedWorkerId(workersArray[0].id);
       })
       .finally(() => setLoading(false));
   }, []);

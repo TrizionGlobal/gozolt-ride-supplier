@@ -130,7 +130,7 @@ export function CarRentalForm({ initialData }: Props) {
         name,
         category,
         registrationNo,
-        year: Number(year),
+        year: String(year),
         transmission,
         fuelType,
         seats: Number(seats),
@@ -150,7 +150,7 @@ export function CarRentalForm({ initialData }: Props) {
           })),
         mileagePackages: [],
         addons: addons
-          .filter(a => a.name && a.pricePerDay !== '')
+          .filter(a => a.name)
           .map(a => ({ ...a, pricePerDay: Number(a.pricePerDay) || 0 })),
       };
 
@@ -287,11 +287,17 @@ export function CarRentalForm({ initialData }: Props) {
         <h2 className="text-lg font-bold text-white mb-6">Features & Delivery Options</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-[#D4D4D8]">Vehicle Features</h3>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" checked={hasAirConditioning} onChange={e => setHasAirConditioning(e.target.checked)} className="w-4 h-4 rounded border-[#3F3F46] bg-[#0A0A0A] checked:bg-[#FACC15] focus:ring-[#FACC15]" />
-              <span className="text-sm text-white">Air Conditioning</span>
-            </label>
+            <h3 className="text-sm font-semibold text-[#D4D4D8]">Air Conditioning</h3>
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="radio" checked={hasAirConditioning === true} onChange={() => setHasAirConditioning(true)} className="w-4 h-4 rounded-full border-[#3F3F46] bg-[#0A0A0A] checked:bg-[#FACC15] focus:ring-[#FACC15]" />
+                <span className="text-sm text-white">AC</span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input type="radio" checked={hasAirConditioning === false} onChange={() => setHasAirConditioning(false)} className="w-4 h-4 rounded-full border-[#3F3F46] bg-[#0A0A0A] checked:bg-[#FACC15] focus:ring-[#FACC15]" />
+                <span className="text-sm text-white">Non AC</span>
+              </label>
+            </div>
           </div>
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-[#D4D4D8]">Delivery Options</h3>

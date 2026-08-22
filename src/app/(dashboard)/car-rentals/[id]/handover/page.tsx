@@ -6,6 +6,7 @@ import { ArrowLeft, Check, Camera, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { carRentalsService } from '@/services/car-rentals/car-rentals.service';
 import { format } from 'date-fns';
+import { useCarRentalsStore } from '@/stores/car-rentals.store';
 
 export default function VehicleHandoverPage() {
   const params = useParams();
@@ -17,9 +18,10 @@ export default function VehicleHandoverPage() {
   const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
-    fuelLevel: 'Full',
+    fuelLevel: 'FULL',
     odometerReading: '',
     vehicleCondition: 'Good',
+    damageNotes: '',
     customerSignature: '',
     supplierSignature: ''
   });
@@ -53,6 +55,7 @@ export default function VehicleHandoverPage() {
     try {
       await carRentalsService.handoverBooking(bookingId, payload);
       toast.success("Handover completed successfully!");
+      useCarRentalsStore.getState().setManagementBookings([], 0, ''); // Invalidate cache
       router.back();
     } catch (err) {
       console.error(err);
@@ -95,23 +98,52 @@ export default function VehicleHandoverPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         
-        {/* Pre-fetched Details */}
-        <div className="bg-[#111111] p-6 rounded-xl border border-[#27272A] grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="block text-gray-400 mb-1">Vehicle Name</span>
-            <span className="font-medium text-white">{booking.vehicle?.name}</span>
+        {/* Vehicle Info */}
+        <div className="bg-[#111111] rounded-xl p-4 border border-[#27272A] flex gap-4 items-center">
+          <div className="w-20 h-20 bg-[#1A1A1A] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+            {booking.vehicle?.images?.[0] ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={booking.vehicle.images[0]} alt="Car" className="w-full h-full object-cover" />
+            ) : (
+              <Camera className="h-6 w-6 text-gray-500" />
+            )}
           </div>
-          <div>
-            <span className="block text-gray-400 mb-1">Vehicle ID</span>
-            <span className="font-medium text-white">CR-{booking.vehicle?.id.substring(0, 8).toUpperCase()}</span>
+          <div className="flex-1">
+            <h3 className="font-semibold text-lg text-white">{booking.vehicle?.name}</h3>
+            <p className="text-sm text-gray-400">
+              {booking.vehicle?.category} {booking.vehicle?.year ? `• ${booking.vehicle.year}` : ''}
+            </p>
+            <p className="text-xs text-[#FACC15] mt-1 font-medium">Plate: {booking.vehicle?.registrationNo || 'N/A'}</p>
           </div>
-          <div>
-            <span className="block text-gray-400 mb-1">Pickup Date & Time</span>
-            <span className="font-medium text-white">{format(new Date(booking.startDate), 'MMM dd, yyyy HH:mm')}</span>
-          </div>
-          <div>
-            <span className="block text-gray-400 mb-1">Pickup Location</span>
-            <span className="font-medium text-white">{booking.pickupLocation}</span>
+        </div>
+        
+        {/* Booking Details */}
+        <div className="bg-[#111111] rounded-xl p-4 border border-[#27272A]">
+          <h3 className="text-sm font-semibold text-white mb-2 uppercase tracking-wider text-xs">Booking Details</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 mb-0.5">Customer</p>
+              <p className="text-sm text-gray-300 font-medium">{booking.user?.firstName} {booking.user?.lastName}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{booking.user?.phone || 'No phone'}</p>
+            </div>
+            <div className="col-span-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">Pickup Date & Time</p>
+                  <p className="text-sm text-gray-300 font-medium">
+                    {new Date(booking.startDate).toLocaleDateString()} {new Date(booking.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5 break-words">{booking.pickupLocation}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">Return Date & Time</p>
+                  <p className="text-sm text-gray-300 font-medium">
+                    {new Date(booking.endDate).toLocaleDateString()} {new Date(booking.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5 break-words">{booking.dropoffLocation}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -141,11 +173,10 @@ export default function VehicleHandoverPage() {
                 onChange={e => setFormData({...formData, fuelLevel: e.target.value})}
                 className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2.5 px-3 text-white focus:border-[#FACC15] outline-none"
               >
-                <option value="Full">Full</option>
-                <option value="3/4">3/4</option>
-                <option value="1/2">1/2</option>
-                <option value="1/4">1/4</option>
-                <option value="Empty">Empty</option>
+                <option value="FULL">Full (8/8)</option>
+                <option value="HALF">Half (4/8)</option>
+                <option value="QUARTER">Quarter (2/8)</option>
+                <option value="EMPTY">Empty</option>
               </select>
             </div>
             <div>
@@ -171,6 +202,18 @@ export default function VehicleHandoverPage() {
                 <option value="Damaged">Damaged</option>
               </select>
             </div>
+            
+            {formData.vehicleCondition !== 'Good' && (
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-400 mb-1.5">Damage Notes</label>
+                <textarea 
+                  value={formData.damageNotes}
+                  onChange={e => setFormData({...formData, damageNotes: e.target.value})}
+                  className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2.5 px-3 text-white focus:border-[#FACC15] outline-none min-h-[100px]"
+                  placeholder="Describe the damage..."
+                />
+              </div>
+            )}
             
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-400 mb-1.5">Vehicle Photos (Optional)</label>

@@ -107,6 +107,7 @@ export function CarRentalBookingsTable({
       key: 'status',
       title: 'Rental Status',
       dataIndex: 'status',
+      className: 'text-center',
       render: (row) => {
         const colors: Record<string, string> = {
           PENDING_APPROVAL: 'text-orange-500 bg-orange-500/10 border-orange-500/20',

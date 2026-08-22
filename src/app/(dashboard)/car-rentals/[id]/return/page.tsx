@@ -6,6 +6,7 @@ import { ArrowLeft, Camera, ShieldAlert, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { carRentalsService } from '@/services/car-rentals/car-rentals.service';
 import { format } from 'date-fns';
+import { useCarRentalsStore } from '@/stores/car-rentals.store';
 
 export default function VehicleReturnPage() {
   const params = useParams();
@@ -17,16 +18,40 @@ export default function VehicleReturnPage() {
   const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
-    fuelLevel: 'Full',
+    fuelLevel: 'FULL',
     odometerReading: '',
     vehicleCondition: 'Good',
     damageNotes: '',
-    securityDeposit: 'Refund',
+    refundAmount: '',
+    refundAccountNumber: '',
     customerSignature: '',
     supplierSignature: ''
   });
   
   const [photos, setPhotos] = useState<string[]>([]);
+  const [maxRefund, setMaxRefund] = useState(0);
+  const [remainingDays, setRemainingDays] = useState(0);
+  const [totalDays, setTotalDays] = useState(0);
+
+  useEffect(() => {
+    if (booking) {
+      const start = new Date(booking.startDate);
+      const end = new Date(booking.endDate);
+      const now = new Date();
+      
+      const tDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      const uDays = Math.max(1, Math.ceil((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+      const rDays = Math.max(0, tDays - uDays);
+      
+      setTotalDays(tDays);
+      setRemainingDays(rDays);
+      
+      const dailyRate = Number(booking.vehicleTotal) / tDays;
+      const calcRefund = Math.round(rDays * dailyRate * 100) / 100;
+      setMaxRefund(calcRefund);
+      setFormData(prev => ({ ...prev, refundAmount: calcRefund.toString() }));
+    }
+  }, [booking]);
 
   useEffect(() => {
     if (bookingId) {
@@ -55,6 +80,7 @@ export default function VehicleReturnPage() {
     try {
       await carRentalsService.returnBooking(bookingId, payload);
       toast.success("Return completed successfully!");
+      useCarRentalsStore.getState().setManagementBookings([], 0, ''); // Invalidate cache
       router.back();
     } catch (err) {
       console.error(err);
@@ -97,23 +123,61 @@ export default function VehicleReturnPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         
-        {/* Pre-fetched Details */}
-        <div className="bg-[#111111] p-6 rounded-xl border border-[#27272A] grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="block text-gray-400 mb-1">Vehicle Name</span>
-            <span className="font-medium text-white">{booking.vehicle?.name}</span>
+        {/* Vehicle Info */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr,auto] gap-4">
+          <div className="bg-[#111111] rounded-xl p-4 border border-[#27272A] flex gap-4 items-center">
+            <div className="w-20 h-20 bg-[#1A1A1A] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
+              {booking.vehicle?.images?.[0] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={booking.vehicle.images[0]} alt="Car" className="w-full h-full object-cover" />
+              ) : (
+                <Camera className="h-6 w-6 text-gray-500" />
+              )}
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-lg text-white">{booking.vehicle?.name}</h3>
+              <p className="text-sm text-gray-400">
+                {booking.vehicle?.category} {booking.vehicle?.year ? `• ${booking.vehicle.year}` : ''}
+              </p>
+              <p className="text-xs text-[#FACC15] mt-1 font-medium">Plate: {booking.vehicle?.registrationNo || 'N/A'}</p>
+            </div>
           </div>
-          <div>
-            <span className="block text-gray-400 mb-1">Vehicle ID</span>
-            <span className="font-medium text-white">CR-{booking.vehicle?.id.substring(0, 8).toUpperCase()}</span>
+          
+          <div className="bg-[#111111] rounded-xl p-4 border border-[#27272A] flex flex-col justify-center">
+            <p className="text-xs text-gray-500 mb-1">Total Amount Paid</p>
+            <p className="text-2xl font-bold text-emerald-500">
+              EUR {booking?.grandTotal ? Number(booking.grandTotal).toFixed(2) : '0.00'}
+            </p>
           </div>
-          <div>
-            <span className="block text-gray-400 mb-1">Return Date & Time</span>
-            <span className="font-medium text-white">{format(new Date(booking.endDate), 'MMM dd, yyyy HH:mm')}</span>
-          </div>
-          <div>
-            <span className="block text-gray-400 mb-1">Return Location</span>
-            <span className="font-medium text-white">{booking.dropoffLocation}</span>
+        </div>
+        
+        {/* Booking Details */}
+        <div className="bg-[#111111] rounded-xl p-4 border border-[#27272A]">
+          <h3 className="text-sm font-semibold text-white mb-2 uppercase tracking-wider text-xs">Booking Details</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 mb-0.5">Customer</p>
+              <p className="text-sm text-gray-300 font-medium">{booking.user?.firstName} {booking.user?.lastName}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{booking.user?.phone || 'No phone'}</p>
+            </div>
+            <div className="col-span-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">Pickup Date & Time</p>
+                  <p className="text-sm text-gray-300 font-medium">
+                    {new Date(booking.startDate).toLocaleDateString()} {new Date(booking.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5 break-words">{booking.pickupLocation}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 mb-0.5">Return Date & Time</p>
+                  <p className="text-sm text-gray-300 font-medium">
+                    {new Date(booking.endDate).toLocaleDateString()} {new Date(booking.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5 break-words">{booking.dropoffLocation}</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -129,11 +193,10 @@ export default function VehicleReturnPage() {
                 onChange={e => setFormData({...formData, fuelLevel: e.target.value})}
                 className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2.5 px-3 text-white focus:border-[#FACC15] outline-none"
               >
-                <option value="Full">Full</option>
-                <option value="3/4">3/4</option>
-                <option value="1/2">1/2</option>
-                <option value="1/4">1/4</option>
-                <option value="Empty">Empty</option>
+                <option value="FULL">Full (8/8)</option>
+                <option value="HALF">Half (4/8)</option>
+                <option value="QUARTER">Quarter (2/8)</option>
+                <option value="EMPTY">Empty</option>
               </select>
             </div>
             <div>
@@ -199,6 +262,43 @@ export default function VehicleReturnPage() {
                 </div>
               )}
             </div>
+            
+            {remainingDays > 0 && (
+              <div className="col-span-2 bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl mt-4">
+                <h3 className="text-yellow-500 font-semibold mb-2">Early Return Refund</h3>
+                <div className="flex justify-between text-sm text-gray-300 mb-1">
+                  <span>Total Booked Days:</span>
+                  <span>{totalDays} days</span>
+                </div>
+                <div className="flex justify-between text-sm text-gray-300 mb-1">
+                  <span>Remaining Unused Days:</span>
+                  <span>{remainingDays} days</span>
+                </div>
+                <div className="flex justify-between text-sm text-white font-medium mb-3">
+                  <span>Calculated Refund:</span>
+                  <span>EUR {maxRefund.toFixed(2)}</span>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-yellow-500/80 mb-1">Enter Final Refund Amount (EUR)</label>
+                    <input 
+                      type="number" 
+                      step="0.01"
+                      required 
+                      max={maxRefund}
+                      value={formData.refundAmount}
+                      onChange={e => setFormData({...formData, refundAmount: e.target.value})}
+                      className="w-full bg-[#0A0A0A] border border-yellow-500/30 rounded-lg p-3 text-white focus:border-yellow-500 outline-none"
+                    />
+                  </div>
+                  <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                    <span className="text-sm text-blue-200">Refund will be automatically processed to the customer's original payment method.</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

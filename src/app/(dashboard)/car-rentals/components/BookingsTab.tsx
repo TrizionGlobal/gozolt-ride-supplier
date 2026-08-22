@@ -8,14 +8,18 @@ import { toast } from 'sonner';
 import { CarRentalBookingsTable } from './CarRentalBookingsTable';
 import { useDebounce } from '@/hooks/use-debounce';
 import { AssignWorkerModal } from '@/components/car-rentals/assign-worker-modal';
+import Swal from 'sweetalert2';
 import { ExtensionRequestsTable } from './ExtensionRequestsTable';
 
 const TABS = [
   { id: 'today', label: 'Today\'s Scheduled', statuses: ['CONFIRMED'], dateFilter: 'TODAY' },
   { id: 'pending', label: 'Pending Requests', statuses: ['PENDING_APPROVAL'], dateFilter: undefined },
+  { id: 'confirmed', label: 'Confirmed', statuses: ['CONFIRMED'], dateFilter: undefined },
   { id: 'on_rent', label: 'On Rent', statuses: ['ACTIVE'], dateFilter: undefined },
   { id: 'overdue', label: 'Overdue', statuses: ['ACTIVE'], dateFilter: 'OVERDUE' },
   { id: 'upcoming', label: 'Upcoming', statuses: ['CONFIRMED'], dateFilter: 'UPCOMING' },
+  { id: 'cancelled', label: 'User Cancellations', statuses: ['CANCELLED'], dateFilter: undefined },
+  { id: 'rejected', label: 'Supplier Rejections', statuses: ['REJECTED'], dateFilter: undefined },
   { id: 'extensions', label: 'Extension Requests', statuses: [], dateFilter: undefined },
 ] as { id: string; label: string; statuses: string[]; dateFilter?: 'TODAY' | 'UPCOMING' | 'OVERDUE' }[];
 
@@ -76,11 +80,17 @@ export function BookingsTab() {
   const [extensions, setExtensions] = useState<any[]>([]);
   const [isExtensionsLoading, setIsExtensionsLoading] = useState(false);
   const [extensionsTotal, setExtensionsTotal] = useState(0);
+  const [extensionsStatus, setExtensionsStatus] = useState<string>('ALL');
 
   const fetchExtensions = useCallback(async () => {
     setIsExtensionsLoading(true);
     try {
-      const res = await carRentalsService.getExtensionRequests({ page: managementPage, limit: managementLimit });
+      const res = await carRentalsService.getExtensionRequests({ 
+        page: managementPage, 
+        limit: managementLimit, 
+        search: managementSearch || undefined,
+        status: extensionsStatus !== 'ALL' ? extensionsStatus : undefined
+      });
       setExtensions(res.data || []);
       setExtensionsTotal(res.total || 0);
     } catch (e) {
@@ -89,7 +99,7 @@ export function BookingsTab() {
     } finally {
       setIsExtensionsLoading(false);
     }
-  }, [managementPage, managementLimit]);
+  }, [managementPage, managementLimit, managementSearch, extensionsStatus]);
 
   useEffect(() => {
     if (managementTab === 'extensions') {
@@ -100,22 +110,64 @@ export function BookingsTab() {
   }, [fetchBookings, fetchExtensions, managementTab]);
 
   const handleApproveExtension = async (id: string) => {
-    try {
-      await carRentalsService.approveExtensionRequest(id);
-      toast.success('Extension approved');
+    const result = await Swal.fire({
+      title: 'Approve Extension?',
+      text: 'Are you sure you want to approve this extension request?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, approve it',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#10B981',
+      cancelButtonColor: '#3F3F46',
+      background: '#111111',
+      color: '#ffffff',
+      showLoaderOnConfirm: true,
+      preConfirm: async () => {
+        try {
+          await carRentalsService.approveExtensionRequest(id);
+          return true;
+        } catch (e: any) {
+          Swal.showValidationMessage(e.message || 'Failed to approve extension');
+          return false;
+        }
+      },
+      allowOutsideClick: () => !Swal.isLoading()
+    });
+
+    if (result.isConfirmed) {
+      toast.success('Extension approved successfully');
       fetchExtensions();
-    } catch (e) {
-      toast.error('Failed to approve extension');
     }
   };
 
   const handleRejectExtension = async (id: string) => {
-    try {
-      await carRentalsService.rejectExtensionRequest(id);
-      toast.success('Extension rejected');
+    const result = await Swal.fire({
+      title: 'Reject Extension?',
+      text: 'Are you sure you want to reject this extension request?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, reject it',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#EF4444',
+      cancelButtonColor: '#3F3F46',
+      background: '#111111',
+      color: '#ffffff',
+      showLoaderOnConfirm: true,
+      preConfirm: async () => {
+        try {
+          await carRentalsService.rejectExtensionRequest(id);
+          return true;
+        } catch (e: any) {
+          Swal.showValidationMessage(e.message || 'Failed to reject extension');
+          return false;
+        }
+      },
+      allowOutsideClick: () => !Swal.isLoading()
+    });
+
+    if (result.isConfirmed) {
+      toast.success('Extension rejected successfully');
       fetchExtensions();
-    } catch (e) {
-      toast.error('Failed to reject extension');
     }
   };
 
@@ -132,14 +184,14 @@ export function BookingsTab() {
   return (
     <div>
       {/* Tabs */}
-      <div className="mb-6 flex space-x-1 rounded-xl bg-[#141414] p-1 border border-[#27272A] w-fit">
+      <div className="mb-6 flex space-x-1 rounded-xl bg-[#141414] p-1 border border-[#27272A] max-w-full overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => {
               setManagementFilters(1, managementLimit, managementSearch, tab.id);
             }}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+            className={`whitespace-nowrap flex-shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
               managementTab === tab.id
                 ? 'bg-[#27272A] text-white shadow'
                 : 'text-[#A1A1AA] hover:text-white hover:bg-[#1A1A1A]'
@@ -150,8 +202,8 @@ export function BookingsTab() {
         ))}
       </div>
 
-      {/* Search */}
-      <div className="mb-4">
+      {/* Search & Filter */}
+      <div className="mb-4 flex flex-col sm:flex-row gap-4">
         <div className="relative w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#52525B]" />
           <input
@@ -164,6 +216,20 @@ export function BookingsTab() {
             className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2 pl-10 pr-3 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15]"
           />
         </div>
+        
+        {managementTab === 'extensions' && (
+          <select
+            value={extensionsStatus}
+            onChange={(e) => {
+              setExtensionsStatus(e.target.value);
+            }}
+            className="rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2 px-3 text-sm text-white outline-none focus:border-[#FACC15] w-full sm:w-auto"
+          >
+            <option value="ALL">All Statuses</option>
+            <option value="APPROVED">Approved</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+        )}
       </div>
 
       {/* Table */}

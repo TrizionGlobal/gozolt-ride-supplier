@@ -126,7 +126,7 @@ export const carRentalsService = {
 
   // --- Extensions ---
 
-  async getExtensionRequests(params?: { page?: number; limit?: number }): Promise<any> {
+  async getExtensionRequests(params?: { page?: number; limit?: number; search?: string; status?: string }): Promise<any> {
     const response = await apiClient.get('/car-rentals/supplier/dashboard/extension-requests', { params });
     return response.data;
   },

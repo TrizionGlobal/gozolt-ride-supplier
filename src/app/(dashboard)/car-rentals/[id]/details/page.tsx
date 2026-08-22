@@ -132,42 +132,130 @@ export default function BookingDetailsPage() {
             </div>
           </div>
 
-          {/* Packages & Addons */}
-          <div className="space-y-4">
-            <h4 className="font-semibold text-white text-lg">Packages & Add-ons</h4>
+          {/* Pricing & Payment Details */}
+          <div className="col-span-2 space-y-4">
+            <h4 className="font-semibold text-white text-lg">Payment Details</h4>
             <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm space-y-3">
-              <div className="flex justify-between"><span className="text-gray-400">Protection Package:</span> <span className="font-medium">{booking.selectedPackage?.title || 'None'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Mileage Package:</span> <span className="font-medium">{booking.mileagePackage || 'Standard'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Add-ons:</span> <span className="font-medium">N/A</span></div>
-            </div>
-          </div>
+              {(() => {
+                const start = new Date(booking.startDate);
+                const end = new Date(booking.endDate);
+                let d = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+                if (d < 1) d = 1;
 
-          {/* Pricing Summary */}
-          <div className="space-y-4">
-            <h4 className="font-semibold text-white text-lg">Pricing & Payment Details</h4>
-            <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm space-y-3">
-              <div className="flex justify-between"><span className="text-gray-400">Vehicle Total:</span> <span className="font-medium">€{booking.vehicleTotal}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Packages Total:</span> <span className="font-medium">€{booking.packagesTotal}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Add-ons Total:</span> <span className="font-medium">€{booking.addOnsTotal}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Delivery Fee:</span> <span className="font-medium">€{booking.deliveryFee}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Taxes:</span> <span className="font-medium">€{booking.taxes}</span></div>
-              <div className="flex justify-between font-bold pt-3 border-t border-[#27272A]"><span className="text-white">Total Booking Amount:</span> <span className="text-[#FACC15]">€{booking.grandTotal}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Payment Status:</span> <span className="font-medium text-emerald-400">Paid</span></div>
+                // Adjust original days if there were extensions (to match original booking rate before extensions)
+                // We'll just show the total including extensions to keep it simple, or calculate just the vehicle rate.
+                const vehicleRate = Number(booking.vehicle?.pricePerDay || 0) * d;
+
+                return (
+                  <>
+                    <div className="flex justify-between"><span className="text-gray-400">Vehicle Rate:</span> <span className="font-medium">€{vehicleRate.toFixed(2)}</span></div>
+                    
+                    {booking.isFlexible && (
+                      <div className="flex justify-between"><span className="text-gray-400">Stay Flexible:</span> <span className="font-medium">€{Number(booking.flexibleTotal || 0).toFixed(2)}</span></div>
+                    )}
+
+                    {/* Protection Package */}
+                    {booking.selectedPackage ? (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">{booking.selectedPackage.title || 'Protection Package'}:</span> 
+                        <span className="font-medium">€{Number((booking.selectedPackage.pricePerDay || booking.selectedPackage.price || 0) * d).toFixed(2)}</span>
+                      </div>
+                    ) : booking.protectionPackageId && booking.vehicle?.protectionPackages && (() => {
+                      const pkg = booking.vehicle.protectionPackages.find((p: any) => p.id === booking.protectionPackageId);
+                      if (pkg) {
+                        return (
+                          <div className="flex justify-between"><span className="text-gray-400">{pkg.title || 'Protection Package'}:</span> <span className="font-medium">€{Number((pkg.pricePerDay || 0) * d).toFixed(2)}</span></div>
+                        );
+                      }
+                      return null;
+                    })()}
+
+                    {/* Add-ons */}
+                    {booking.addonIds && booking.vehicle?.addons ? (
+                      booking.addonIds.map((id: string) => {
+                        const addon = booking.vehicle.addons.find((a: any) => a.id === id);
+                        if (addon) {
+                          return (
+                            <div key={id} className="flex justify-between">
+                              <span className="text-gray-400">{addon.name}:</span>
+                              <span className="font-medium">€{Number(addon.pricePerDay * d).toFixed(2)}</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })
+                    ) : booking.addOns ? (
+                      // Fallback for legacy format
+                      booking.addOns.map((addon: any, idx: number) => (
+                        <div key={idx} className="flex justify-between">
+                          <span className="text-gray-400">{addon.name}:</span>
+                          <span className="font-medium">€{Number((addon.pricePerDay || addon.price || 0) * d).toFixed(2)}</span>
+                        </div>
+                      ))
+                    ) : null}
+
+                    {/* Delivery & Taxes */}
+                    {Number(booking.deliveryFee) > 0 && (
+                      <div className="flex justify-between"><span className="text-gray-400">Delivery Fee:</span> <span className="font-medium">€{Number(booking.deliveryFee || 0).toFixed(2)}</span></div>
+                    )}
+                    {Number(booking.taxes) > 0 && (
+                      <div className="flex justify-between"><span className="text-gray-400">Taxes:</span> <span className="font-medium">€{Number(booking.taxes || 0).toFixed(2)}</span></div>
+                    )}
+
+                    <div className="flex justify-between font-bold pt-3 border-t border-[#27272A]">
+                      <span className="text-white">Grand Total:</span> 
+                      <span className="text-[#FACC15]">€{Number(booking.grandTotal || 0).toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="flex justify-between pt-2">
+                      <span className="text-gray-400">Payment Status:</span> 
+                      <span className="font-medium text-emerald-400">Paid</span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
           
           {/* Documents */}
           <div className="col-span-2 space-y-4">
             <h4 className="font-semibold text-white text-lg">Documents</h4>
-            <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-white font-medium">Rental Agreement</span>
-                <span className="text-gray-400 text-xs">Digitally signed contract</span>
+            {(booking.drivingLicenceUrl || booking.nationalIdUrl) ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {booking.drivingLicenceUrl && (
+                  <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-white font-medium capitalize">Driving License</span>
+                      <span className="text-gray-400 text-xs">Uploaded document</span>
+                    </div>
+                    <a href={booking.drivingLicenceUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-[#27272A] text-white rounded-lg hover:bg-[#3F3F46] text-sm font-medium transition-colors border border-[#3F3F46] text-center inline-block">
+                      View Document
+                    </a>
+                  </div>
+                )}
+                {booking.nationalIdUrl && (
+                  <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <span className="text-white font-medium capitalize">National ID</span>
+                      <span className="text-gray-400 text-xs">Uploaded document</span>
+                    </div>
+                    <a href={booking.nationalIdUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-[#27272A] text-white rounded-lg hover:bg-[#3F3F46] text-sm font-medium transition-colors border border-[#3F3F46] text-center inline-block">
+                      View Document
+                    </a>
+                  </div>
+                )}
               </div>
-              <button className="px-4 py-2 bg-[#27272A] text-white rounded-lg hover:bg-[#3F3F46] text-sm font-medium transition-colors border border-[#3F3F46]">
-                View Document
-              </button>
-            </div>
+            ) : (
+              <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm flex items-center justify-between">
+                <div className="flex flex-col">
+                  <span className="text-white font-medium">Rental Agreement</span>
+                  <span className="text-gray-400 text-xs">Digitally signed contract</span>
+                </div>
+                <button className="px-4 py-2 bg-[#27272A] text-white rounded-lg hover:bg-[#3F3F46] text-sm font-medium transition-colors border border-[#3F3F46]">
+                  View Document
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Handover Details */}

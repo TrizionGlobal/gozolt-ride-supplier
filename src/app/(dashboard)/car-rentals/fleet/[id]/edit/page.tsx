@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Upload, X } from 'lucide-react';
-import { Topbar } from '@/components/layout/topbar';
+
 
 export default function EditRentalVehiclePage() {
   const router = useRouter();

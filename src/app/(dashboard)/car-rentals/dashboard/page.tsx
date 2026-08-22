@@ -323,7 +323,7 @@ export default function RentalDashboardPage() {
                 <Tooltip 
                   contentStyle={{ backgroundColor: 'rgba(17, 17, 17, 0.8)', backdropFilter: 'blur(12px)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', padding: '8px 12px' }}
                   itemStyle={{ color: '#34d399', fontWeight: '900', fontSize: '1.1rem' }}
-                  formatter={(value: number) => [`€${value.toLocaleString()}`, 'Earnings']}
+                  formatter={(value: any) => [`€${Number(value || 0).toLocaleString()}`, 'Earnings']}
                   labelStyle={{ color: '#a1a1aa', fontWeight: 'bold', marginBottom: '2px', fontSize: '0.8rem', textTransform: 'uppercase' }}
                   cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                 />

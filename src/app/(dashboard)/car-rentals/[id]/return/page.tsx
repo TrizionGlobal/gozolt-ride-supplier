@@ -24,7 +24,6 @@ export default function VehicleReturnPage() {
     damageNotes: '',
     refundAmount: '',
     refundAccountNumber: '',
-    customerSignature: '',
     supplierSignature: ''
   });
   
@@ -73,7 +72,7 @@ export default function VehicleReturnPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.odometerReading || !formData.customerSignature || !formData.supplierSignature) {
+    if (!formData.odometerReading || !formData.supplierSignature) {
       toast.error("Please fill in all required fields (Odometer and Signatures)");
       return;
     }
@@ -310,18 +309,7 @@ export default function VehicleReturnPage() {
         <div className="bg-[#111111] p-6 rounded-xl border border-[#27272A]">
           <h3 className="text-lg font-semibold text-white mb-4">Digital Signatures</h3>
           
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1.5">Customer Signature (Type Name)</label>
-              <input 
-                type="text" 
-                required
-                value={formData.customerSignature}
-                onChange={e => setFormData({...formData, customerSignature: e.target.value})}
-                className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2.5 px-3 text-white focus:border-[#FACC15] outline-none"
-                placeholder="Customer's full name"
-              />
-            </div>
+          <div className="grid grid-cols-1 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1.5">Supplier Signature (Type Name)</label>
               <input 

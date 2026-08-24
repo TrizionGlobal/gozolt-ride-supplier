@@ -244,11 +244,11 @@ export default function RentalDashboardPage() {
           </div>
         </GlassCard>
 
-        {/* Expected Earnings */}
+        {/* Pending Payouts */}
         <GlassCard>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-wider">Expected Earnings</p>
+              <p className="text-[10px] font-bold text-[#A1A1AA] uppercase tracking-wider">Pending Payouts</p>
               <h3 className="mt-0.5 text-2xl font-black tracking-tighter text-yellow-400 drop-shadow-lg">
                 €{(metrics?.pendingEarnings || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </h3>

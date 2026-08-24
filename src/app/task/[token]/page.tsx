@@ -13,7 +13,7 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
   const [error, setError] = useState('');
   const [step, setStep] = useState<'VERIFY' | 'SCAN' | 'FORM' | 'SUCCESS'>('VERIFY');
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
-  const [formData, setFormData] = useState({ fuelLevel: 'FULL', odometerReading: '', vehicleCondition: 'Good', damageNotes: '', refundAmount: '', refundAccountNumber: '', customerSignature: '', supplierSignature: '' });
+  const [formData, setFormData] = useState({ fuelLevel: 'FULL', odometerReading: '', vehicleCondition: 'Good', damageNotes: '', refundAmount: '', refundAccountNumber: '', supplierSignature: '' });
   const [photos, setPhotos] = useState<string[]>([]);
   const [maxRefund, setMaxRefund] = useState(0);
   const [remainingDays, setRemainingDays] = useState(0);
@@ -79,7 +79,7 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    if (!formData.odometerReading || !formData.customerSignature || !formData.supplierSignature) {
+    if (!formData.odometerReading || !formData.supplierSignature) {
       alert("Please fill in all required fields (Odometer and Signatures)");
       setLoading(false);
       return;
@@ -93,7 +93,6 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
       damageNotes: formData.damageNotes,
       refundAmount: formData.refundAmount,
       refundAccountNumber: formData.refundAccountNumber,
-      customerSignature: formData.customerSignature,
       supplierSignature: formData.supplierSignature,
       photos,
     };
@@ -350,17 +349,6 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
             <div className="border-t border-gray-800 pt-6 mt-6">
               <h3 className="text-lg font-semibold text-white mb-4">Digital Signatures</h3>
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">Customer Signature (Type Name)</label>
-                  <input 
-                    type="text" 
-                    required
-                    value={formData.customerSignature}
-                    onChange={e => setFormData({...formData, customerSignature: e.target.value})}
-                    className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#FACC15] outline-none"
-                    placeholder="Customer's full name"
-                  />
-                </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">Staff Signature (Type Name)</label>
                   <input 

@@ -83,12 +83,6 @@ export default function EarningsPage() {
 
   const columns: ColumnDef<any>[] = [
     {
-      key: 'bookingId',
-      title: 'Booking ID',
-      dataIndex: 'bookingId',
-      render: (row) => <span className="text-gray-400 text-xs font-mono">{row.bookingId.split('-')[0].toUpperCase()}</span>
-    },
-    {
       key: 'vehicle',
       title: 'Vehicle',
       dataIndex: 'vehicleName',
@@ -202,9 +196,9 @@ export default function EarningsPage() {
         </div>
       </div>
 
-      {isLoading && !summary ? (
-        <div className="grid grid-cols-4 gap-6 mb-8">
-          {[...Array(4)].map((_, i) => (
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {[...Array(3)].map((_, i) => (
             <div key={i} className="bg-[#111111] border border-[#27272A] p-6 rounded-xl animate-pulse">
               <div className="h-4 w-24 bg-white/10 rounded mb-4" />
               <div className="h-8 w-32 bg-white/10 rounded" />
@@ -212,22 +206,18 @@ export default function EarningsPage() {
           ))}
         </div>
       ) : summary ? (
-        <div className="grid grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-[#111111] border border-[#27272A] p-6 rounded-xl">
-            <h3 className="text-gray-400 text-sm font-medium mb-2">Today's Earnings</h3>
-            <p className="text-2xl font-bold text-white">€{summary.todayEarnings.toFixed(2)}</p>
+            <h3 className="text-gray-400 text-sm font-medium mb-2 uppercase tracking-wider">Total Earnings</h3>
+            <p className="text-3xl font-bold text-emerald-400">€{summary.totalEarnings.toFixed(2)}</p>
           </div>
           <div className="bg-[#111111] border border-[#27272A] p-6 rounded-xl">
-            <h3 className="text-gray-400 text-sm font-medium mb-2">This Week</h3>
-            <p className="text-2xl font-bold text-white">€{summary.weekEarnings.toFixed(2)}</p>
+            <h3 className="text-gray-400 text-sm font-medium mb-2 uppercase tracking-wider">Pending Payouts</h3>
+            <p className="text-3xl font-bold text-yellow-400">€{(summary.pendingEarnings || 0).toFixed(2)}</p>
           </div>
           <div className="bg-[#111111] border border-[#27272A] p-6 rounded-xl">
-            <h3 className="text-gray-400 text-sm font-medium mb-2">This Month</h3>
-            <p className="text-2xl font-bold text-white">€{summary.monthEarnings.toFixed(2)}</p>
-          </div>
-          <div className="bg-[#111111] border border-[#FACC15]/20 p-6 rounded-xl shadow-[0_0_15px_rgba(250,204,21,0.1)]">
-            <h3 className="text-[#FACC15] text-sm font-medium mb-2">Total Earnings</h3>
-            <p className="text-2xl font-bold text-[#FACC15]">€{summary.totalEarnings.toFixed(2)}</p>
+            <h3 className="text-gray-400 text-sm font-medium mb-2 uppercase tracking-wider">Total Refunded</h3>
+            <p className="text-3xl font-bold text-red-400">€{(summary.totalRefunded || 0).toFixed(2)}</p>
           </div>
         </div>
       ) : null}

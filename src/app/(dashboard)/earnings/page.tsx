@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
 import { apiClient } from '@/lib/api-client';
-import { format } from 'date-fns';
-import { Calendar, ChevronDown } from 'lucide-react';
+import { Calendar, ChevronDown, CreditCard, Landmark, Banknote } from 'lucide-react';
 import { DatePicker, ConfigProvider, theme } from 'antd';
 import dayjs from 'dayjs';
+import { financialService } from '@/services/financials/financial.service';
+import { PayoutHistoryTable } from '@/components/financials/payout-history-table';
+import { useAuth } from '@/hooks/use-auth';
+import type { PayoutRecord } from '@/types';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 const { RangePicker } = DatePicker;
 
@@ -19,17 +23,21 @@ const periodOptions = [
   'Custom Range',
 ];
 
-export default function EarningsPage() {
-  const [earnings, setEarnings] = useState<any[]>([]);
+export default function EarningsAndPayoutsPage() {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  // Earnings state
   const [summary, setSummary] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
-  const [total, setTotal] = useState(0);
   
   const [period, setPeriod] = useState('All Time');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
+
+  // Payouts state
+  const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
+  const [isLoadingPayouts, setIsLoadingPayouts] = useState(true);
 
   const fetchEarnings = useCallback(async () => {
     setIsLoading(true);
@@ -60,20 +68,18 @@ export default function EarningsPage() {
         }
       }
 
-      const params: any = { page, limit };
+      const params: any = {};
       if (fromDate) params.startDate = fromDate.toISOString();
       if (toDate) params.endDate = toDate.toISOString();
       
       const res = await apiClient.get('/supplier-earnings', { params });
-      setEarnings(res.data.items || []);
       setSummary(res.data.summary);
-      setTotal(res.data.meta?.total || 0);
     } catch (err) {
       console.error(err);
     } finally {
       setIsLoading(false);
     }
-  }, [page, limit, period, customFrom, customTo]);
+  }, [period, customFrom, customTo]);
 
   useEffect(() => {
     if (period !== 'Custom Range' || (customFrom && customTo)) {
@@ -81,159 +87,127 @@ export default function EarningsPage() {
     }
   }, [fetchEarnings, period, customFrom, customTo]);
 
-  const columns: ColumnDef<any>[] = [
-    {
-      key: 'vehicle',
-      title: 'Vehicle',
-      dataIndex: 'vehicleName',
-      render: (row) => (
-        <div className="flex flex-col">
-          <span className="font-medium text-white">{row.vehicleName}</span>
-          <span className="text-xs text-gray-400">{row.vehicleNumberPlate}</span>
-        </div>
-      )
-    },
-    {
-      key: 'amount',
-      title: 'Rental Amount',
-      dataIndex: 'originalAmount',
-      className: 'text-center',
-      render: (row) => (
-        <span className="text-white font-medium">
-          €{(row.originalAmount || row.rentalAmount).toFixed(2)}
-        </span>
-      )
-    },
-    {
-      key: 'refund',
-      title: 'Refund Amount',
-      dataIndex: 'refundAmount',
-      className: 'text-center',
-      render: (row) => (
-        <span className={row.refundAmount > 0 ? "text-red-400" : "text-gray-500"}>
-          {row.refundAmount > 0 ? `-€${row.refundAmount.toFixed(2)}` : '€0.00'}
-        </span>
-      )
-    },
-
-
-    {
-      key: 'net',
-      title: 'Net Earnings',
-      dataIndex: 'netEarnings',
-      className: 'text-center',
-      render: (row) => <div className="flex justify-center"><span className="text-emerald-400 font-bold bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">€{row.netEarnings.toFixed(2)}</span></div>
-    },
-    {
-      key: 'status',
-      title: 'Status',
-      dataIndex: 'status',
-      className: 'text-center',
-      render: (row) => {
-        const isCancelled = row.status === 'CANCELLED';
-        return (
-          <div className="flex justify-center">
-            <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded border ${isCancelled ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-[#27272A] text-gray-300 border-[#3F3F46]'}`}>
-              {isCancelled ? 'CANCELLED (FEE)' : row.status}
-            </span>
-          </div>
-        );
-      }
-    },
-    {
-      key: 'date',
-      title: 'Date',
-      dataIndex: 'earningDate',
-      className: 'text-center',
-      render: (row) => <div className="flex justify-center"><span className="text-gray-400 text-sm">{format(new Date(row.earningDate), 'MMM dd, yyyy')}</span></div>
+  const fetchPayouts = useCallback(async () => {
+    setIsLoadingPayouts(true);
+    try {
+      const payoutsData = await financialService.getCarRentalPayoutHistory();
+      setPayouts(payoutsData);
+    } catch {
+      toast.error('Failed to load rental payout data');
+    } finally {
+      setIsLoadingPayouts(false);
     }
-  ];
+  }, []);
+
+  useEffect(() => {
+    fetchPayouts();
+  }, [fetchPayouts]);
 
   return (
     <div className="p-6">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Earnings</h1>
-          <p className="text-gray-400">Track your completed rental earnings.</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <button className="flex items-center justify-center rounded-md border border-[#3F3F46] bg-[#1A1A1A] p-2 text-[#A1A1AA] hover:text-white transition-colors">
-            <Calendar className="h-4 w-4" />
-          </button>
-          <div className="relative">
-            <select
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-              className="appearance-none rounded-md border border-[#3F3F46] bg-[#1A1A1A] pl-3 pr-8 py-2 text-sm text-white focus:border-[#FACC15] focus:outline-none"
-            >
-              {periodOptions.map((opt) => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A1A1AA]" />
-          </div>
-          
-          {period === 'Custom Range' && (
-            <div className="flex items-center ml-2">
-              <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
-                <RangePicker
-                  value={[customFrom ? dayjs(customFrom) : null, customTo ? dayjs(customTo) : null]}
-                  onChange={(dates) => {
-                    if (dates) {
-                      setCustomFrom(dates[0] ? dates[0].format('YYYY-MM-DD') : '');
-                      setCustomTo(dates[1] ? dates[1].format('YYYY-MM-DD') : '');
-                    } else {
-                      setCustomFrom('');
-                      setCustomTo('');
-                    }
-                  }}
-                  className="rounded-md border border-[#3F3F46] bg-[#1A1A1A] px-3 py-2 text-sm focus:border-[#FACC15] hover:border-[#FACC15]"
-                />
-              </ConfigProvider>
-            </div>
-          )}
+          <h1 className="text-2xl font-bold text-white mb-2">Earnings & Payouts</h1>
+          <p className="text-gray-400">Track your completed rental earnings and view your payouts.</p>
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-[#111111] border border-[#27272A] p-6 rounded-xl animate-pulse">
-              <div className="h-4 w-24 bg-white/10 rounded mb-4" />
-              <div className="h-8 w-32 bg-white/10 rounded" />
+      <div className="animate-in fade-in duration-300">
+        <div className="mb-6 flex justify-end">
+          <div className="flex items-center gap-2">
+            <button className="flex items-center justify-center rounded-md border border-[#3F3F46] bg-[#1A1A1A] p-2 text-[#A1A1AA] hover:text-white transition-colors">
+              <Calendar className="h-4 w-4" />
+            </button>
+            <div className="relative">
+              <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                className="appearance-none rounded-md border border-[#3F3F46] bg-[#1A1A1A] pl-3 pr-8 py-2 text-sm text-white focus:border-[#FACC15] focus:outline-none"
+              >
+                {periodOptions.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A1A1AA]" />
             </div>
-          ))}
+            
+            {period === 'Custom Range' && (
+              <div className="flex items-center ml-2">
+                <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
+                  <RangePicker
+                    value={[customFrom ? dayjs(customFrom) : null, customTo ? dayjs(customTo) : null]}
+                    onChange={(dates) => {
+                      if (dates) {
+                        setCustomFrom(dates[0] ? dates[0].format('YYYY-MM-DD') : '');
+                        setCustomTo(dates[1] ? dates[1].format('YYYY-MM-DD') : '');
+                      } else {
+                        setCustomFrom('');
+                        setCustomTo('');
+                      }
+                    }}
+                    className="rounded-md border border-[#3F3F46] bg-[#1A1A1A] px-3 py-2 text-sm focus:border-[#FACC15] hover:border-[#FACC15]"
+                  />
+                </ConfigProvider>
+              </div>
+            )}
+          </div>
         </div>
-      ) : summary ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-[#111111] border border-[#27272A] p-6 rounded-xl">
-            <h3 className="text-gray-400 text-sm font-medium mb-2 uppercase tracking-wider">Total Earnings</h3>
-            <p className="text-3xl font-bold text-emerald-400">€{summary.totalEarnings.toFixed(2)}</p>
-          </div>
-          <div className="bg-[#111111] border border-[#27272A] p-6 rounded-xl">
-            <h3 className="text-gray-400 text-sm font-medium mb-2 uppercase tracking-wider">Pending Payouts</h3>
-            <p className="text-3xl font-bold text-yellow-400">€{(summary.pendingEarnings || 0).toFixed(2)}</p>
-          </div>
-          <div className="bg-[#111111] border border-[#27272A] p-6 rounded-xl">
-            <h3 className="text-gray-400 text-sm font-medium mb-2 uppercase tracking-wider">Total Refunded</h3>
-            <p className="text-3xl font-bold text-red-400">€{(summary.totalRefunded || 0).toFixed(2)}</p>
-          </div>
-        </div>
-      ) : null}
 
-      <div className="rounded-lg border border-[#27272A] bg-[#111111] overflow-hidden">
-        <ServerSideTable
-          columns={columns}
-          data={earnings}
-          isLoading={isLoading}
-          page={page}
-          limit={limit}
-          total={total}
-          onPageChange={setPage}
-          onLimitChange={setLimit}
-          emptyText="No earnings found for this period."
-        />
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-[#111111] border border-[#27272A] p-6 rounded-xl animate-pulse">
+                <div className="h-4 w-24 bg-white/10 rounded mb-4" />
+                <div className="h-8 w-32 bg-white/10 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : summary ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+            <div className="bg-[#111111] border border-[#27272A] p-5 rounded-xl flex flex-col justify-between">
+              <div className="min-h-[48px] flex items-start">
+                <h3 className="text-gray-400 text-[10px] font-bold uppercase tracking-wider leading-tight">Supplier Total Earnings</h3>
+              </div>
+              <p className="text-2xl font-bold text-white mt-2">€{(summary.totalGrossAmount || 0).toFixed(2)}</p>
+            </div>
+            <div className="bg-[#111111] border border-[#27272A] p-5 rounded-xl flex flex-col justify-between">
+              <div className="min-h-[48px] flex items-start">
+                <h3 className="text-gray-400 text-[10px] font-bold uppercase tracking-wider leading-tight">User Cancellation Refund</h3>
+              </div>
+              <p className="text-2xl font-bold text-red-400 mt-2">€{(summary.cancellationRefunds || 0).toFixed(2)}</p>
+            </div>
+            <div className="bg-[#111111] border border-[#27272A] p-5 rounded-xl flex flex-col justify-between">
+              <div className="min-h-[48px] flex items-start">
+                <h3 className="text-gray-400 text-[10px] font-bold uppercase tracking-wider leading-tight">Refunded Amount (Early Return)</h3>
+              </div>
+              <p className="text-2xl font-bold text-orange-400 mt-2">€{(summary.earlyReturnRefunds || 0).toFixed(2)}</p>
+            </div>
+            <div className="bg-[#111111] border border-[#27272A] p-5 rounded-xl flex flex-col justify-between">
+              <div className="min-h-[48px] flex items-start">
+                <h3 className="text-gray-400 text-[10px] font-bold uppercase tracking-wider leading-tight">Net Amount</h3>
+              </div>
+              <p className="text-2xl font-bold text-emerald-400 mt-2">€{(summary.totalEarnings || 0).toFixed(2)}</p>
+            </div>
+            <div className="bg-[#111111] border border-[#27272A] p-5 rounded-xl flex flex-col justify-between">
+              <div className="min-h-[48px] flex items-start">
+                <h3 className="text-gray-400 text-[10px] font-bold uppercase tracking-wider leading-tight">Already Paid</h3>
+              </div>
+              <p className="text-2xl font-bold text-blue-400 mt-2">€{(summary.totalAlreadyPaid || 0).toFixed(2)}</p>
+            </div>
+            <div className="bg-[#111111] border border-[#27272A] p-5 rounded-xl flex flex-col justify-between">
+              <div className="min-h-[48px] flex items-start">
+                <h3 className="text-gray-400 text-[10px] font-bold uppercase tracking-wider leading-tight">Pending Payouts</h3>
+              </div>
+              <p className="text-2xl font-bold text-yellow-400 mt-2">€{(summary.pendingEarnings || 0).toFixed(2)}</p>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="mt-8">
+
+          <h2 className="text-xl font-bold text-white mb-4">Payout History</h2>
+          <PayoutHistoryTable data={payouts} isLoading={isLoadingPayouts} />
+        </div>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { PanelLeftClose, PanelLeft } from 'lucide-react';
+import { PanelLeftClose, PanelLeft, ArrowLeftRight } from 'lucide-react';
 import { SIDEBAR_ITEMS, ROUTES } from '@/lib/constants';
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { useCarRentalsStore } from '@/stores/car-rentals.store';
@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { isCollapsed, toggle, activeModule } = useSidebarStore();
+  const { isCollapsed, toggle, activeModule, setActiveModule } = useSidebarStore();
   const { logout } = useAuth();
   
   const [source, setSource] = useState<string | null>(null);
@@ -84,6 +84,7 @@ export function Sidebar() {
              pathname.startsWith('/car-rentals/reviews') ||
              pathname.startsWith('/car-rentals/workers') ||
              pathname.startsWith('/car-rentals/bookings') ||
+             pathname.startsWith('/car-rentals/payouts') ||
              pathname.startsWith('/car-rentals/operational') ||
              pathname === '/car-rentals/new' ||
              pathname.match(/^\/car-rentals\/[a-zA-Z0-9-]+\/edit$/) ||
@@ -132,14 +133,24 @@ export function Sidebar() {
 
 
 
+      {/* Switch Module Button */}
+      <div className={cn("px-3 pb-3", isCollapsed && "flex justify-center")}>
+        <Link 
+          href="/module-selection" 
+          onClick={() => setActiveModule(null)}
+          className={cn(
+            "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[#71717A] transition-colors hover:bg-[#1A1A1A] hover:text-[#FACC15]",
+            isCollapsed && "px-2 justify-center"
+          )}
+          title={isCollapsed ? "Switch Module" : undefined}
+        >
+          <ArrowLeftRight className="h-5 w-5 shrink-0" />
+          {!isCollapsed && <span>Switch Module</span>}
+        </Link>
+      </div>
+
       {/* Footer */}
       <div className={cn("border-t border-[#27272A] px-4 py-3", isCollapsed && "px-2")}>
-        {!isCollapsed && (
-          <Link href="/module-selection" className="mb-4 flex items-center justify-center gap-2 rounded-lg border border-[#27272A] bg-[#111111] px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-[#1A1A1A]">
-            <PanelLeftClose className="h-4 w-4 rotate-180" />
-            Switch Module
-          </Link>
-        )}
         {!isCollapsed ? (
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">

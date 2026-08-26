@@ -17,6 +17,34 @@ export default function BookingDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [assignModal, setAssignModal] = useState<{ isOpen: boolean; taskType: 'HANDOVER' | 'RETURN' | null }>({ isOpen: false, taskType: null });
 
+  const getRentalStatus = (b: any) => {
+    if (b.status === 'CANCELLED') {
+      if (b.return?.vehicleCondition === 'SUPPLIER_REJECTED') return 'Supplier Rejected';
+      if (b.return?.vehicleCondition === 'USER_CANCELLED') return 'User Cancelled';
+      return 'Cancelled';
+    }
+    switch (b.status) {
+      case 'PENDING_APPROVAL': return 'Pending';
+      case 'CONFIRMED': return 'Upcoming';
+      case 'ACTIVE': return 'Active';
+      case 'COMPLETED': return 'Completed';
+      default: return b.status;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      PENDING_APPROVAL: 'text-orange-500 bg-orange-500/10 border-orange-500/20',
+      PENDING_PAYMENT: 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20',
+      CONFIRMED: 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+      ACTIVE: 'text-green-500 bg-green-500/10 border-green-500/20',
+      COMPLETED: 'text-teal-400 bg-teal-500/10 border-teal-500/20',
+      CANCELLED: 'text-red-500 bg-red-500/10 border-red-500/20',
+      REJECTED: 'text-red-500 bg-red-500/10 border-red-500/20',
+    };
+    return colors[status] || 'text-white bg-[#27272A] border-[#3F3F46]';
+  };
+
   useEffect(() => {
     if (bookingId) {
       setLoading(true);
@@ -103,7 +131,9 @@ export default function BookingDetailsPage() {
             <p className="text-sm text-gray-400 mt-1">Vehicle ID: CR-{booking.vehicle?.id.substring(0, 8).toUpperCase()} | Category: {booking.vehicle?.category?.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}</p>
           </div>
           <div className="text-right">
-            <span className="px-4 py-1.5 bg-[#27272A] text-white rounded-full text-sm font-medium border border-[#3F3F46]">{booking.status}</span>
+            <span className={`px-4 py-1.5 rounded-full text-sm font-medium border ${getStatusColor(booking.status)}`}>
+              {getRentalStatus(booking)}
+            </span>
           </div>
         </div>
 
@@ -229,7 +259,7 @@ export default function BookingDetailsPage() {
                       <span className="text-gray-400 text-xs">Uploaded document</span>
                     </div>
                     <a href={booking.drivingLicenceUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-[#27272A] text-white rounded-lg hover:bg-[#3F3F46] text-sm font-medium transition-colors border border-[#3F3F46] text-center inline-block">
-                      View Document
+                      View
                     </a>
                   </div>
                 )}
@@ -240,20 +270,14 @@ export default function BookingDetailsPage() {
                       <span className="text-gray-400 text-xs">Uploaded document</span>
                     </div>
                     <a href={booking.nationalIdUrl} target="_blank" rel="noopener noreferrer" className="px-4 py-2 bg-[#27272A] text-white rounded-lg hover:bg-[#3F3F46] text-sm font-medium transition-colors border border-[#3F3F46] text-center inline-block">
-                      View Document
+                      View
                     </a>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm flex items-center justify-between">
-                <div className="flex flex-col">
-                  <span className="text-white font-medium">Rental Agreement</span>
-                  <span className="text-gray-400 text-xs">Digitally signed contract</span>
-                </div>
-                <button className="px-4 py-2 bg-[#27272A] text-white rounded-lg hover:bg-[#3F3F46] text-sm font-medium transition-colors border border-[#3F3F46]">
-                  View Document
-                </button>
+              <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm text-gray-400 text-center">
+                No documents uploaded for this booking.
               </div>
             )}
           </div>
@@ -285,7 +309,7 @@ export default function BookingDetailsPage() {
           )}
 
           {/* Return Details */}
-          {booking.return && (
+          {booking.return && booking.status !== 'CANCELLED' && (
             <div className="col-span-2 space-y-4">
               <h4 className="font-semibold text-white text-lg">Return Details</h4>
               <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm space-y-3">
@@ -309,6 +333,49 @@ export default function BookingDetailsPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Cancellation Details */}
+          {booking.status === 'CANCELLED' && (
+            <div className="col-span-2 space-y-4">
+              <h4 className="font-semibold text-white text-lg text-red-500">Cancellation Details</h4>
+              <div className="bg-[#111111] p-5 rounded-xl border border-red-500/20 bg-red-500/5 text-sm space-y-3">
+                <div className="flex justify-between"><span className="text-gray-400">Cancelled By:</span> <span className="font-medium text-red-500">{booking.cancelledBy === 'USER' ? 'Customer' : booking.cancelledBy === 'SUPPLIER' ? 'Supplier' : 'Unknown'}</span></div>
+                {booking.cancellationReason && (
+                  <div className="flex justify-between"><span className="text-gray-400">Reason:</span> <span className="font-medium">{booking.cancellationReason}</span></div>
+                )}
+                {booking.return?.refundAmount && (
+                  <div className="flex justify-between"><span className="text-gray-400">Refund Amount:</span> <span className="font-medium text-emerald-400">€{Number(booking.return.refundAmount).toFixed(2)}</span></div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Extension Requests Details */}
+          {booking.extensionRequests && booking.extensionRequests.length > 0 && (
+            <div className="col-span-2 space-y-4">
+              <h4 className="font-semibold text-white text-lg">Extension Requests</h4>
+              <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm space-y-4">
+                {booking.extensionRequests.map((ext: any, idx: number) => (
+                  <div key={ext.id || idx} className="p-4 rounded border border-[#3F3F46] space-y-2 relative">
+                    <div className="absolute top-4 right-4">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${
+                        ext.status === 'APPROVED' ? 'text-teal-400 bg-teal-500/10 border-teal-500/20' :
+                        ext.status === 'REJECTED' ? 'text-red-500 bg-red-500/10 border-red-500/20' :
+                        'text-yellow-500 bg-yellow-500/10 border-yellow-500/20'
+                      }`}>
+                        {ext.status}
+                      </span>
+                    </div>
+                    <div className="flex justify-between w-3/4"><span className="text-gray-400">Requested End Date:</span> <span className="font-medium">{format(new Date(ext.newEndDate), 'dd-MMM-yyyy hh:mm a')}</span></div>
+                    <div className="flex justify-between w-3/4"><span className="text-gray-400">Additional Cost:</span> <span className="font-medium text-[#FACC15]">€{Number(ext.additionalCost || 0).toFixed(2)}</span></div>
+                    {ext.reason && (
+                      <div className="flex justify-between w-3/4"><span className="text-gray-400">Reason:</span> <span className="font-medium">{ext.reason}</span></div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}

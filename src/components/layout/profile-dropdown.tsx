@@ -59,7 +59,7 @@ export function ProfileDropdown() {
           </div>
           
           <div className="py-1">
-            {activeModule === 'CAB' && pathname !== '/module-selection' && (
+            {pathname !== '/module-selection' && (
               <>
                 <button
                   onClick={() => { setIsOpen(false); router.push('/settings'); }}

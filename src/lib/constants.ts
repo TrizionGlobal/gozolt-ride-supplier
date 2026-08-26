@@ -15,6 +15,7 @@ import {
   Banknote,
   Star,
   CalendarCheck,
+  Key,
 } from 'lucide-react';
 
 export const ROUTES = {
@@ -45,10 +46,10 @@ export const ROUTES = {
 export const SIDEBAR_ITEMS = [
   { label: 'Dashboard', href: ROUTES.DASHBOARD, icon: LayoutDashboard, module: 'CAB' },
   { label: 'Dashboard', href: '/car-rentals/dashboard', icon: LayoutDashboard, module: 'RENTAL' },
-  { label: 'Car Rentals', href: ROUTES.CAR_RENTALS, icon: Truck, module: 'RENTAL' },
+  { label: 'Car Rentals', href: ROUTES.CAR_RENTALS, icon: Key, module: 'RENTAL' },
   { label: 'Fleet', href: '/car-rentals/fleet', icon: Truck, module: 'RENTAL' },
   { label: 'Booking Management', href: '/car-rentals/bookings', icon: CalendarCheck, module: 'RENTAL' },
-  { label: 'Rental Earnings', href: ROUTES.RENTAL_EARNINGS, icon: Wallet, module: 'RENTAL' },
+  { label: 'Earnings & Payouts', href: ROUTES.RENTAL_EARNINGS, icon: Wallet, module: 'RENTAL' },
   { label: 'Reviews & Ratings', href: '/car-rentals/reviews', icon: Star, module: 'RENTAL' },
   { label: 'Staff & Workers', href: '/car-rentals/workers', icon: Users, module: 'RENTAL' },
   { label: 'Fleet', href: ROUTES.FLEET, icon: Truck, module: 'CAB' },

@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useSidebarStore } from '@/stores/sidebar.store';
-import { Truck, Navigation } from 'lucide-react';
 import { Topbar } from '@/components/layout/topbar';
+import Image from 'next/image';
 
 export default function ModuleSelectionPage() {
   const router = useRouter();
@@ -40,8 +40,8 @@ export default function ModuleSelectionPage() {
             >
               <div className="absolute inset-0 bg-gradient-to-br from-[#FACC15]/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-3xl" />
               <div className="relative z-10 flex flex-col items-center gap-6">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#1A1A1A] border border-[#27272A] group-hover:bg-[#FACC15]/20 group-hover:border-[#FACC15]/50 transition-colors">
-                  <Navigation className="h-10 w-10 text-[#FACC15]" />
+                <div className="flex h-32 w-32 items-center justify-center rounded-2xl overflow-hidden shadow-lg border border-[#27272A] group-hover:border-[#FACC15]/50 transition-colors">
+                  <Image src="/cab-icon.jpg" alt="Cab Booking" width={128} height={128} className="object-cover w-full h-full" />
                 </div>
                 <div className="text-center">
                   <h2 className="text-2xl font-bold text-white mb-2">Cab Booking</h2>
@@ -59,8 +59,8 @@ export default function ModuleSelectionPage() {
             >
               <div className="absolute inset-0 bg-gradient-to-br from-[#FACC15]/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-3xl" />
               <div className="relative z-10 flex flex-col items-center gap-6">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#1A1A1A] border border-[#27272A] group-hover:bg-[#FACC15]/20 group-hover:border-[#FACC15]/50 transition-colors">
-                  <Truck className="h-10 w-10 text-[#FACC15]" />
+                <div className="flex h-32 w-32 items-center justify-center rounded-2xl overflow-hidden shadow-lg border border-[#27272A] group-hover:border-[#FACC15]/50 transition-colors">
+                  <Image src="/rental-icon.jpg" alt="Car Rentals" width={128} height={128} className="object-cover w-full h-full" />
                 </div>
                 <div className="text-center">
                   <h2 className="text-2xl font-bold text-white mb-2">Car Rentals</h2>

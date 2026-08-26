@@ -18,8 +18,6 @@ const TABS = [
   { id: 'on_rent', label: 'On Rent', statuses: ['ACTIVE'], dateFilter: undefined },
   { id: 'overdue', label: 'Overdue', statuses: ['ACTIVE'], dateFilter: 'OVERDUE' },
   { id: 'upcoming', label: 'Upcoming', statuses: ['CONFIRMED'], dateFilter: 'UPCOMING' },
-  { id: 'cancelled', label: 'User Cancellations', statuses: ['CANCELLED'], dateFilter: undefined },
-  { id: 'rejected', label: 'Supplier Rejections', statuses: ['REJECTED'], dateFilter: undefined },
   { id: 'extensions', label: 'Extension Requests', statuses: [], dateFilter: undefined },
 ] as { id: string; label: string; statuses: string[]; dateFilter?: 'TODAY' | 'UPCOMING' | 'OVERDUE' }[];
 

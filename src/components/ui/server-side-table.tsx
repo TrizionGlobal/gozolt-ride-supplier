@@ -25,6 +25,7 @@ interface ServerSideTableProps<T> {
   emptyText?: ReactNode;
   size?: 'default' | 'sm';
   renderExpandedRow?: (row: T) => ReactNode;
+  tableClassName?: string;
 }
 
 export function ServerSideTable<T extends Record<string, any>>({
@@ -41,6 +42,7 @@ export function ServerSideTable<T extends Record<string, any>>({
   emptyText = 'No data found',
   size = 'default',
   renderExpandedRow,
+  tableClassName = '',
 }: ServerSideTableProps<T>) {
   const getRowKey = (row: T) => {
     if (typeof rowKey === 'function') {
@@ -62,7 +64,7 @@ export function ServerSideTable<T extends Record<string, any>>({
         </div>
       ) : (
         <div className="overflow-x-auto border-t border-[#27272A]">
-          <table className="w-full text-left">
+          <table className={`w-full text-left ${tableClassName}`}>
             <thead>
               <tr className="border-b border-[#27272A] bg-[#0A0A0A]/50">
                 {columns.map((col) => (

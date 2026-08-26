@@ -61,14 +61,18 @@ export default function CarRentalsHistoryPage() {
     fetchBookings();
   }, [fetchBookings]);
 
-  const getRentalStatus = (status: string) => {
-    switch (status) {
+  const getRentalStatus = (b: any) => {
+    if (b.status === 'CANCELLED') {
+      if (b.return?.vehicleCondition === 'SUPPLIER_REJECTED') return 'Supplier Rejected';
+      if (b.return?.vehicleCondition === 'USER_CANCELLED') return 'User Cancelled';
+      return 'Cancelled';
+    }
+    switch (b.status) {
       case 'PENDING_APPROVAL': return 'Pending';
       case 'CONFIRMED': return 'Upcoming';
       case 'ACTIVE': return 'Active';
       case 'COMPLETED': return 'Completed';
-      case 'CANCELLED': return 'Cancelled';
-      default: return status;
+      default: return b.status;
     }
   };
 
@@ -76,6 +80,7 @@ export default function CarRentalsHistoryPage() {
     {
       key: 'vehicle',
       title: 'Vehicle Info',
+      className: 'w-[15%]',
       render: (b) => (
         <div>
           <div className="text-white font-medium">{b.vehicle?.name || 'Unknown'}</div>
@@ -88,6 +93,7 @@ export default function CarRentalsHistoryPage() {
     {
       key: 'customer',
       title: 'Customer Details',
+      className: 'w-[20%]',
       render: (b) => (
         <div>
           <div className="text-white font-medium">{b.user?.firstName} {b.user?.lastName}</div>
@@ -99,6 +105,7 @@ export default function CarRentalsHistoryPage() {
     {
       key: 'locations',
       title: 'Locations & Delivery',
+      className: 'w-[25%]',
       render: (b) => (
         <div>
           <div className="text-xs font-medium text-emerald-400 mb-1">
@@ -122,6 +129,7 @@ export default function CarRentalsHistoryPage() {
     {
       key: 'dates',
       title: 'Dates & Times',
+      className: 'w-[20%] whitespace-nowrap',
       render: (b) => (
         <div>
           <div className="text-xs">
@@ -138,14 +146,14 @@ export default function CarRentalsHistoryPage() {
     {
       key: 'status',
       title: 'Rental Status',
-      className: 'text-center',
+      className: 'text-center w-[120px]',
       render: (b) => (
         <div className="flex justify-center">
           <span className={`px-2 py-1 text-xs font-medium rounded-full border ${b.status === 'COMPLETED' ? 'text-teal-400 bg-teal-500/10 border-teal-500/20' :
               b.status === 'CANCELLED' ? 'text-red-500 bg-red-500/10 border-red-500/20' :
                 'text-blue-500 bg-blue-500/10 border-blue-500/20'
             }`}>
-            {getRentalStatus(b.status)}
+            {getRentalStatus(b)}
           </span>
         </div>
       )
@@ -153,6 +161,7 @@ export default function CarRentalsHistoryPage() {
     {
       key: 'amountPaid',
       title: 'Amount Paid',
+      className: 'w-[100px]',
       render: (b) => (
         <div className="text-sm font-medium text-emerald-400">
           €{Number(b.grandTotal || 0).toFixed(2)}
@@ -212,6 +221,7 @@ export default function CarRentalsHistoryPage() {
           total={total}
           onPageChange={setPage}
           onLimitChange={setLimit}
+          tableClassName="table-fixed"
           emptyText="No rental history found."
         />
       </div>

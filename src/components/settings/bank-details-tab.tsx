@@ -29,6 +29,8 @@ export function BankDetailsTab() {
     }
   }, [user]);
 
+  const isLocked = user?.editBankDetails === false && !!user?.supplierAccountNumber;
+
   if (isLoading) {
     return (
       <div>
@@ -97,7 +99,7 @@ export function BankDetailsTab() {
 
       <div className="mb-6 flex items-center justify-between">
         <h4 className="text-md font-semibold text-white">Settlement Information</h4>
-        {user?.editBankDetails === false && (
+        {isLocked && (
           <div className="flex items-center gap-2 rounded-lg bg-red-500/10 px-3 py-1.5 text-sm font-medium text-red-500 border border-red-500/20">
             <Lock className="h-4 w-4" />
             <span>Bank details locked for security</span>
@@ -115,7 +117,7 @@ export function BankDetailsTab() {
               name="supplierAccountHolder"
               value={formData.supplierAccountHolder}
               onChange={handleChange}
-              disabled={user?.editBankDetails === false}
+              disabled={isLocked}
               placeholder="Enter Holder Name"
               className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             />
@@ -129,7 +131,7 @@ export function BankDetailsTab() {
               name="supplierBankName"
               value={formData.supplierBankName}
               onChange={handleChange}
-              disabled={user?.editBankDetails === false}
+              disabled={isLocked}
               placeholder="Enter Bank Name"
               className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             />
@@ -143,7 +145,7 @@ export function BankDetailsTab() {
               name="supplierAccountNumber"
               value={formData.supplierAccountNumber}
               onChange={handleChange}
-              disabled={user?.editBankDetails === false}
+              disabled={isLocked}
               placeholder="MTXX XXXX XXXX XXXX"
               className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors uppercase disabled:opacity-50 disabled:cursor-not-allowed"
             />
@@ -157,21 +159,22 @@ export function BankDetailsTab() {
               name="supplierSwiftCode"
               value={formData.supplierSwiftCode}
               onChange={handleChange}
-              disabled={user?.editBankDetails === false}
+              disabled={isLocked}
               placeholder="XXXXX"
               className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors uppercase disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
 
-        {user?.editBankDetails !== false && (
-          <div className="flex justify-end pt-4 border-t border-[#27272A]">
+        {!isLocked && (
+          <div className="flex justify-end pt-4">
             <button
               type="submit"
               disabled={isSaving}
-              className="flex items-center gap-2 rounded-lg bg-[#FACC15] px-6 py-2.5 text-sm font-semibold text-black hover:bg-[#E5B800] transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-[#FACC15] px-6 py-2.5 text-sm font-semibold text-black transition-colors hover:bg-[#EAB308] disabled:opacity-50"
             >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Bank Details'}
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {isSaving ? 'Saving...' : 'Save Bank Details'}
             </button>
           </div>
         )}

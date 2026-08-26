@@ -14,8 +14,13 @@ export function Topbar() {
 
   // Build breadcrumb from pathname
   const segments = pathname.split('/').filter(Boolean);
-  const pageTitle = segments.length > 0
-    ? segments[segments.length - 1].charAt(0).toUpperCase() + segments[segments.length - 1].slice(1)
+  const segmentLabels: Record<string, string> = {
+    'car-rentals': 'Car rentals history',
+  };
+
+  const currentSegment = segments.length > 0 ? segments[segments.length - 1] : '';
+  const pageTitle = currentSegment
+    ? (segmentLabels[currentSegment] || currentSegment.charAt(0).toUpperCase() + currentSegment.slice(1))
     : 'Dashboard';
 
   const initials = user?.companyName

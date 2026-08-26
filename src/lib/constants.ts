@@ -46,7 +46,7 @@ export const ROUTES = {
 export const SIDEBAR_ITEMS = [
   { label: 'Dashboard', href: ROUTES.DASHBOARD, icon: LayoutDashboard, module: 'CAB' },
   { label: 'Dashboard', href: '/car-rentals/dashboard', icon: LayoutDashboard, module: 'RENTAL' },
-  { label: 'Car Rentals', href: ROUTES.CAR_RENTALS, icon: Key, module: 'RENTAL' },
+  { label: 'Car rentals history', href: ROUTES.CAR_RENTALS, icon: Key, module: 'RENTAL' },
   { label: 'Fleet', href: '/car-rentals/fleet', icon: Truck, module: 'RENTAL' },
   { label: 'Booking Management', href: '/car-rentals/bookings', icon: CalendarCheck, module: 'RENTAL' },
   { label: 'Earnings & Payouts', href: ROUTES.RENTAL_EARNINGS, icon: Wallet, module: 'RENTAL' },

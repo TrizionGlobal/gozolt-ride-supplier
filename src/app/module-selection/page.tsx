@@ -63,7 +63,7 @@ export default function ModuleSelectionPage() {
                   <Image src="/rental-icon.jpg" alt="Car Rentals" width={128} height={128} className="object-cover w-full h-full" />
                 </div>
                 <div className="text-center">
-                  <h2 className="text-2xl font-bold text-white mb-2">Car Rentals</h2>
+                  <h2 className="text-2xl font-bold text-white mb-2">Car rentals history</h2>
                   <p className="text-sm text-gray-400">
                     Manage rental bookings, process handovers & returns, track rental earnings, and view your rental customers.
                   </p>

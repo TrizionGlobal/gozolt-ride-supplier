@@ -9,7 +9,7 @@ import { PayoutHistoryTable } from '@/components/financials/payout-history-table
 import { useAuth } from '@/hooks/use-auth';
 import type { PayoutRecord } from '@/types';
 
-export default function PayoutsPage() {
+export default function CarRentalPayoutsPage() {
   const router = useRouter();
   const { user } = useAuth();
   
@@ -19,10 +19,10 @@ export default function PayoutsPage() {
   const fetchData = useCallback(async () => {
     setIsLoadingPayouts(true);
     try {
-      const payoutsData = await financialService.getPayoutHistory();
+      const payoutsData = await financialService.getCarRentalPayoutHistory();
       setPayouts(payoutsData);
     } catch {
-      toast.error('Failed to load payout data');
+      toast.error('Failed to load rental payout data');
     } finally {
       setIsLoadingPayouts(false);
     }
@@ -34,7 +34,12 @@ export default function PayoutsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-white">Payouts</h1>
+      <div>
+        <h1 className="text-2xl font-bold text-white">Car Rental Payouts</h1>
+        <p className="text-sm text-[#A1A1AA] mt-1">
+          Track 10-day settlement earnings and payouts for your car rental operations
+        </p>
+      </div>
 
 
 

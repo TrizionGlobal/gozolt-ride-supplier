@@ -32,7 +32,7 @@ export function useAuth() {
           const data = await meRes.json();
           setUser(data.user);
         }
-        router.push('/dashboard');
+        router.push('/module-selection');
       } finally {
         setLoading(false);
       }

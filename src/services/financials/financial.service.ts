@@ -113,6 +113,27 @@ export const financialService = {
     }
   },
 
+  async getCarRentalPayoutHistory(): Promise<PayoutRecord[]> {
+    try {
+      const res = await apiClient.get('/suppliers/car-rentals/payouts', {
+        params: { page: 1, limit: 10, sortBy: 'createdAt', order: 'desc' },
+      });
+      const payouts = res.data.data || res.data;
+      return payouts.map((p: PayoutRecord) => ({
+        id: p.id,
+        amount: p.amount,
+        status: p.status,
+        periodStart: p.periodStart,
+        periodEnd: p.periodEnd,
+        processedAt: p.processedAt,
+        createdAt: p.createdAt,
+        details: p.details,
+      }));
+    } catch {
+      return [];
+    }
+  },
+
   async downloadStatementPDF(): Promise<void> {
     // Mock — actual implementation would fetch PDF from backend
     // GET /invoices/statements/supplier/:supplierId → get latest statement

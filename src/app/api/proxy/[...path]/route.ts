@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { AUTH_COOKIE_NAME } from '@/lib/constants';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
@@ -6,12 +7,13 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
 async function proxyRequest(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
   const targetPath = path.join('/');
-  const isAuthRoute = targetPath.startsWith('auth/');
+  const isAuthRoute = targetPath.startsWith('auth/') || targetPath.includes('/public/');
   const url = new URL(request.url);
   const queryString = url.search;
   const targetUrl = `${BACKEND_URL}/v1/${targetPath}${queryString}`;
 
-  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
   if (!token && !isAuthRoute) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });

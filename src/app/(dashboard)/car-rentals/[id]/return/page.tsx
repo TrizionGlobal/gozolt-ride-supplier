@@ -264,9 +264,9 @@ export default function VehicleReturnPage() {
               )}
             </div>
             
-            {remainingDays > 0 && (
+            {booking.isFlexible && remainingDays > 0 && (
               <div className="col-span-2 bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-xl mt-4">
-                <h3 className="text-yellow-500 font-semibold mb-2">Early Return Refund</h3>
+                <h3 className="text-yellow-500 font-semibold mb-2">Flexible Return Refund</h3>
                 <div className="flex justify-between text-sm text-gray-300 mb-1">
                   <span>Total Booked Days:</span>
                   <span>{totalDays} days</span>
@@ -276,7 +276,7 @@ export default function VehicleReturnPage() {
                   <span>{remainingDays} days</span>
                 </div>
                 <div className="flex justify-between text-sm text-white font-medium mb-3">
-                  <span>Calculated Refund:</span>
+                  <span>Calculated Unused Amount:</span>
                   <span>EUR {maxRefund.toFixed(2)}</span>
                 </div>
                 
@@ -287,7 +287,7 @@ export default function VehicleReturnPage() {
                       type="number" 
                       step="0.01"
                       required 
-                      max={maxRefund}
+                      max={booking.grandTotal ? Number(booking.grandTotal) : maxRefund}
                       value={formData.refundAmount}
                       onChange={e => setFormData({...formData, refundAmount: e.target.value})}
                       className="w-full bg-[#0A0A0A] border border-yellow-500/30 rounded-lg p-3 text-white focus:border-yellow-500 outline-none"

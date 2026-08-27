@@ -574,6 +574,8 @@ export interface CompanyProfile {
   city: string;
   country: string;
   postalCode: string;
+  latitude?: number | null;
+  longitude?: number | null;
   defaultDriverCommission: number;
   logoUrl?: string;
 }

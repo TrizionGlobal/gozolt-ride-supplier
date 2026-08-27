@@ -181,12 +181,7 @@ export default function VehicleDetailsPage() {
                 <span className={`inline-flex h-2 w-2 rounded-full ${vehicle.isDoorstepDeliveryAllowed ? 'bg-green-500' : 'bg-[#27272A]'}`} />
               </div>
               
-              {(vehicle.isSupplierDeliveryAllowed || vehicle.isDoorstepDeliveryAllowed) && (
-                <div className="flex justify-between items-center pt-2">
-                  <p className="text-sm text-[#A1A1AA]">Delivery Charge</p>
-                  <p className="text-sm font-semibold text-white">€{Number(vehicle.deliveryCharge || 0).toFixed(2)}</p>
-                </div>
-              )}
+
             </div>
           </div>
         </div>

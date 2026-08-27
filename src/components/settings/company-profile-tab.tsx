@@ -6,10 +6,16 @@ import { settingsService } from '@/services/settings/settings.service';
 import type { CompanyProfile } from '@/types';
 import { ImageCropperModal } from '@/components/ui/image-cropper-modal';
 import { Camera } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { Upload, Image } from 'antd';
 import type { UploadFile } from 'antd';
 import { useAuthStore } from '@/stores/auth.store';
 import { PhoneInput } from '@/components/ui/phone-input';
+
+const LocationPicker = dynamic(() => import('@/components/settings/location-picker'), {
+  ssr: false,
+  loading: () => <div className="h-[300px] w-full rounded-lg bg-[#27272A] animate-pulse flex items-center justify-center text-[#A1A1AA]">Loading Map...</div>
+});
 
 export function CompanyProfileTab() {
   const [form, setForm] = useState<CompanyProfile>({
@@ -22,6 +28,8 @@ export function CompanyProfileTab() {
     city: '',
     country: '',
     postalCode: '',
+    latitude: null,
+    longitude: null,
     defaultDriverCommission: 0,
     logoUrl: '',
   });
@@ -48,6 +56,8 @@ export function CompanyProfileTab() {
         city: user.city || '',
         country: user.country || '',
         postalCode: user.postalCode || '',
+        latitude: user.latitude || null,
+        longitude: user.longitude || null,
         defaultDriverCommission: user.defaultDriverCommission || 0,
         logoUrl: user.logoUrl || '',
       });
@@ -55,7 +65,7 @@ export function CompanyProfileTab() {
     }
   }, [user]);
 
-  const handleChange = (field: keyof CompanyProfile, value: string) => {
+  const handleChange = (field: keyof CompanyProfile, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -91,6 +101,8 @@ export function CompanyProfileTab() {
         city: form.city,
         country: form.country,
         postalCode: form.postalCode,
+        latitude: form.latitude,
+        longitude: form.longitude,
         defaultDriverCommission: Number(form.defaultDriverCommission) || 0,
         logoUrl: form.logoUrl,
       };
@@ -259,6 +271,19 @@ export function CompanyProfileTab() {
       </div>
 
 
+      <div className="mt-8">
+        <label className="mb-2 block text-sm font-medium text-[#A1A1AA]">
+          Company Map Location (Pinpoint for Distance Calculation)
+        </label>
+        <LocationPicker
+          latitude={form.latitude}
+          longitude={form.longitude}
+          onChange={(lat, lng) => {
+            handleChange('latitude', lat);
+            handleChange('longitude', lng);
+          }}
+        />
+      </div>
 
       <div className="mt-8 flex justify-end">
         <button

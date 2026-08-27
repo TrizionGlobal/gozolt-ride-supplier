@@ -25,7 +25,6 @@ export default function EditRentalVehiclePage() {
     weeklyPrice: 300,
     monthlyPrice: 1000,
     securityDeposit: 300,
-    deliveryCharge: 0,
     isSelfPickupAllowed: true,
     isSupplierDeliveryAllowed: false,
     isDoorstepDeliveryAllowed: false,
@@ -53,7 +52,6 @@ export default function EditRentalVehiclePage() {
             weeklyPrice: Number(data.weeklyPrice) || 0,
             monthlyPrice: Number(data.monthlyPrice) || 0,
             securityDeposit: Number(data.securityDeposit) || 0,
-            deliveryCharge: Number(data.deliveryCharge) || 0,
             isSelfPickupAllowed: data.isSelfPickupAllowed ?? true,
             isSupplierDeliveryAllowed: data.isSupplierDeliveryAllowed ?? false,
             isDoorstepDeliveryAllowed: data.isDoorstepDeliveryAllowed ?? false,
@@ -323,18 +321,6 @@ export default function EditRentalVehiclePage() {
               />
               Doorstep Delivery Allowed
             </label>
-            {(formData.isSupplierDeliveryAllowed || formData.isDoorstepDeliveryAllowed) && (
-              <div className="pt-4 max-w-xs">
-                <label className="block text-sm font-medium text-[#A1A1AA] mb-1">Delivery Charge (€)</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="w-full rounded-lg border border-[#27272A] bg-[#1A1A1A] px-3 py-2 text-white focus:border-[#FACC15] focus:outline-none"
-                  value={formData.deliveryCharge}
-                  onChange={(e) => setFormData({...formData, deliveryCharge: Number(e.target.value)})}
-                />
-              </div>
-            )}
           </div>
         </div>
 

@@ -13,6 +13,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@stripe/react-stripe-js": "^6.6.0",
     "@stripe/stripe-js": "^9.8.0",
+    "@vis.gl/react-google-maps": "^1.9.0",
     "@yudiel/react-qr-scanner": "^2.6.0",
     "antd": "^6.4.4",
     "axios": "^1.13.5",

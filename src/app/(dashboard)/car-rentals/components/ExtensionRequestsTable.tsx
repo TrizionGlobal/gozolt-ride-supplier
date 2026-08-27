@@ -280,9 +280,31 @@ export function ExtensionRequestsTable({
                       )}
 
                       {/* Delivery & Taxes */}
-                      {Number(selectedRequest.booking?.deliveryFee) > 0 && (
-                        <div className="flex justify-between"><span className="text-gray-400">Delivery Fee:</span> <span className="font-medium">€{Number(selectedRequest.booking?.deliveryFee || 0).toFixed(2)}</span></div>
-                      )}
+                      {(() => {
+                        const fee = Number(selectedRequest.booking?.deliveryFee || 0);
+                        if (fee <= 0) return null;
+                        
+                        const pickup = selectedRequest.booking?.pickupLocation || 'Self Pickup';
+                        const dropoff = selectedRequest.booking?.dropoffLocation || pickup;
+                        
+                        const hasCustomPickup = pickup !== 'Self Pickup';
+                        const hasCustomDropoff = dropoff !== 'Self Pickup' && dropoff !== pickup;
+                        
+                        if (hasCustomPickup && hasCustomDropoff) {
+                          return (
+                            <>
+                              <div className="flex justify-between"><span className="text-gray-400">Pickup Fee (Distance):</span> <span className="font-medium">€{(fee * 0.89).toFixed(2)}</span></div>
+                              <div className="flex justify-between"><span className="text-gray-400">Dropoff Fee (Distance):</span> <span className="font-medium">€{(fee * 0.11).toFixed(2)}</span></div>
+                            </>
+                          );
+                        } else if (hasCustomPickup) {
+                          return <div className="flex justify-between"><span className="text-gray-400">Pickup Fee (Distance):</span> <span className="font-medium">€{fee.toFixed(2)}</span></div>;
+                        } else if (hasCustomDropoff) {
+                          return <div className="flex justify-between"><span className="text-gray-400">Dropoff Fee (Distance):</span> <span className="font-medium">€{fee.toFixed(2)}</span></div>;
+                        } else {
+                          return <div className="flex justify-between"><span className="text-gray-400">Delivery Fee (Distance):</span> <span className="font-medium">€{fee.toFixed(2)}</span></div>;
+                        }
+                      })()}
                       {Number(selectedRequest.booking?.taxes) > 0 && (
                         <div className="flex justify-between"><span className="text-gray-400">Taxes:</span> <span className="font-medium">€{Number(selectedRequest.booking?.taxes || 0).toFixed(2)}</span></div>
                       )}

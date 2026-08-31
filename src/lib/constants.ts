@@ -40,6 +40,7 @@ export const ROUTES = {
   SETTINGS: '/settings',
   PAYOUTS: '/payouts',
   CAR_RENTALS: '/car-rentals',
+  BIKE_RENTALS: '/bike-rentals',
   RENTAL_EARNINGS: '/earnings',
 } as const;
 
@@ -52,6 +53,13 @@ export const SIDEBAR_ITEMS = [
   { label: 'Earnings & Payouts', href: ROUTES.RENTAL_EARNINGS, icon: Wallet, module: 'RENTAL' },
   { label: 'Reviews & Ratings', href: '/car-rentals/reviews', icon: Star, module: 'RENTAL' },
   { label: 'Staff & Workers', href: '/car-rentals/workers', icon: Users, module: 'RENTAL' },
+  
+  { label: 'Dashboard', href: '/bike-rentals/dashboard', icon: LayoutDashboard, module: 'BIKE_RENTAL' },
+  { label: 'Bike rentals history', href: ROUTES.BIKE_RENTALS, icon: Key, module: 'BIKE_RENTAL' },
+  { label: 'Fleet', href: '/bike-rentals/fleet', icon: Truck, module: 'BIKE_RENTAL' },
+  { label: 'Booking Management', href: '/bike-rentals/bookings', icon: CalendarCheck, module: 'BIKE_RENTAL' },
+  { label: 'Earnings & Payouts', href: '/bike-rentals/payouts', icon: Wallet, module: 'BIKE_RENTAL' },
+  { label: 'Reviews & Ratings', href: '/bike-rentals/reviews', icon: Star, module: 'BIKE_RENTAL' },
   { label: 'Fleet', href: ROUTES.FLEET, icon: Truck, module: 'CAB' },
   { label: 'My Fleet Drivers', href: ROUTES.DRIVERS, icon: Users, module: 'CAB' },
   { label: 'Find New Drivers', href: ROUTES.NEW_DRIVERS, icon: Users, module: 'CAB' },

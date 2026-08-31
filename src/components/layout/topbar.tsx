@@ -16,6 +16,7 @@ export function Topbar() {
   const segments = pathname.split('/').filter(Boolean);
   const segmentLabels: Record<string, string> = {
     'car-rentals': 'Car rentals history',
+    'bike-rentals': 'Bike rentals history',
   };
 
   const currentSegment = segments.length > 0 ? segments[segments.length - 1] : '';

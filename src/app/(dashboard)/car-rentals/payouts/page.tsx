@@ -44,7 +44,7 @@ export default function CarRentalPayoutsPage() {
 
 
       {/* Payout History Table */}
-      <PayoutHistoryTable data={payouts} isLoading={isLoadingPayouts} />
+      <PayoutHistoryTable data={payouts} isLoading={isLoadingPayouts} moduleType="CAR_RENTAL" />
     </div>
   );
 }

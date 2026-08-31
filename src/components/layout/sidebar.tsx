@@ -69,16 +69,16 @@ export function Sidebar() {
         {SIDEBAR_ITEMS.filter((item) => item.module === activeModule || !activeModule).map((item) => {
           const Icon = item.icon;
           let isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-          const isBookingSubPage = pathname.match(/^\/car-rentals\/[a-zA-Z0-9-]+\/(details|handover|return)$/);
+          const isBookingSubPage = pathname.match(/^\/(car-rentals|bike-rentals)\/[a-zA-Z0-9-]+\/(details|handover|return)$/);
 
           // Prevent "Drivers" from being active when in "Driver Settlements"
           if (item.href === ROUTES.DRIVERS && pathname.startsWith(ROUTES.DRIVER_SETTLEMENTS)) {
             isActive = false;
           }
 
-          // Prevent "Car Rentals" from being active when in its distinct sub-modules
+          // Prevent "Car Rentals" or "Bike Rentals" from being active when in its distinct sub-modules
           if (
-            item.href === ROUTES.CAR_RENTALS &&
+            (item.href === ROUTES.CAR_RENTALS &&
             (pathname.startsWith('/car-rentals/dashboard') ||
              pathname.startsWith('/car-rentals/fleet') ||
              pathname.startsWith('/car-rentals/reviews') ||
@@ -88,22 +88,34 @@ export function Sidebar() {
              pathname.startsWith('/car-rentals/operational') ||
              pathname === '/car-rentals/new' ||
              pathname.match(/^\/car-rentals\/[a-zA-Z0-9-]+\/edit$/) ||
-             (isBookingSubPage && source === 'bookings'))
+             (isBookingSubPage && source === 'bookings'))) ||
+            (item.href === ROUTES.BIKE_RENTALS &&
+            (pathname.startsWith('/bike-rentals/dashboard') ||
+             pathname.startsWith('/bike-rentals/fleet') ||
+             pathname.startsWith('/bike-rentals/reviews') ||
+             pathname.startsWith('/bike-rentals/workers') ||
+             pathname.startsWith('/bike-rentals/bookings') ||
+             pathname.startsWith('/bike-rentals/payouts') ||
+             pathname.startsWith('/bike-rentals/operational') ||
+             pathname === '/bike-rentals/new' ||
+             pathname.match(/^\/bike-rentals\/[a-zA-Z0-9-]+\/edit$/) ||
+             (isBookingSubPage && source === 'bookings')))
           ) {
             isActive = false;
           }
 
-          if (item.href === ROUTES.CAR_RENTALS && isBookingSubPage && source !== 'bookings') {
+          if ((item.href === ROUTES.CAR_RENTALS || item.href === ROUTES.BIKE_RENTALS) && isBookingSubPage && source !== 'bookings') {
             isActive = true;
           }
 
           // Make "Fleet" active for new vehicle and edit vehicle pages
-          if (item.href === '/car-rentals/fleet' && (pathname === '/car-rentals/new' || pathname.match(/^\/car-rentals\/[a-zA-Z0-9-]+\/edit$/))) {
+          if ((item.href === '/car-rentals/fleet' && (pathname === '/car-rentals/new' || pathname.match(/^\/car-rentals\/[a-zA-Z0-9-]+\/edit$/))) ||
+              (item.href === '/bike-rentals/fleet' && (pathname === '/bike-rentals/new' || pathname.match(/^\/bike-rentals\/[a-zA-Z0-9-]+\/edit$/)))) {
             isActive = true;
           }
 
           // Make "Booking Management" active for details, handover, and return pages
-          if (item.href === '/car-rentals/bookings' && isBookingSubPage && source === 'bookings') {
+          if ((item.href === '/car-rentals/bookings' || item.href === '/bike-rentals/bookings') && isBookingSubPage && source === 'bookings') {
             isActive = true;
           }
 

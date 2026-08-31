@@ -56,8 +56,7 @@ export function CompanyProfileTab() {
         city: user.city || '',
         country: user.country || '',
         postalCode: user.postalCode || '',
-        latitude: user.latitude || null,
-        longitude: user.longitude || null,
+
         defaultDriverCommission: user.defaultDriverCommission || 0,
         logoUrl: user.logoUrl || '',
       });

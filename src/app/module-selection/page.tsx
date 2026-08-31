@@ -9,12 +9,14 @@ export default function ModuleSelectionPage() {
   const router = useRouter();
   const { setActiveModule } = useSidebarStore();
 
-  const handleSelection = (module: 'CAB' | 'RENTAL') => {
+  const handleSelection = (module: 'CAB' | 'RENTAL' | 'BIKE_RENTAL') => {
     setActiveModule(module);
     if (module === 'CAB') {
       router.push('/dashboard');
-    } else {
+    } else if (module === 'RENTAL') {
       router.push('/car-rentals/dashboard');
+    } else if (module === 'BIKE_RENTAL') {
+      router.push('/bike-rentals/dashboard');
     }
   };
 
@@ -34,7 +36,7 @@ export default function ModuleSelectionPage() {
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Cab Booking Card */}
-            <button 
+            <button
               onClick={() => handleSelection('CAB')}
               className="group relative flex flex-col items-center justify-center p-12 rounded-3xl border border-[#27272A] bg-[#111111] transition-all duration-300 hover:border-[#FACC15] hover:bg-[#1A1A1A] hover:shadow-[0_0_30px_rgba(250,204,21,0.15)] text-left"
             >
@@ -53,7 +55,7 @@ export default function ModuleSelectionPage() {
             </button>
 
             {/* Car Rentals Card */}
-            <button 
+            <button
               onClick={() => handleSelection('RENTAL')}
               className="group relative flex flex-col items-center justify-center p-12 rounded-3xl border border-[#27272A] bg-[#111111] transition-all duration-300 hover:border-[#FACC15] hover:bg-[#1A1A1A] hover:shadow-[0_0_30px_rgba(250,204,21,0.15)] text-left"
             >
@@ -63,9 +65,29 @@ export default function ModuleSelectionPage() {
                   <Image src="/rental-icon.jpg" alt="Car Rentals" width={128} height={128} className="object-cover w-full h-full" />
                 </div>
                 <div className="text-center">
-                  <h2 className="text-2xl font-bold text-white mb-2">Car rentals history</h2>
+                  <h2 className="text-2xl font-bold text-white mb-2">Car Rentals</h2>
                   <p className="text-sm text-gray-400">
                     Manage rental bookings, process handovers & returns, track rental earnings, and view your rental customers.
+                  </p>
+                </div>
+              </div>
+            </button>
+
+            {/* Bike Rentals Card */}
+            <button
+              onClick={() => handleSelection('BIKE_RENTAL')}
+              className="group relative flex flex-col items-center justify-center p-12 rounded-3xl border border-[#27272A] bg-[#111111] transition-all duration-300 hover:border-[#FACC15] hover:bg-[#1A1A1A] hover:shadow-[0_0_30px_rgba(250,204,21,0.15)] text-left"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FACC15]/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-3xl" />
+              <div className="relative z-10 flex flex-col items-center gap-6">
+                <div className="flex h-32 w-32 items-center justify-center rounded-2xl overflow-hidden shadow-lg border border-[#27272A] group-hover:border-[#FACC15]/50 transition-colors bg-white">
+                  {/* Using bike rental icon placeholder */}
+                  <Image src="/bike-rental-icon-v2.jpg" alt="Bike Rentals" width={128} height={128} className="object-cover w-full h-full" />
+                </div>
+                <div className="text-center">
+                  <h2 className="text-2xl font-bold text-white mb-2">Bike Rentals</h2>
+                  <p className="text-sm text-gray-400">
+                    Manage bike bookings, process handovers & returns, track bike earnings, and view your bike customers.
                   </p>
                 </div>
               </div>

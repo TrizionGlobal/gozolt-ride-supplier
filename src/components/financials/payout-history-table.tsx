@@ -12,6 +12,7 @@ import type { PayoutRecord, SupplierStatement, SupplierProfile } from '@/types';
 interface PayoutHistoryTableProps {
   data: PayoutRecord[];
   isLoading: boolean;
+  moduleType?: 'CAB' | 'CAR_RENTAL' | 'BIKE_RENTAL';
 }
 
 const statusStyles: Record<string, { bg: string; text: string; label: string }> = {
@@ -72,7 +73,7 @@ function PrintRowButton({ row, supplier }: { row: PayoutRecord; supplier: Suppli
   );
 }
 
-export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps) {
+export function PayoutHistoryTable({ data, isLoading, moduleType = 'CAB' }: PayoutHistoryTableProps) {
   const { user } = useAuth();
 
   const handleStatementPDF = () => {
@@ -83,7 +84,7 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
     const csvData = data.map((p) => ({
       Date: formatDate(p.processedAt || p.createdAt),
       Period: formatPeriodFull(p.periodStart, p.periodEnd),
-      Rides: p.details?.totalRides ?? '--',
+      [moduleType === 'CAB' ? 'Rides' : 'Bookings']: p.details?.totalRides ?? '--',
       Gross: p.details?.totalSettledEarned ?? '--',
       Cash: p.details?.totalCashCollected ?? '--',
       Net: p.amount,
@@ -132,7 +133,7 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
               <tr className="border-b border-[#27272A] bg-[#0A0A0A]/50">
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">DATE</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">PERIOD</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-[#71717A]">RIDES</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-[#71717A] uppercase">{moduleType === 'CAB' ? 'RIDES' : 'BOOKINGS'}</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">GROSS EARNINGS</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">CANCELLATION FEES</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">CASH COLLECTED</th>

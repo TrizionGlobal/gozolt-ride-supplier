@@ -74,7 +74,7 @@ export const carRentalsService = {
     return response.data;
   },
 
-  async createVehicle(data: CarRentalVehicle): Promise<CarRentalVehicle> {
+  async createVehicle(data: any): Promise<any> {
     const response = await apiClient.post('/car-rentals/supplier/vehicles', data);
     return response.data;
   },
@@ -91,6 +91,13 @@ export const carRentalsService = {
 
   async deleteVehicle(id: string): Promise<void> {
     await apiClient.delete(`/car-rentals/supplier/vehicles/${id}`);
+  },
+
+  async uploadVehicleImage(file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/car-rentals/supplier/vehicles/upload-image', formData);
+    return response.data;
   },
 
   // --- Bookings ---

@@ -26,13 +26,21 @@ export function useAuth() {
           }),
         });
 
+        let redirectPath = '/module-selection';
+
         // Fetch the supplier profile
         const meRes = await fetch('/api/auth/me');
         if (meRes.ok) {
           const data = await meRes.json();
           setUser(data.user);
+          
+          // Check subscription status
+          const hasActiveSubscription = data.user.subscription && new Date(data.user.subscription.currentPeriodEnd) > new Date();
+          if (!hasActiveSubscription) {
+            redirectPath = '/subscription';
+          }
         }
-        router.push('/module-selection');
+        router.push(redirectPath);
       } finally {
         setLoading(false);
       }

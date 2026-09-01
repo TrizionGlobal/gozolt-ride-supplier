@@ -19,7 +19,7 @@ export function RidesTab({ vehicle }: RidesTabProps) {
       <p className="mb-4 text-sm text-[#A1A1AA]">Total rides completed this month:</p>
       <div className="flex items-center justify-start">
         <div className="relative h-[180px] w-[180px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
             <PieChart>
               <Pie
                 data={data}

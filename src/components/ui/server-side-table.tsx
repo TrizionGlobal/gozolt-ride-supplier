@@ -56,29 +56,42 @@ export function ServerSideTable<T extends Record<string, any>>({
   return (
     <div className="flex flex-col w-full">
       {/* Table Body */}
-      {isLoading ? (
-        <div className="p-4 space-y-2 border-t border-[#27272A]">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="h-10 w-full rounded bg-[#27272A] animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <div className="overflow-x-auto border-t border-[#27272A]">
-          <table className={`w-full text-left ${tableClassName}`}>
-            <thead>
-              <tr className="border-b border-[#27272A] bg-[#0A0A0A]/50">
-                {columns.map((col) => (
-                  <th
-                    key={col.key}
-                    className={`${cellPadding} text-xs font-medium uppercase text-[#71717A] whitespace-nowrap ${col.className || ''}`}
-                  >
-                    {col.title}
-                  </th>
-                ))}
+      <div className="overflow-x-auto border-t border-[#27272A]">
+        <table className={`w-full text-left ${tableClassName}`}>
+          <thead>
+            <tr className="border-b border-[#27272A] bg-[#0A0A0A]/50">
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  className={`${cellPadding} text-xs font-medium uppercase text-[#71717A] whitespace-nowrap ${col.className || ''}`}
+                >
+                  {col.title}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              Array.from({ length: 10 }).map((_, i) => (
+                <tr key={i} className="border-b border-[#27272A] last:border-b-0">
+                  {columns.map((col) => (
+                    <td key={col.key} className={`${cellPadding} ${col.className || ''}`}>
+                      <div className="h-5 w-full rounded bg-[#27272A] animate-pulse" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : data.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="px-4 py-8 text-center text-sm text-[#52525B]"
+                >
+                  {emptyText}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {data.map((row) => (
+            ) : (
+              data.map((row) => (
                 <RowItem
                   key={getRowKey(row)}
                   row={row}
@@ -87,21 +100,11 @@ export function ServerSideTable<T extends Record<string, any>>({
                   onRowClick={onRowClick}
                   renderExpandedRow={renderExpandedRow}
                 />
-              ))}
-              {data.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="px-4 py-8 text-center text-sm text-[#52525B]"
-                  >
-                    {emptyText}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {/* Pagination Footer */}
       {!isLoading && data.length > 0 && (

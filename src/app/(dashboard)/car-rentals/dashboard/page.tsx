@@ -309,7 +309,7 @@ export default function RentalDashboardPage() {
             <p className="text-xs font-medium text-[#A1A1AA]">Your earnings over the last 6 months</p>
           </div>
           <div className="w-full h-[240px]">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <BarChart data={metrics?.monthlyEarnings} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorBarEarnings" x1="0" y1="0" x2="0" y2="1">
@@ -346,7 +346,7 @@ export default function RentalDashboardPage() {
             <p className="text-xs font-medium text-[#A1A1AA]">Status breakdown</p>
           </div>
           <div className="w-full h-[220px] flex items-center justify-center relative">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <PieChart>
                 <Pie
                   data={bookingData}

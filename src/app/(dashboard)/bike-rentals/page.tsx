@@ -93,9 +93,9 @@ export default function BikeRentalsHistoryPage() {
     {
       key: 'customer',
       title: 'Customer Details',
-      className: 'w-[20%]',
+      className: 'w-[20%] text-center',
       render: (b) => (
-        <div>
+        <div className="flex flex-col items-center">
           <div className="text-white font-medium">{b.user?.firstName} {b.user?.lastName}</div>
           <div className="text-xs text-[#71717A] mt-1">{b.user?.phone || 'No phone'}</div>
           <div className="text-xs text-[#71717A]">{b.user?.email || 'No email'}</div>
@@ -105,19 +105,19 @@ export default function BikeRentalsHistoryPage() {
     {
       key: 'locations',
       title: 'Locations & Delivery',
-      className: 'w-[25%]',
+      className: 'w-[25%] text-center',
       render: (b) => (
-        <div>
+        <div className="flex flex-col items-center">
           <div className="text-xs font-medium text-emerald-400 mb-1">
             {b.deliveryType ? b.deliveryType.replace('_', ' ') : 'SELF PICKUP'}
           </div>
-          <div className="text-xs">
+          <div className="text-xs text-center">
             <span className="text-[#71717A]">Pickup: </span>
             <span className="text-white max-w-[150px] truncate inline-block align-bottom" title={b.pickupLocation || b.deliveryAddress}>
               {b.pickupLocation || b.deliveryAddress || 'N/A'}
             </span>
           </div>
-          <div className="text-xs mt-1">
+          <div className="text-xs mt-1 text-center">
             <span className="text-[#71717A]">Return: </span>
             <span className="text-white max-w-[150px] truncate inline-block align-bottom" title={b.dropoffLocation}>
               {b.dropoffLocation || 'N/A'}
@@ -129,14 +129,14 @@ export default function BikeRentalsHistoryPage() {
     {
       key: 'dates',
       title: 'Dates & Times',
-      className: 'w-[20%] whitespace-nowrap',
+      className: 'w-[20%] whitespace-nowrap text-center',
       render: (b) => (
-        <div>
-          <div className="text-xs">
+        <div className="flex flex-col items-center">
+          <div className="text-xs text-center">
             <span className="text-[#71717A]">Pickup: </span>
             <span className="text-white">{format(new Date(b.startDate), 'dd-MMM-yyyy hh:mm a')}</span>
           </div>
-          <div className="text-xs mt-1">
+          <div className="text-xs mt-1 text-center">
             <span className="text-[#71717A]">Return: </span>
             <span className="text-white">{format(new Date(b.endDate), 'dd-MMM-yyyy hh:mm a')}</span>
           </div>
@@ -161,9 +161,9 @@ export default function BikeRentalsHistoryPage() {
     {
       key: 'amountPaid',
       title: 'Amount Paid',
-      className: 'w-[100px]',
+      className: 'w-[100px] text-center',
       render: (b) => (
-        <div className="text-sm font-medium text-emerald-400">
+        <div className="text-sm font-medium text-emerald-400 text-center">
           €{Number(b.grandTotal || 0).toFixed(2)}
         </div>
       )

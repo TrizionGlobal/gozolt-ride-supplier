@@ -46,11 +46,12 @@ export default function BikeReturnPage() {
       setRemainingDays(rDays);
       
       let calcRefund = 0;
-      const dailyRate = Number(booking.bikeTotal) / tDays;
+      const vehicleTotal = Number(booking.vehicleTotal) || Number(booking.grandTotal) || 0;
+      const dailyRate = tDays > 0 ? vehicleTotal / tDays : 0;
       calcRefund = Math.round(rDays * dailyRate * 100) / 100;
       
       setMaxRefund(calcRefund);
-      setFormData(prev => ({ ...prev, refundAmount: calcRefund.toString() }));
+      setFormData(prev => ({ ...prev, refundAmount: calcRefund > 0 ? calcRefund.toString() : '' }));
     }
   }, [booking]);
 
@@ -76,7 +77,12 @@ export default function BikeReturnPage() {
     }
 
     setSubmitting(true);
-    const payload = { ...formData, photos };
+    const refundAmt = parseFloat(formData.refundAmount);
+    const payload = {
+      ...formData,
+      photos,
+      refundAmount: !isNaN(refundAmt) && refundAmt > 0 ? refundAmt.toString() : undefined,
+    };
     
     try {
       await bikeRentalsService.returnBooking(bookingId, payload);
@@ -128,19 +134,19 @@ export default function BikeReturnPage() {
         <div className="grid grid-cols-1 md:grid-cols-[1fr,auto] gap-4">
           <div className="bg-[#111111] rounded-xl p-4 border border-[#27272A] flex gap-4 items-center">
             <div className="w-20 h-20 bg-[#1A1A1A] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
-              {booking.bike?.images?.[0] ? (
+              {booking.vehicle?.images?.[0] ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={booking.bike.images[0]} alt="Bike" className="w-full h-full object-cover" />
+                <img src={booking.vehicle.images[0]} alt="Bike" className="w-full h-full object-cover" />
               ) : (
                 <Camera className="h-6 w-6 text-gray-500" />
               )}
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-lg text-white">{booking.bike?.name}</h3>
+              <h3 className="font-semibold text-lg text-white">{booking.vehicle?.name}</h3>
               <p className="text-sm text-gray-400">
-                {booking.bike?.category} {booking.bike?.year ? `• ${booking.bike.year}` : ''}
+                {booking.vehicle?.category} {booking.vehicle?.year ? `• ${booking.vehicle.year}` : ''}
               </p>
-              <p className="text-xs text-[#FACC15] mt-1 font-medium">Plate: {booking.bike?.registrationNo || 'N/A'}</p>
+              <p className="text-xs text-[#FACC15] mt-1 font-medium">Plate: {booking.vehicle?.registrationNo || 'N/A'}</p>
             </div>
           </div>
           

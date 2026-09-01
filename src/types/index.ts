@@ -430,7 +430,35 @@ export interface FinancialKPIs {
   commissionRate: number;
   netRevenue: number;
   pendingPayout: number;
+  settledPayout: number;
+  totalRefunds: number;
+  totalCancellations: number;
   tipEarnings: number;
+  breakdown?: {
+    cab: {
+      netAmount: number;
+      totalEarned: number;
+      cancellations: number;
+      refunds: number;
+    };
+    carRental: {
+      netAmount: number;
+      totalEarned: number;
+      cancellations: number;
+      refunds: number;
+    };
+    bikeRental: {
+      netAmount: number;
+      totalEarned: number;
+      cancellations: number;
+      refunds: number;
+    };
+  };
+  activeModules?: {
+    cab: boolean;
+    carRental: boolean;
+    bikeRental: boolean;
+  };
 }
 
 export interface PerDriverEarning {

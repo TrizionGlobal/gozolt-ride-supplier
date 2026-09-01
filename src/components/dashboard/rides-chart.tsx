@@ -17,7 +17,7 @@ export function RidesChart() {
     <div className="rounded-lg border border-[#27272A] bg-[#111111] p-4">
       <h3 className="mb-4 text-lg font-semibold text-white">Rides This Week</h3>
       <div className="h-[250px]">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
             <XAxis dataKey="day" tick={{ fill: '#71717A', fontSize: 12 }} axisLine={{ stroke: '#27272A' }} tickLine={false} />

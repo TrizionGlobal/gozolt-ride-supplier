@@ -1,14 +1,14 @@
 import React, { forwardRef } from 'react';
 import { formatCurrency } from '@/lib/utils';
-import type { SupplierStatement, SupplierProfile } from '@/types';
+import type { PayoutRecord, SupplierProfile } from '@/types';
 
 interface InvoiceDocumentProps {
-  statement: SupplierStatement;
+  payout: PayoutRecord;
   supplier: SupplierProfile | null;
 }
 
 export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
-  ({ statement, supplier }, ref) => {
+  ({ payout, supplier }, ref) => {
     const formatDate = (dateString: string) => {
       return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -16,6 +16,19 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         day: 'numeric',
       });
     };
+
+    const statementNo = payout.id.substring(0, 8).toUpperCase();
+    const periodStart = payout.periodStart || payout.createdAt;
+    const periodEnd = payout.periodEnd || payout.processedAt || payout.createdAt;
+
+    const cab = Number(payout.details?.breakdown?.cab || 0);
+    const carRental = Number(payout.details?.breakdown?.carRental || 0);
+    const bikeRental = Number(payout.details?.breakdown?.bikeRental || 0);
+    const totalGross = cab + carRental + bikeRental;
+
+    // We can assume total deductions are the difference between gross and net
+    const netAmount = Number(payout.amount || 0);
+    const deductions = totalGross > 0 ? Math.max(0, totalGross - netAmount) : 0;
 
     return (
       <div
@@ -41,7 +54,7 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             <h2 className="text-3xl font-bold text-gray-800 uppercase tracking-widest">
               Invoice
             </h2>
-            <p className="text-gray-500 font-medium mt-1">#{statement.statementNo}</p>
+            <p className="text-gray-500 font-medium mt-1">#{statementNo}</p>
           </div>
         </div>
 
@@ -84,19 +97,19 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
               Period Start
             </p>
-            <p className="font-semibold text-gray-800">{formatDate(statement.periodStart)}</p>
+            <p className="font-semibold text-gray-800">{formatDate(periodStart)}</p>
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
               Period End
             </p>
-            <p className="font-semibold text-gray-800">{formatDate(statement.periodEnd)}</p>
+            <p className="font-semibold text-gray-800">{formatDate(periodEnd)}</p>
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-              Total Rides
+              Status
             </p>
-            <p className="font-semibold text-gray-800">{statement.totalRides != null ? statement.totalRides.toLocaleString() : 'N/A'}</p>
+            <p className="font-semibold text-green-600">{payout.status}</p>
           </div>
         </div>
 
@@ -113,18 +126,46 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             </tr>
           </thead>
           <tbody className="text-gray-700">
-            <tr className="border-b border-gray-100">
-              <td className="py-5 font-medium">Gross Ride Revenue</td>
-              <td className="py-5 text-right font-medium">
-                {statement.grossRevenue != null ? formatCurrency(statement.grossRevenue) : 'N/A'}
-              </td>
-            </tr>
-            <tr className="border-b border-gray-100">
-              <td className="py-5 font-medium">Platform Commission (Deduction)</td>
-              <td className="py-5 text-right font-medium text-red-600">
-                {statement.commissionEarned != null ? `-${formatCurrency(statement.commissionEarned)}` : 'N/A'}
-              </td>
-            </tr>
+            {cab > 0 && (
+              <tr className="border-b border-gray-100">
+                <td className="py-5 font-medium">Cab Bookings Revenue</td>
+                <td className="py-5 text-right font-medium">
+                  {formatCurrency(cab)}
+                </td>
+              </tr>
+            )}
+            {carRental > 0 && (
+              <tr className="border-b border-gray-100">
+                <td className="py-5 font-medium">Car Rentals Revenue</td>
+                <td className="py-5 text-right font-medium">
+                  {formatCurrency(carRental)}
+                </td>
+              </tr>
+            )}
+            {bikeRental > 0 && (
+              <tr className="border-b border-gray-100">
+                <td className="py-5 font-medium">Bike Rentals Revenue</td>
+                <td className="py-5 text-right font-medium">
+                  {formatCurrency(bikeRental)}
+                </td>
+              </tr>
+            )}
+            {totalGross === 0 && (
+              <tr className="border-b border-gray-100">
+                <td className="py-5 font-medium">Gross Revenue</td>
+                <td className="py-5 text-right font-medium">
+                  {formatCurrency(0)}
+                </td>
+              </tr>
+            )}
+            {deductions > 0 && (
+              <tr className="border-b border-gray-100">
+                <td className="py-5 font-medium">Platform Commission (Deduction)</td>
+                <td className="py-5 text-right font-medium text-red-600">
+                  -{formatCurrency(deductions)}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
 
@@ -133,11 +174,11 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
           <div className="w-1/2">
             <div className="flex justify-between py-3 border-b border-gray-100 text-gray-600 font-medium">
               <span>Subtotal</span>
-              <span>{statement.grossRevenue != null && statement.commissionEarned != null ? formatCurrency(statement.grossRevenue - statement.commissionEarned) : 'N/A'}</span>
+              <span>{formatCurrency(totalGross)}</span>
             </div>
             <div className="flex justify-between py-4 mt-2 bg-gray-50 px-4 rounded-lg font-bold text-xl text-gray-900 border border-gray-200">
               <span>Net Balance</span>
-              <span className="text-[#EAB308]">{formatCurrency(statement.netBalance)}</span>
+              <span className="text-[#EAB308]">{formatCurrency(netAmount)}</span>
             </div>
           </div>
         </div>

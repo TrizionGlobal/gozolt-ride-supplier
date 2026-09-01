@@ -1,18 +1,17 @@
 'use client';
 
-import { Download, FileText, Printer } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import React, { useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { formatCurrency, downloadCSV } from '@/lib/utils';
 import { InvoiceDocument } from '@/components/invoices/invoice-document';
 import { useAuth } from '@/hooks/use-auth';
-import type { PayoutRecord, SupplierStatement, SupplierProfile } from '@/types';
+import type { PayoutRecord, SupplierProfile } from '@/types';
 
 interface PayoutHistoryTableProps {
   data: PayoutRecord[];
   isLoading: boolean;
-  moduleType?: 'CAB' | 'CAR_RENTAL' | 'BIKE_RENTAL';
 }
 
 const statusStyles: Record<string, { bg: string; text: string; label: string }> = {
@@ -41,23 +40,6 @@ function PrintRowButton({ row, supplier }: { row: PayoutRecord; supplier: Suppli
     documentTitle: `Gozolt_Payout_Invoice_${row.id.substring(0, 8)}`,
   });
 
-  // Create a pseudo-statement from the payout record
-  const gross = row.details?.totalSettledEarned ?? null;
-  const net = row.amount;
-  const comm = gross != null ? Math.max(0, gross - net) : null;
-
-  const pseudoStatement: SupplierStatement = {
-    id: row.id,
-    statementNo: row.id.substring(0, 8).toUpperCase(),
-    periodStart: row.periodStart || row.createdAt,
-    periodEnd: row.periodEnd || row.processedAt || row.createdAt,
-    totalRides: row.details?.totalRides ?? null,
-    grossRevenue: gross,
-    commissionEarned: comm,
-    netBalance: net,
-    pdfUrl: null,
-  };
-
   return (
     <>
       <button
@@ -67,13 +49,13 @@ function PrintRowButton({ row, supplier }: { row: PayoutRecord; supplier: Suppli
         <Printer className="h-4 w-4" />
       </button>
       <div className="hidden">
-        <InvoiceDocument ref={contentRef} statement={pseudoStatement} supplier={supplier} />
+        <InvoiceDocument ref={contentRef} payout={row} supplier={supplier} />
       </div>
     </>
   );
 }
 
-export function PayoutHistoryTable({ data, isLoading, moduleType = 'CAB' }: PayoutHistoryTableProps) {
+export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps) {
   const { user } = useAuth();
 
   const handleStatementPDF = () => {
@@ -84,9 +66,9 @@ export function PayoutHistoryTable({ data, isLoading, moduleType = 'CAB' }: Payo
     const csvData = data.map((p) => ({
       Date: formatDate(p.processedAt || p.createdAt),
       Period: formatPeriodFull(p.periodStart, p.periodEnd),
-      [moduleType === 'CAB' ? 'Rides' : 'Bookings']: p.details?.totalRides ?? '--',
-      Gross: p.details?.totalSettledEarned ?? '--',
-      Cash: p.details?.totalCashCollected ?? '--',
+      'Cab Booking': p.details?.breakdown?.cab || 0,
+      'Car Rental': p.details?.breakdown?.carRental || 0,
+      'Bike Rental': p.details?.breakdown?.bikeRental || 0,
       Net: p.amount,
       Status: statusStyles[p.status]?.label || p.status,
     }));
@@ -133,11 +115,7 @@ export function PayoutHistoryTable({ data, isLoading, moduleType = 'CAB' }: Payo
               <tr className="border-b border-[#27272A] bg-[#0A0A0A]/50">
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">DATE</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">PERIOD</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-[#71717A] uppercase">{moduleType === 'CAB' ? 'RIDES' : 'BOOKINGS'}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">GROSS EARNINGS</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">CANCELLATION FEES</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">CASH COLLECTED</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">NET</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">AMOUNT</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">STATUS</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-[#71717A]">INVOICE</th>
               </tr>
@@ -145,10 +123,12 @@ export function PayoutHistoryTable({ data, isLoading, moduleType = 'CAB' }: Payo
             <tbody>
               {data.map((row) => {
                 const style = statusStyles[row.status] || statusStyles.PENDING;
+                const hasBreakdown = !!row.details?.breakdown;
+                
                 return (
+                  <React.Fragment key={row.id}>
                   <tr
-                    key={row.id}
-                    className="border-b border-[#27272A] last:border-b-0 transition-colors hover:bg-[#1A1A1A]/30"
+                    className={`border-[#27272A] transition-colors hover:bg-[#1A1A1A]/30 ${hasBreakdown ? 'border-b-0' : 'border-b last:border-b-0'}`}
                   >
                     <td className="px-4 py-3 text-sm text-[#D4D4D8]">
                       {formatDate(row.processedAt || row.createdAt)}
@@ -156,21 +136,7 @@ export function PayoutHistoryTable({ data, isLoading, moduleType = 'CAB' }: Payo
                     <td className="px-4 py-3 text-sm text-[#D4D4D8]">
                       {formatPeriodFull(row.periodStart, row.periodEnd)}
                     </td>
-                    <td className="px-4 py-3 text-center text-sm text-[#D4D4D8]">
-                      {row.details?.totalRides ?? '--'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#D4D4D8]">
-                      {row.details?.totalSettledEarned != null ? formatCurrency(row.details.totalSettledEarned) : '--'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#D4D4D8]">
-                      {(row.details?.userCancellationFees ?? row.details?.totalPenaltyEarned) != null 
-                        ? formatCurrency((row.details?.userCancellationFees ?? row.details?.totalPenaltyEarned) as number) 
-                        : '--'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#D4D4D8]">
-                      {row.details?.totalCashCollected != null ? formatCurrency(row.details.totalCashCollected) : '--'}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium text-white">
+                    <td className="px-4 py-3 text-sm font-semibold text-[#22C55E]">
                       {formatCurrency(row.amount)}
                     </td>
                     <td className="px-4 py-3">
@@ -182,8 +148,39 @@ export function PayoutHistoryTable({ data, isLoading, moduleType = 'CAB' }: Payo
                       <PrintRowButton row={row} supplier={user} />
                     </td>
                   </tr>
+                  {hasBreakdown && (
+                    <tr className="border-b border-[#27272A] last:border-b-0 bg-[#0A0A0A]/30">
+                      <td colSpan={5} className="px-4 py-3 pb-4">
+                        <div className="rounded-lg bg-[#111111] p-4 border border-[#27272A]">
+                          <p className="text-xs font-semibold text-[#A1A1AA] mb-3 uppercase tracking-wider">Earnings Breakdown by Service</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="bg-[#141414] border border-[#27272A] p-3 rounded-lg flex justify-between items-center">
+                              <span className="text-sm text-[#D4D4D8]">Cab Bookings</span>
+                              <span className="text-sm font-semibold text-white">{formatCurrency(row.details?.breakdown?.cab || 0)}</span>
+                            </div>
+                            <div className="bg-[#141414] border border-[#27272A] p-3 rounded-lg flex justify-between items-center">
+                              <span className="text-sm text-[#D4D4D8]">Car Rentals</span>
+                              <span className="text-sm font-semibold text-white">{formatCurrency(row.details?.breakdown?.carRental || 0)}</span>
+                            </div>
+                            <div className="bg-[#141414] border border-[#27272A] p-3 rounded-lg flex justify-between items-center">
+                              <span className="text-sm text-[#D4D4D8]">Bike Rentals</span>
+                              <span className="text-sm font-semibold text-white">{formatCurrency(row.details?.breakdown?.bikeRental || 0)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 );
               })}
+              {data.length === 0 && !isLoading && (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-[#71717A] text-sm">
+                    No payouts recorded yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

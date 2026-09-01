@@ -58,8 +58,8 @@ export function ExtensionRequestsTable({
       title: 'Bike Info',
       render: (row) => (
         <div>
-          <div className="text-white font-medium">{row.booking?.bike?.name || 'Unknown'}</div>
-          <div className="text-xs text-[#71717A] mt-1">{row.booking?.bike?.category || 'No category'}</div>
+          <div className="text-white font-medium">{row.booking?.vehicle?.name || 'Unknown'}</div>
+          <div className="text-xs text-[#71717A] mt-1">{row.booking?.vehicle?.category || 'No category'}</div>
         </div>
       ),
     },
@@ -201,9 +201,9 @@ export function ExtensionRequestsTable({
                 <div className="bg-[#111111] border border-[#27272A] p-4 rounded-lg space-y-3">
                   <h5 className="text-xs uppercase text-[#FACC15] font-bold tracking-wider">Bike Details</h5>
                   <div className="space-y-1">
-                    <p className="text-sm"><span className="text-gray-500 block text-xs">Name</span> <span className="text-gray-200 font-medium">{selectedRequest.booking?.bike?.name}</span></p>
-                    <p className="text-sm"><span className="text-gray-500 block text-xs">Category</span> <span className="text-gray-200">{selectedRequest.booking?.bike?.category}</span></p>
-                    <p className="text-sm"><span className="text-gray-500 block text-xs">Plate</span> <span className="text-gray-200">{selectedRequest.booking?.bike?.registrationNo || 'N/A'}</span></p>
+                    <p className="text-sm"><span className="text-gray-500 block text-xs">Name</span> <span className="text-gray-200 font-medium">{selectedRequest.booking?.vehicle?.name}</span></p>
+                    <p className="text-sm"><span className="text-gray-500 block text-xs">Category</span> <span className="text-gray-200">{selectedRequest.booking?.vehicle?.category}</span></p>
+                    <p className="text-sm"><span className="text-gray-500 block text-xs">Plate</span> <span className="text-gray-200">{selectedRequest.booking?.vehicle?.registrationNo || 'N/A'}</span></p>
                   </div>
                 </div>
 
@@ -252,7 +252,7 @@ export function ExtensionRequestsTable({
                     </div>
                   ) : (
                     <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm space-y-3">
-                      <div className="flex justify-between"><span className="text-gray-400">Bike Rate:</span> <span className="font-medium">€{Number(selectedRequest.booking?.bikeTotal || 0).toFixed(2)}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-400">Bike Rate:</span> <span className="font-medium">€{Number(selectedRequest.booking?.vehicleTotal || 0).toFixed(2)}</span></div>
                       
                       {/* Dynamic Packages */}
                       {selectedRequest.booking?.selectedPackage && (

@@ -32,13 +32,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         user.subscription?.currentPeriodEnd &&
         new Date(user.subscription.currentPeriodEnd) < new Date();
 
-      // if ((isMissingSubscription || isExpired) && pathname !== '/subscription') {
-      //   router.push('/subscription');
-      // }
+      if ((isMissingSubscription || isExpired) && pathname !== '/subscription') {
+        router.push('/subscription');
+        return;
+      }
 
-      // BYPASS SUBSCRIPTION logic completely
-      if (pathname === '/subscription') {
-        router.push('/');
+      // If they are on the subscription page but already have a valid subscription, go to module selection
+      if (pathname === '/subscription' && !isMissingSubscription && !isExpired) {
+        router.push('/module-selection');
+        return;
       }
 
       const activeModule = useSidebarStore.getState().activeModule;

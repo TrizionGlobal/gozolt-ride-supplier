@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Pencil, ArrowLeft, Bike, Bike, Info, Euro, Clock, Package } from 'lucide-react';
+import { Pencil, ArrowLeft, Bike, Info, Euro, Clock, Package } from 'lucide-react';
 
 export default function BikeDetailsPage() {
   const params = useParams();

@@ -88,6 +88,13 @@ export const bikeRentalsService = {
   },
 
   // --- Bookings ---
+
+  async uploadVehicleImage(file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/bike-rentals/supplier/vehicles/upload-image', formData);
+    return response.data;
+  },
   
   async getBookings(params?: { page?: number; limit?: number; search?: string; statuses?: string[]; dateFilter?: 'TODAY' | 'UPCOMING' | 'OVERDUE' }): Promise<any> {
     const queryParams: any = { ...params };

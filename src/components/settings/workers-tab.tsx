@@ -83,7 +83,29 @@ export function WorkersTab() {
     setIsEditModalOpen(true);
   };
 
-  const handleDeleteWorker = async (id: string, name: string) => {
+  const handleDeleteWorker = async (id: string, name: string, hasTasks: boolean) => {
+    if (hasTasks) {
+      MySwal.fire({
+        title: 'Cannot Remove Worker',
+        text: 'This staff member is assigned to pending tasks. Please wait until they are completed.',
+        icon: 'error',
+        background: '#111111',
+        color: '#fff',
+        confirmButtonColor: '#FACC15',
+        confirmButtonText: 'OK',
+        width: '450px',
+        customClass: {
+          popup: 'border border-[#27272A] rounded-xl p-4',
+          title: 'text-sm font-bold',
+          htmlContainer: 'text-xs text-gray-300 mt-1',
+          confirmButton: 'px-4 py-1.5 text-xs rounded-lg font-bold text-black',
+          icon: '!scale-50 !mt-2 !mb-0',
+          actions: 'mt-2'
+        }
+      });
+      return;
+    }
+
     MySwal.fire({
       title: 'Remove Worker?',
       text: `Are you sure you want to remove ${name}? They will no longer be able to complete tasks.`,
@@ -143,15 +165,19 @@ export function WorkersTab() {
       title: 'Current Tasks',
       className: 'text-center',
       render: (worker) => {
-        if (!worker.tasks || worker.tasks.length === 0) {
+        const carTasks = (worker.tasks || []).map((t: any) => ({ ...t, _category: 'Car' }));
+        const bikeTasks = (worker.bikeTasks || []).map((t: any) => ({ ...t, _category: 'Bike' }));
+        const allTasks = [...carTasks, ...bikeTasks];
+
+        if (allTasks.length === 0) {
           return <span className="text-gray-500 text-xs italic">No pending tasks</span>;
         }
         return (
           <div className="flex flex-col gap-2">
-            {worker.tasks.map((task: any) => (
+            {allTasks.map((task: any) => (
               <div key={task.id} className="bg-[#1A1A1A] p-2 rounded border border-[#27272A] text-xs">
                 <div className="font-medium text-[#FACC15] mb-1">
-                  {task.taskType === 'HANDOVER' ? 'Handover' : 'Return'} - {task.booking?.vehicle?.name || 'Vehicle'}
+                  {task._category} {task.taskType === 'HANDOVER' ? 'Handover' : 'Return'} - {task.booking?.vehicle?.name || 'Vehicle'}
                 </div>
                 <div className="text-[#A1A1AA]">
                   Due: {new Date(task.expiresAt).toLocaleString(undefined, {
@@ -167,26 +193,40 @@ export function WorkersTab() {
     {
       key: 'status',
       title: 'Status',
-      render: () => (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-500 border border-emerald-500/20">
-          Active
-        </span>
-      )
+      render: (worker) => {
+        const hasTasks = (worker.tasks?.length > 0) || (worker.bikeTasks?.length > 0);
+        
+        if (hasTasks) {
+          return (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-500 border border-blue-500/20">
+              Assigned
+            </span>
+          );
+        }
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-500 border border-emerald-500/20">
+            Available
+          </span>
+        );
+      }
     },
     {
       key: 'actions',
       title: 'Actions',
       className: 'text-center',
-      render: (worker) => (
-        <div className="flex items-center justify-center gap-2">
-          <button onClick={() => openEditModal(worker)} className="text-[#FACC15] hover:text-yellow-400 p-2 rounded-lg hover:bg-[#FACC15]/10 transition-colors" title="Edit">
-            <Edit2 className="h-4 w-4" />
-          </button>
-          <button onClick={() => handleDeleteWorker(worker.id, worker.name)} className="text-red-500 hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-colors" title="Remove">
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      )
+      render: (worker) => {
+        const hasTasks = (worker.tasks?.length > 0) || (worker.bikeTasks?.length > 0);
+        return (
+          <div className="flex items-center justify-center gap-2">
+            <button onClick={() => openEditModal(worker)} className="text-[#FACC15] hover:text-yellow-400 p-2 rounded-lg hover:bg-[#FACC15]/10 transition-colors" title="Edit">
+              <Edit2 className="h-4 w-4" />
+            </button>
+            <button onClick={() => handleDeleteWorker(worker.id, worker.name, hasTasks)} className="text-red-500 hover:text-red-400 p-2 rounded-lg hover:bg-red-500/10 transition-colors" title="Remove">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        );
+      }
     }
   ];
 

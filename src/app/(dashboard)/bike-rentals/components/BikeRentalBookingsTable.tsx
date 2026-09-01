@@ -44,9 +44,9 @@ export function BikeRentalBookingsTable({
       dataIndex: 'bike',
       render: (row) => (
         <div>
-          <div className="text-white font-medium">{row.bike?.name || 'Unknown'}</div>
+          <div className="text-white font-medium">{row.vehicle?.name || 'Unknown'}</div>
           <div className="inline-block mt-1 px-1.5 py-0.5 bg-[#27272A] rounded border border-[#3F3F46] text-[10px] font-mono text-[#A1A1AA]">
-            {row.bike?.registrationNo || 'No Plate'}
+            {row.vehicle?.registrationNo || 'No Plate'}
           </div>
         </div>
       ),

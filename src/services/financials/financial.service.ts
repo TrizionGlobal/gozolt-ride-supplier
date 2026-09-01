@@ -21,18 +21,50 @@ export const financialService = {
       const profile = profileRes.data;
       const payouts = payoutsRes.data.data || payoutsRes.data;
 
-      const grossRevenue = analytics.totalRevenue || 0;
+      const grossRevenue = analytics.totalGrossRevenue || analytics.totalRevenue || 0;
+      const netRevenue = analytics.totalNetRevenue || analytics.totalRevenue || 0;
       const commissionRate = profile.defaultDriverCommission || 0;
-      const commissionAmount = grossRevenue * (commissionRate / 100);
-      const netRevenue = grossRevenue - commissionAmount;
+      const commissionAmount = grossRevenue - netRevenue;
       const pendingPayout = payouts
         .filter((p: PayoutRecord) => p.status === 'PENDING')
         .reduce((sum: number, p: PayoutRecord) => sum + p.amount, 0);
 
+      const settledPayout = payouts
+        .filter((p: PayoutRecord) => p.status === 'PAID' || p.status === 'COMPLETED')
+        .reduce((sum: number, p: PayoutRecord) => sum + p.amount, 0);
+
       const tipEarnings = analytics.tipEarnings || 0;
-      return { grossRevenue, commissionRate, commissionAmount, netRevenue, pendingPayout, tipEarnings };
+      
+      const bd = analytics.breakdown || {};
+      const totalRefunds = (bd.cab?.refunds || 0) + (bd.carRental?.refunds || 0) + (bd.bikeRental?.refunds || 0);
+      const totalCancellations = (bd.cab?.cancellations || 0) + (bd.carRental?.cancellations || 0) + (bd.bikeRental?.cancellations || 0);
+
+      return { 
+        grossRevenue, 
+        commissionRate, 
+        commissionAmount, 
+        netRevenue, 
+        pendingPayout, 
+        settledPayout,
+        totalRefunds,
+        totalCancellations,
+        tipEarnings,
+        breakdown: analytics.breakdown,
+        activeModules: {
+          cab: profile.isCabActive ?? false,
+          carRental: profile.isCarRentalActive ?? false,
+          bikeRental: profile.isBikeRentalActive ?? false,
+        }
+      };
     } catch {
-      return { grossRevenue: 0, commissionRate: 15, commissionAmount: 0, netRevenue: 0, pendingPayout: 0, tipEarnings: 0 };
+      return { 
+        grossRevenue: 0, 
+        commissionRate: 15, 
+        commissionAmount: 0, 
+        netRevenue: 0, 
+        pendingPayout: 0, 
+        tipEarnings: 0 
+      };
     }
   },
 
@@ -113,47 +145,7 @@ export const financialService = {
     }
   },
 
-  async getCarRentalPayoutHistory(): Promise<PayoutRecord[]> {
-    try {
-      const res = await apiClient.get('/suppliers/car-rentals/payouts', {
-        params: { page: 1, limit: 10, sortBy: 'createdAt', order: 'desc' },
-      });
-      const payouts = res.data.data || res.data;
-      return payouts.map((p: PayoutRecord) => ({
-        id: p.id,
-        amount: p.amount,
-        status: p.status,
-        periodStart: p.periodStart,
-        periodEnd: p.periodEnd,
-        processedAt: p.processedAt,
-        createdAt: p.createdAt,
-        details: p.details,
-      }));
-    } catch {
-      return [];
-    }
-  },
 
-  async getBikeRentalPayoutHistory(): Promise<PayoutRecord[]> {
-    try {
-      const res = await apiClient.get('/suppliers/bike-rentals/payouts', {
-        params: { page: 1, limit: 10, sortBy: 'createdAt', order: 'desc' },
-      });
-      const payouts = res.data.data || res.data;
-      return payouts.map((p: PayoutRecord) => ({
-        id: p.id,
-        amount: p.amount,
-        status: p.status,
-        periodStart: p.periodStart,
-        periodEnd: p.periodEnd,
-        processedAt: p.processedAt,
-        createdAt: p.createdAt,
-        details: p.details,
-      }));
-    } catch {
-      return [];
-    }
-  },
 
   async downloadStatementPDF(): Promise<void> {
     // Mock — actual implementation would fetch PDF from backend

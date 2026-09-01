@@ -12,6 +12,7 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'VERIFY' | 'SCAN' | 'FORM' | 'SUCCESS'>('VERIFY');
+  const [rentalType, setRentalType] = useState('car');
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
   const [formData, setFormData] = useState({ fuelLevel: 'FULL', odometerReading: '', vehicleCondition: 'Good', damageNotes: '', refundAmount: '', refundAccountNumber: '', supplierSignature: '' });
   const [photos, setPhotos] = useState<string[]>([]);
@@ -33,7 +34,8 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
       setTotalDays(tDays);
       setRemainingDays(rDays);
       
-      const dailyRate = Number(task.booking.vehicleTotal) / tDays;
+      const totalAmount = task.booking.vehicleTotal || task.booking.bikeTotal || 0;
+      const dailyRate = Number(totalAmount) / tDays;
       const calcRefund = Math.round(rDays * dailyRate * 100) / 100;
       setMaxRefund(calcRefund);
       setFormData(prev => ({ ...prev, refundAmount: calcRefund.toString() }));
@@ -41,7 +43,10 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
   }, [task]);
 
   useEffect(() => {
-    fetch(`/api/proxy/car-rentals/public/task/${token}`)
+    const type = new URLSearchParams(window.location.search).get('type') || 'car';
+    setRentalType(type);
+    
+    fetch(`/api/proxy/${type === 'bike' ? 'bike-rentals' : 'car-rentals'}/public/task/${token}`)
       .then(res => res.json())
       .then(data => {
         if (data.statusCode && data.statusCode !== 200) {
@@ -98,7 +103,7 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
     };
 
     try {
-      const res = await fetch(`/api/proxy/car-rentals/public/task/${token}/complete`, {
+      const res = await fetch(`/api/proxy/${rentalType === 'bike' ? 'bike-rentals' : 'car-rentals'}/public/task/${token}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -135,7 +140,7 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
     <div className="min-h-screen bg-black text-white p-4 max-w-md mx-auto">
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-800 pt-4">
         <div>
-          <h1 className="text-xl font-bold">{task?.taskType === 'HANDOVER' ? 'Car Handover' : 'Car Return'}</h1>
+          <h1 className="text-xl font-bold">{task?.taskType === 'HANDOVER' ? `${rentalType === 'bike' ? 'Bike' : 'Car'} Handover` : `${rentalType === 'bike' ? 'Bike' : 'Car'} Return`}</h1>
           <p className="text-sm text-gray-400">Assigned to: {task?.worker?.name}</p>
         </div>
       </div>
@@ -147,7 +152,7 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
               <div className="w-20 h-20 bg-black rounded-lg overflow-hidden flex items-center justify-center shrink-0">
                 {task.booking.vehicle?.images?.[0] ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={task.booking.vehicle.images[0]} alt="Car" className="w-full h-full object-cover" />
+                  <img src={task.booking.vehicle.images[0]} alt={rentalType === 'bike' ? 'Bike' : 'Car'} className="w-full h-full object-cover" />
                 ) : (
                   <Camera className="h-6 w-6 text-gray-500" />
                 )}
@@ -262,7 +267,7 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Vehicle Condition</label>
+              <label className="block text-sm text-gray-400 mb-1">{rentalType === 'bike' ? 'Bike' : 'Vehicle'} Condition</label>
               <select 
                 value={formData.vehicleCondition}
                 onChange={e => setFormData({...formData, vehicleCondition: e.target.value})}

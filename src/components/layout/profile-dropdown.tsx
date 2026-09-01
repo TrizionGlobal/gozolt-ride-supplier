@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, Settings, CreditCard, ChevronDown } from 'lucide-react';
+import { LogOut, Settings, CreditCard, ChevronDown, Users } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, usePathname } from 'next/navigation';
@@ -34,9 +34,8 @@ export function ProfileDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2.5 p-1 pr-3 rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-[#FACC15]/50 ${
-          isOpen ? 'bg-[#1A1A1A] border-[#FACC15]' : 'bg-[#111111] border-[#FACC15]/50 hover:border-[#FACC15] hover:bg-[#1A1A1A]'
-        }`}
+        className={`flex items-center gap-2.5 p-1 pr-3 rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-[#FACC15]/50 ${isOpen ? 'bg-[#1A1A1A] border-[#FACC15]' : 'bg-[#111111] border-[#FACC15]/50 hover:border-[#FACC15] hover:bg-[#1A1A1A]'
+          }`}
       >
         <div className="flex h-8 w-8 overflow-hidden items-center justify-center rounded-full bg-[#FACC15]">
           {user?.logoUrl ? (
@@ -57,10 +56,27 @@ export function ProfileDropdown() {
             <p className="text-sm font-semibold text-white truncate">{user?.companyName || 'Malta Taxis Ltd'}</p>
             <p className="text-xs text-[#71717A] truncate mt-0.5">{user?.email || 'admin@maltataxis.com'}</p>
           </div>
-          
+
           <div className="py-1">
             {pathname !== '/module-selection' && (
               <>
+                <button
+                  onClick={() => { setIsOpen(false); router.push('/payouts'); }}
+                  className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:text-[#FACC15] hover:bg-[#1A1A1A] transition-colors border-b border-[#27272A]"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-3">
+                    <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                    <line x1="2" x2="22" y1="10" y2="10"></line>
+                  </svg>
+                  Payments & Settlements
+                </button>
+                <button
+                  onClick={() => { setIsOpen(false); router.push('/workers'); }}
+                  className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:text-[#FACC15] hover:bg-[#1A1A1A] transition-colors border-b border-[#27272A]"
+                >
+                  <Users className="h-4 w-4 mr-3 text-[#A1A1AA]" />
+                  Staff & Workers
+                </button>
                 <button
                   onClick={() => { setIsOpen(false); router.push('/settings'); }}
                   className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
@@ -78,7 +94,7 @@ export function ProfileDropdown() {
               </>
             )}
           </div>
-          
+
           <div className="border-t border-[#27272A] py-1">
             <button
               onClick={() => { setIsOpen(false); logout(); }}

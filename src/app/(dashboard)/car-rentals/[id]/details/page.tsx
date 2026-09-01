@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -11,8 +11,10 @@ import { AssignWorkerModal } from '@/components/car-rentals/assign-worker-modal'
 
 export default function BookingDetailsPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const bookingId = params.id as string;
+  const source = searchParams.get('source');
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [assignModal, setAssignModal] = useState<{ isOpen: boolean; taskType: 'HANDOVER' | 'RETURN' | null }>({ isOpen: false, taskType: null });
@@ -101,7 +103,7 @@ export default function BookingDetailsPage() {
               >
                 Assign Handover
               </button>
-              <Link href={`/car-rentals/${booking.id}/handover`} className="px-4 py-2 rounded-lg text-sm font-medium bg-[#FACC15] text-black hover:bg-[#EAB308]">
+              <Link href={`/car-rentals/${booking.id}/handover${source ? `?source=${source}` : ''}`} className="px-4 py-2 rounded-lg text-sm font-medium bg-[#FACC15] text-black hover:bg-[#EAB308]">
                 Start Handover
               </Link>
             </>
@@ -114,7 +116,7 @@ export default function BookingDetailsPage() {
               >
                 Assign Return
               </button>
-              <Link href={`/car-rentals/${booking.id}/return`} className="px-4 py-2 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600">
+              <Link href={`/car-rentals/${booking.id}/return${source ? `?source=${source}` : ''}`} className="px-4 py-2 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600">
                 Start Return
               </Link>
             </>

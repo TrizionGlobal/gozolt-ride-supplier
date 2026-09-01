@@ -54,7 +54,18 @@ export function AssignWorkerModal({ bookingId, taskType, onClose, onAssigned }: 
         {loading ? (
           <div className="text-gray-400 text-sm">Loading workers...</div>
         ) : workers.length === 0 ? (
-          <div className="text-yellow-500 text-sm mb-4">No workers found. Please add workers in Settings first.</div>
+          <div>
+            <div className="text-yellow-500 text-sm mb-4">No workers found. Please add workers in Settings first.</div>
+            <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-[#27272A]">
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg border border-[#27272A] px-4 py-2 font-medium text-white hover:bg-[#1A1A1A]"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         ) : (
           <form onSubmit={handleAssign} className="space-y-4">
             <div>

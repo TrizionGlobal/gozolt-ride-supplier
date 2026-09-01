@@ -100,19 +100,19 @@ export default function BikeHandoverPage() {
         {/* Bike Info */}
         <div className="bg-[#111111] rounded-xl p-4 border border-[#27272A] flex gap-4 items-center">
           <div className="w-20 h-20 bg-[#1A1A1A] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
-            {booking.bike?.images?.[0] ? (
+            {booking.vehicle?.images?.[0] ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={booking.bike.images[0]} alt="Bike" className="w-full h-full object-cover" />
+              <img src={booking.vehicle.images[0]} alt="Bike" className="w-full h-full object-cover" />
             ) : (
               <Camera className="h-6 w-6 text-gray-500" />
             )}
           </div>
           <div className="flex-1">
-            <h3 className="font-semibold text-lg text-white">{booking.bike?.name}</h3>
+            <h3 className="font-semibold text-lg text-white">{booking.vehicle?.name}</h3>
             <p className="text-sm text-gray-400">
-              {booking.bike?.category} {booking.bike?.year ? `• ${booking.bike.year}` : ''}
+              {booking.vehicle?.category} {booking.vehicle?.year ? `• ${booking.vehicle.year}` : ''}
             </p>
-            <p className="text-xs text-[#FACC15] mt-1 font-medium">Plate: {booking.bike?.registrationNo || 'N/A'}</p>
+            <p className="text-xs text-[#FACC15] mt-1 font-medium">Plate: {booking.vehicle?.registrationNo || 'N/A'}</p>
           </div>
         </div>
         

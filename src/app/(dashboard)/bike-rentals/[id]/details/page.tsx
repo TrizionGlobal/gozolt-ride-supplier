@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -11,8 +11,10 @@ import { AssignWorkerModal } from '@/components/bike-rentals/assign-worker-modal
 
 export default function BookingDetailsPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const bookingId = params.id as string;
+  const source = searchParams.get('source');
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [assignModal, setAssignModal] = useState<{ isOpen: boolean; taskType: 'HANDOVER' | 'RETURN' | null }>({ isOpen: false, taskType: null });
@@ -101,7 +103,7 @@ export default function BookingDetailsPage() {
               >
                 Assign Handover
               </button>
-              <Link href={`/bike-rentals/${booking.id}/handover`} className="px-4 py-2 rounded-lg text-sm font-medium bg-[#FACC15] text-black hover:bg-[#EAB308]">
+              <Link href={`/bike-rentals/${booking.id}/handover${source ? `?source=${source}` : ''}`} className="px-4 py-2 rounded-lg text-sm font-medium bg-[#FACC15] text-black hover:bg-[#EAB308]">
                 Start Handover
               </Link>
             </>
@@ -114,7 +116,7 @@ export default function BookingDetailsPage() {
               >
                 Assign Return
               </button>
-              <Link href={`/bike-rentals/${booking.id}/return`} className="px-4 py-2 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600">
+              <Link href={`/bike-rentals/${booking.id}/return${source ? `?source=${source}` : ''}`} className="px-4 py-2 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600">
                 Start Return
               </Link>
             </>
@@ -127,8 +129,8 @@ export default function BookingDetailsPage() {
         {/* Top Summary */}
         <div className="flex justify-between items-start bg-[#111111] p-6 rounded-xl border border-[#27272A]">
           <div>
-            <h3 className="text-xl font-semibold text-white">{booking.bike?.name}</h3>
-            <p className="text-sm text-gray-400 mt-1">Bike ID: CR-{booking.bike?.id.substring(0, 8).toUpperCase()} | Category: {booking.bike?.category?.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}</p>
+            <h3 className="text-xl font-semibold text-white">{booking.vehicle?.name}</h3>
+            <p className="text-sm text-gray-400 mt-1">Bike ID: CR-{booking.vehicle?.id.substring(0, 8).toUpperCase()} | Category: {booking.vehicle?.category?.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}</p>
           </div>
           <div className="text-right">
             <span className={`px-4 py-1.5 rounded-full text-sm font-medium border ${getStatusColor(booking.status)}`}>
@@ -174,7 +176,7 @@ export default function BookingDetailsPage() {
 
                 // Adjust original days if there were extensions (to match original booking rate before extensions)
                 // We'll just show the total including extensions to keep it simple, or calculate just the bike rate.
-                const bikeRate = Number(booking.bike?.pricePerDay || 0) * d;
+                const bikeRate = Number(booking.vehicle?.pricePerDay || 0) * d;
 
                 return (
                   <>
@@ -190,8 +192,8 @@ export default function BookingDetailsPage() {
                         <span className="text-gray-400">{booking.selectedPackage.title || 'Protection Package'}:</span> 
                         <span className="font-medium">€{Number((booking.selectedPackage.pricePerDay || booking.selectedPackage.price || 0) * d).toFixed(2)}</span>
                       </div>
-                    ) : booking.protectionPackageId && booking.bike?.protectionPackages && (() => {
-                      const pkg = booking.bike.protectionPackages.find((p: any) => p.id === booking.protectionPackageId);
+                    ) : booking.protectionPackageId && booking.vehicle?.protectionPackages && (() => {
+                      const pkg = booking.vehicle.protectionPackages.find((p: any) => p.id === booking.protectionPackageId);
                       if (pkg) {
                         return (
                           <div className="flex justify-between"><span className="text-gray-400">{pkg.title || 'Protection Package'}:</span> <span className="font-medium">€{Number((pkg.pricePerDay || 0) * d).toFixed(2)}</span></div>

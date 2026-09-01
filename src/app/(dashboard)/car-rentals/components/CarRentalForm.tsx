@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Save, X, Check, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Save, X, Check, Loader2, UploadCloud } from 'lucide-react';
 import { toast } from 'sonner';
 import { carRentalsService, CarRentalVehicle, ProtectionPackage, Addon, MileagePackage } from '@/services/car-rentals/car-rentals.service';
 import { useCarRentalsStore } from '@/stores/car-rentals.store';
@@ -71,7 +71,40 @@ export function CarRentalForm({ initialData }: Props) {
   const [seats, setSeats] = useState<number | ''>(initialData?.seats || '');
   const [luggageCapacity, setLuggageCapacity] = useState<number | ''>(initialData?.luggageCapacity || '');
   const [pricePerDay, setPricePerDay] = useState<number | ''>(initialData?.pricePerDay || '');
-  const [imageUrl, setImageUrl] = useState(initialData?.images?.[0] || '');
+  const [imageUrls, setImageUrls] = useState<string[]>(initialData?.images || []);
+  const [localImages, setLocalImages] = useState<{file: File, preview: string}[]>([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Only PNG and JPG images are allowed');
+      return;
+    }
+
+    if (imageUrls.length + localImages.length >= 5) {
+      toast.error('Maximum 5 images allowed');
+      return;
+    }
+
+    const preview = URL.createObjectURL(file);
+    setLocalImages(prev => [...prev, { file, preview }]);
+  };
+
+  const removeImageUrl = (indexToRemove: number) => {
+    setImageUrls(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const removeLocalImage = (indexToRemove: number) => {
+    setLocalImages(prev => {
+      const removed = prev[indexToRemove];
+      URL.revokeObjectURL(removed.preview);
+      return prev.filter((_, idx) => idx !== indexToRemove);
+    });
+  };
   // Features & Delivery Options
   const [hasAirConditioning, setHasAirConditioning] = useState(initialData?.hasAirConditioning ?? true);
   const [isSelfPickupAllowed, setIsSelfPickupAllowed] = useState(initialData?.isSelfPickupAllowed ?? true);
@@ -140,7 +173,7 @@ export function CarRentalForm({ initialData }: Props) {
         isSelfPickupAllowed,
         isSupplierDeliveryAllowed,
         isDoorstepDeliveryAllowed,
-        images: imageUrl ? [imageUrl] : [],
+        images: imageUrls,
         protectionPackages: packages
           .filter(pkg => pkg.originalPricePerDay && Number(pkg.originalPricePerDay) > 0)
           .map(pkg => ({
@@ -154,10 +187,19 @@ export function CarRentalForm({ initialData }: Props) {
           .map(a => ({ ...a, pricePerDay: Number(a.pricePerDay) || 0 })),
       };
 
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(data));
+
+      if (localImages.length > 0) {
+        for (const localImage of localImages) {
+          formData.append('images', localImage.file);
+        }
+      }
+
       if (initialData?.id) {
-        await carRentalsService.updateVehicle(initialData.id, data);
+        await carRentalsService.updateVehicle(initialData.id, formData);
       } else {
-        await carRentalsService.createVehicle(data);
+        await carRentalsService.createVehicle(formData);
       }
 
       useCarRentalsStore.getState().clearFleetCache();
@@ -275,8 +317,55 @@ export function CarRentalForm({ initialData }: Props) {
             <input required type="number" min="0" step="0.01" value={pricePerDay} onChange={e => setPricePerDay(e.target.value === '' ? '' : Number(e.target.value))} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. 45.00" />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Image URL<span className="text-red-500">*</span></label>
-            <input required type="url" value={imageUrl} onChange={e => setImageUrl(e.target.value)} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="https://..." />
+            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Car Image<span className="text-red-500">*</span></label>
+            <div className="space-y-3">
+              {(imageUrls.length + localImages.length) < 5 && (
+                <label className="flex flex-col items-center justify-center gap-1 w-full h-14 rounded-lg bg-[#111111] border border-[#3F3F46] text-[#D4D4D8] text-sm hover:bg-[#27272A] cursor-pointer">
+                  {isUploadingImage ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Uploading images...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <UploadCloud className="h-4 w-4" />
+                        <span>Upload Image ({imageUrls.length + localImages.length}/5)</span>
+                      </div>
+                      <span className="text-[10px] text-[#71717A]">PNG, JPG only</span>
+                    </>
+                  )}
+                  <input type="file" accept=".png, .jpg, .jpeg, image/png, image/jpeg, image/jpg" className="hidden" onChange={handleImageUpload} disabled={isUploadingImage || isSubmitting} />
+                </label>
+              )}
+              {(imageUrls.length > 0 || localImages.length > 0) && (
+                <div className="flex flex-wrap gap-2">
+                  {imageUrls.map((url, idx) => (
+                    <div key={`remote-${idx}`} className="relative h-20 w-32 rounded-lg border border-[#27272A] overflow-hidden bg-black flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt={`Car Preview ${idx + 1}`} className="h-full w-full object-cover" />
+                      <button type="button" onClick={() => removeImageUrl(idx)} className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:text-red-400 disabled:opacity-50" disabled={isUploadingImage || isSubmitting}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {localImages.map((local, idx) => (
+                    <div key={`local-${idx}`} className="relative h-20 w-32 rounded-lg border border-[#27272A] overflow-hidden bg-black flex items-center justify-center opacity-90">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={local.preview} alt={`Car Local Preview ${idx + 1}`} className="h-full w-full object-cover" />
+                      {isUploadingImage && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                          <Loader2 className="h-5 w-5 animate-spin text-[#FACC15]" />
+                        </div>
+                      )}
+                      <button type="button" onClick={() => removeLocalImage(idx)} className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:text-red-400 disabled:opacity-50" disabled={isUploadingImage || isSubmitting}>
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

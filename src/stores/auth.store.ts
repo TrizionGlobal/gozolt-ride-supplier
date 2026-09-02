@@ -34,16 +34,19 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   hydrateFromSession: async () => {
     try {
-
-
       const res = await fetch('/api/auth/me');
       if (res.ok) {
         const data = await res.json();
+        if (data.token) {
+          localStorage.setItem('supplier_token', data.token);
+        }
         set({ user: data.user, isAuthenticated: true, isLoading: false });
       } else {
+        localStorage.removeItem('supplier_token');
         set({ isLoading: false });
       }
     } catch {
+      localStorage.removeItem('supplier_token');
       set({ isLoading: false });
     }
   },

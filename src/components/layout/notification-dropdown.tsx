@@ -9,8 +9,11 @@ import { getMessaging, isSupported } from 'firebase/messaging';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { io, Socket } from 'socket.io-client';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 export function NotificationDropdown() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -72,6 +75,18 @@ export function NotificationDropdown() {
       if (supported && app) {
         const messaging = getMessaging(app);
         const unsubscribe = onMessage(messaging, (payload) => {
+          if (payload.notification) {
+            toast(payload.notification.title || 'New Notification', {
+              description: payload.notification.body || '',
+              icon: <Bell className="h-4 w-4 text-[#FFD700]" />,
+              style: {
+                background: '#1A1A1A',
+                border: '1px solid #333',
+                color: '#fff',
+              },
+            });
+          }
+
           // Increment unread count or refetch
           fetchUnreadCount();
           // If dropdown is open, refresh the list
@@ -95,18 +110,34 @@ export function NotificationDropdown() {
     };
   }, [isOpen]);
 
+  const getActionFromData = (data?: Record<string, any>) => {
+    if (!data || !data.module) return null;
+    return {
+      label: 'View',
+      onClick: () => {
+        setIsOpen(false);
+        if (data.bookingId) {
+          router.push(`/${data.module}/${data.bookingId}/details`);
+        } else {
+          router.push(`/${data.module}`);
+        }
+      }
+    };
+  };
+
   // Listen to Socket.IO for real-time notifications
   useEffect(() => {
     const token = localStorage.getItem('supplier_token') || sessionStorage.getItem('supplier_token');
     if (!token) return;
 
     const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
-    const socket: Socket = io(`${API_URL}/supplier`, {
+    const baseUrl = API_URL.replace(/\/v1$/, '');
+    const socket: Socket = io(`${baseUrl}/supplier`, {
       auth: { token },
       transports: ['websocket'],
     });
 
-    socket.on('notification:in_app', (notification: Record<string, string>) => {
+    socket.on('notification:in_app', (notification: any) => {
       const newNotif: NotificationItem = {
         id: notification.id || Math.random().toString(36).substr(2, 9),
         title: notification.title,
@@ -114,9 +145,26 @@ export function NotificationDropdown() {
         type: notification.type || 'SYSTEM',
         isRead: false,
         createdAt: notification.createdAt || new Date().toISOString(),
+        data: notification.data,
       };
 
+      const action = getActionFromData(notification.data);
+
       // Play a sound or show a toast if needed
+      toast(notification.title, {
+        description: notification.body,
+        icon: <Bell className="h-4 w-4 text-[#FFD700]" />,
+        action: action ? {
+          label: action.label,
+          onClick: action.onClick,
+        } : undefined,
+        style: {
+          background: '#1A1A1A',
+          border: '1px solid #333',
+          color: '#fff',
+        },
+      });
+
       setUnreadCount((prev) => prev + 1);
       
       // Update list if already fetched
@@ -219,6 +267,21 @@ export function NotificationDropdown() {
                       <p className="text-xs text-[#71717A] line-clamp-2">
                         {notification.body}
                       </p>
+                      {notification.data?.module && (
+                        <div className="mt-2 text-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const action = getActionFromData(notification.data);
+                              if (action) action.onClick();
+                              handleMarkRead(notification.id, notification.isRead);
+                            }}
+                            className="text-xs px-2 py-1 bg-[#1F1F22] hover:bg-[#27272A] text-[#FACC15] rounded border border-[#27272A] transition-colors"
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

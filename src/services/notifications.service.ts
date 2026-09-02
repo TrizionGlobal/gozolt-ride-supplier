@@ -7,6 +7,7 @@ export interface NotificationItem {
   type: string;
   isRead: boolean;
   createdAt: string;
+  data?: Record<string, any>;
 }
 
 export interface PaginatedNotifications {

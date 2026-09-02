@@ -26,6 +26,8 @@ export function useAuth() {
           }),
         });
 
+        localStorage.setItem('supplier_token', response.accessToken);
+
         let redirectPath = '/module-selection';
 
         // Fetch the supplier profile
@@ -66,6 +68,7 @@ export function useAuth() {
       await logout();
       await fetch('/api/auth/logout', { method: 'POST' });
     } finally {
+      localStorage.removeItem('supplier_token');
       clearAuth();
       router.push('/login');
     }

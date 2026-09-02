@@ -59,9 +59,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await res.json();
-    return NextResponse.json({ user });
-  } catch {
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    const data = await res.json();
+    return NextResponse.json({ user: data, token });
+  } catch (error) {
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -30,7 +30,7 @@ export const financialService = {
         .reduce((sum: number, p: PayoutRecord) => sum + p.amount, 0);
 
       const settledPayout = payouts
-        .filter((p: PayoutRecord) => p.status === 'PAID' || p.status === 'COMPLETED')
+        .filter((p: PayoutRecord) => (p.status as string) === 'PAID' || p.status === 'COMPLETED')
         .reduce((sum: number, p: PayoutRecord) => sum + p.amount, 0);
 
       const tipEarnings = analytics.tipEarnings || 0;
@@ -63,6 +63,9 @@ export const financialService = {
         commissionAmount: 0, 
         netRevenue: 0, 
         pendingPayout: 0, 
+        settledPayout: 0,
+        totalRefunds: 0,
+        totalCancellations: 0,
         tipEarnings: 0 
       };
     }

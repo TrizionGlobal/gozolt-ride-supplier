@@ -1,15 +1,17 @@
 import React, { forwardRef } from 'react';
 import { formatCurrency } from '@/lib/utils';
-import type { PayoutRecord, SupplierProfile } from '@/types';
+import type { PayoutRecord, SupplierStatement, SupplierProfile } from '@/types';
 
 interface InvoiceDocumentProps {
-  payout: PayoutRecord;
+  payout?: PayoutRecord | null;
+  statement?: SupplierStatement | null;
   supplier: SupplierProfile | null;
 }
 
 export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
-  ({ payout, supplier }, ref) => {
-    const formatDate = (dateString: string) => {
+  ({ payout, statement, supplier }, ref) => {
+    const formatDate = (dateString?: string | null) => {
+      if (!dateString) return 'N/A';
       return new Date(dateString).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
@@ -17,18 +19,19 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
       });
     };
 
-    const statementNo = payout.id.substring(0, 8).toUpperCase();
-    const periodStart = payout.periodStart || payout.createdAt;
-    const periodEnd = payout.periodEnd || payout.processedAt || payout.createdAt;
+    const statementNo = statement?.statementNo || (payout?.id ? payout.id.substring(0, 8).toUpperCase() : 'DOCUMENT');
+    const periodStart = statement?.periodStart || payout?.periodStart || payout?.createdAt || '';
+    const periodEnd = statement?.periodEnd || payout?.periodEnd || payout?.processedAt || payout?.createdAt || '';
 
-    const cab = Number(payout.details?.breakdown?.cab || 0);
-    const carRental = Number(payout.details?.breakdown?.carRental || 0);
-    const bikeRental = Number(payout.details?.breakdown?.bikeRental || 0);
-    const totalGross = cab + carRental + bikeRental;
+    const cab = Number(payout?.details?.breakdown?.cab || 0);
+    const carRental = Number(payout?.details?.breakdown?.carRental || 0);
+    const bikeRental = Number(payout?.details?.breakdown?.bikeRental || 0);
+    const totalGross = statement?.grossRevenue ?? (cab + carRental + bikeRental);
 
     // We can assume total deductions are the difference between gross and net
-    const netAmount = Number(payout.amount || 0);
-    const deductions = totalGross > 0 ? Math.max(0, totalGross - netAmount) : 0;
+    const netAmount = statement?.netBalance ?? Number(payout?.amount || 0);
+    const deductions = statement?.commissionEarned ?? (totalGross > 0 ? Math.max(0, totalGross - netAmount) : 0);
+    const status = payout?.status || 'COMPLETED';
 
     return (
       <div
@@ -109,7 +112,7 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
               Status
             </p>
-            <p className="font-semibold text-green-600">{payout.status}</p>
+            <p className="font-semibold text-green-600">{status}</p>
           </div>
         </div>
 

@@ -1,16 +1,30 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { toast } from 'sonner';
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
+import { useRouter } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
-import { subscriptionService } from '@/services/subscription/subscription.service';
+import { toast } from 'sonner';
+
+import { Step5Payment } from '@/components/auth/step5-payment';
 import { CurrentPlanBanner } from '@/components/subscription/current-plan-banner';
 import { PlanComparisonCards } from '@/components/subscription/plan-comparison-cards';
-import type { SubscriptionInfo, PlanDetails } from '@/types';
 import { useFleetTracking } from '@/hooks/use-fleet-tracking';
+import { subscriptionService } from '@/services/subscription/subscription.service';
 import { useAuthStore } from '@/stores/auth.store';
-import { Step5Payment } from '@/components/auth/step5-payment';
-import { useRouter } from 'next/navigation';
+import { useSidebarStore } from '@/stores/sidebar.store';
+import {
+  isSupplierService,
+  SUPPLIER_SERVICE_NAMES,
+  type SupplierService,
+} from '@/types/supplier-service';
+import type {
+  PlanDetails,
+  SubscriptionInfo,
+} from '@/types';
 
 const PLAN_CONFIG: PlanDetails[] = [
   {
@@ -76,140 +90,411 @@ const PLAN_CONFIG: PlanDetails[] = [
   },
 ];
 
+type UsageInfo = {
+  totalVehicles: number;
+  totalDrivers: number;
+};
+
+type PaymentData = {
+  paymentMethodId: string;
+  cardName: string;
+  last4: string;
+  brand: string;
+};
+
 export default function SubscriptionPage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
-  const [usage, setUsage] = useState<{ totalVehicles: number; totalDrivers: number } | null>(null);
-  const [isChanging, setIsChanging] = useState<string | null>(null);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [showConfirmPlanDialog, setShowConfirmPlanDialog] = useState<SubscriptionInfo['tier'] | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState<SubscriptionInfo['tier'] | null>(null);
-
-  // Setup Flow States
-  const { user, hydrateFromSession, clearAuth } = useAuthStore();
   const router = useRouter();
-  const [setupStep, setSetupStep] = useState<number>(1);
-  const [selectedTier, setSelectedTier] = useState<'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE'>('STARTER');
-  const [cardData, setCardData] = useState<{ paymentMethodId: string; cardName: string; last4: string; brand: string; }>({
-    paymentMethodId: '', cardName: '', last4: '', brand: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
 
-  const fetchData = useCallback(async (showLoader = true) => {
-    if (showLoader) setIsLoading(true);
-    try {
-      const [sub, usg] = await Promise.all([
-        subscriptionService.getSubscription(),
-        subscriptionService.getUsage(),
-      ]);
-      setSubscription(sub);
-      setUsage(usg);
-    } catch {
-      // handled in service
-    } finally {
-      if (showLoader) setIsLoading(false);
+  const {
+    user,
+    clearAuth,
+    hydrateFromSession,
+  } = useAuthStore();
+
+  const [selectedService, setSelectedService] =
+    useState<SupplierService | null>(null);
+
+  const [subscription, setSubscription] =
+    useState<SubscriptionInfo | null>(null);
+
+  const [usage, setUsage] =
+    useState<UsageInfo | null>(null);
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [isSubmitting, setIsSubmitting] =
+    useState(false);
+
+  const [isCancelling, setIsCancelling] =
+    useState(false);
+
+  const [isChanging, setIsChanging] =
+    useState<string | null>(null);
+
+  const [setupStep, setSetupStep] =
+    useState<number>(1);
+
+  const [showCancelDialog, setShowCancelDialog] =
+    useState(false);
+
+  const [
+    showConfirmPlanDialog,
+    setShowConfirmPlanDialog,
+  ] = useState<SubscriptionInfo['tier'] | null>(
+    null
+  );
+
+  const [
+    showPaymentModal,
+    setShowPaymentModal,
+  ] = useState<SubscriptionInfo['tier'] | null>(
+    null
+  );
+
+  const [cardData] = useState<PaymentData>({
+    paymentMethodId: '',
+    cardName: '',
+    last4: '',
+    brand: '',
+  });
+
+  /*
+   * Read the service selected on the landing page.
+   *
+   * This common subscription page is used only for:
+   * - Cab Booking
+   * - Car Rental
+   * - Bike Rental
+   *
+   * Quick Services has a separate subscription page.
+   */
+  useEffect(() => {
+    const urlParams = new URLSearchParams(
+      window.location.search
+    );
+
+    const serviceFromUrl =
+      urlParams.get('service');
+
+    const savedService =
+      localStorage.getItem(
+        'gozolt-selected-service'
+      );
+
+    const service =
+      isSupplierService(serviceFromUrl)
+        ? serviceFromUrl
+        : isSupplierService(savedService)
+          ? savedService
+          : null;
+
+    if (
+      !service ||
+      service === 'QUICK_SERVICES'
+    ) {
+      router.replace('/');
+      return;
     }
-  }, []);
+
+    localStorage.setItem(
+      'gozolt-selected-service',
+      service
+    );
+
+    setSelectedService(service);
+  }, [router]);
+
+  /*
+   * Fetch current subscription and usage.
+   */
+  const fetchData = useCallback(
+    async (showLoader = true) => {
+      if (showLoader) {
+        setIsLoading(true);
+      }
+
+      try {
+        const [sub, usg] =
+          await Promise.all([
+            subscriptionService.getSubscription(),
+            subscriptionService.getUsage(),
+          ]);
+
+        setSubscription(sub);
+        setUsage(usg);
+      } catch (error) {
+        console.error(
+          'Failed to fetch subscription information:',
+          error
+        );
+      } finally {
+        if (showLoader) {
+          setIsLoading(false);
+        }
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  useFleetTracking({ onRefresh: fetchData });
+  useFleetTracking({
+    onRefresh: fetchData,
+  });
 
-  const isExpired =
+  const isExpired = Boolean(
     subscription?.currentPeriodEnd &&
-    new Date(subscription.currentPeriodEnd) < new Date();
+      new Date(
+        subscription.currentPeriodEnd
+      ) < new Date()
+  );
 
-  const handleSelectPlan = async (tier: SubscriptionInfo['tier']) => {
-    if (subscription && !isExpired && tier === subscription.tier) return;
+  /*
+   * Redirect to the dashboard selected before login.
+   */
+  const openSelectedDashboard = () => {
+    const sidebarStore =
+      useSidebarStore.getState();
 
-    if (!subscription || isExpired) {
-      setShowPaymentModal(tier);
-    } else {
-      setShowConfirmPlanDialog(tier);
+    switch (selectedService) {
+      case 'CAB':
+        sidebarStore.setActiveModule('CAB');
+        router.push('/dashboard');
+        break;
+
+      case 'CAR_RENTAL':
+        sidebarStore.setActiveModule(
+          'RENTAL'
+        );
+        router.push(
+          '/car-rentals/dashboard'
+        );
+        break;
+
+      case 'BIKE_RENTAL':
+        sidebarStore.setActiveModule(
+          'BIKE_RENTAL'
+        );
+        router.push(
+          '/bike-rentals/dashboard'
+        );
+        break;
+
+      default:
+        sidebarStore.setActiveModule(null);
+        router.push('/');
     }
   };
 
+  /*
+   * Handle plan card selection.
+   */
+  const handleSelectPlan = async (
+    tier: SubscriptionInfo['tier']
+  ) => {
+    if (
+      subscription &&
+      !isExpired &&
+      tier === subscription.tier
+    ) {
+      return;
+    }
+
+    if (!subscription || isExpired) {
+      setShowPaymentModal(tier);
+      return;
+    }
+
+    setShowConfirmPlanDialog(tier);
+  };
+
+  /*
+   * Confirm changing an existing plan.
+   */
   const confirmPlanChange = () => {
-    if (!showConfirmPlanDialog) return;
+    if (!showConfirmPlanDialog) {
+      return;
+    }
+
     const tier = showConfirmPlanDialog;
+
     setShowConfirmPlanDialog(null);
     setShowPaymentModal(tier);
   };
 
-  const handleConfirmPayment = async (paymentData: any) => {
-    if (!showPaymentModal) return;
+  /*
+   * Handle both:
+   * 1. New subscription
+   * 2. Existing subscription plan change
+   */
+  const handleConfirmPayment = async (
+    paymentData: PaymentData
+  ) => {
+    if (!showPaymentModal) {
+      return;
+    }
+
+    if (!paymentData.paymentMethodId) {
+      toast.error(
+        'Payment method is required.'
+      );
+      return;
+    }
+
     const tier = showPaymentModal;
-    const planName = PLAN_CONFIG.find((p) => p.tier === tier)?.name || tier;
+
+    const planName =
+      PLAN_CONFIG.find(
+        (plan) => plan.tier === tier
+      )?.name || tier;
 
     setIsSubmitting(true);
     setIsChanging(tier);
+
     try {
       if (!subscription || isExpired) {
         await subscriptionService.setupSubscription({
           subscriptionTier: tier,
-          paymentMethodId: paymentData.paymentMethodId,
+          paymentMethodId:
+            paymentData.paymentMethodId,
         });
+
+        toast.success(
+          'Subscription setup successful!'
+        );
+
         await hydrateFromSession();
         await fetchData(false);
+
         setShowPaymentModal(null);
-        setSetupStep(3); // success card
+        setSetupStep(3);
       } else {
-        const updated = await subscriptionService.changePlan(tier, paymentData?.paymentMethodId);
-        setSubscription(updated);
-        toast.success(`Subscription updated to ${planName}`);
+        const updatedSubscription =
+          await subscriptionService.changePlan(
+            tier,
+            paymentData.paymentMethodId
+          );
+
+        setSubscription(
+          updatedSubscription
+        );
+
         setShowPaymentModal(null);
+
+        toast.success(
+          `Subscription updated to ${planName}`
+        );
       }
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to update subscription');
+    } catch (error: unknown) {
+      let message =
+        'Failed to update subscription';
+
+      if (
+        typeof error === 'object' &&
+        error !== null
+      ) {
+        const apiError = error as {
+          response?: {
+            data?: {
+              message?: string | string[];
+            };
+          };
+          message?: string;
+        };
+
+        message =
+          Array.isArray(
+            apiError.response?.data?.message
+          )
+            ? apiError.response.data.message.join(
+                ', '
+              )
+            : apiError.response?.data
+                ?.message ||
+              apiError.message ||
+              message;
+      }
+
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
       setIsChanging(null);
     }
   };
 
-  const handleCancelSubscription = async () => {
-    setIsCancelling(true);
-    try {
-      await subscriptionService.cancelSubscription();
-      toast.success('Subscription cancelled successfully. Logging out...');
+  /*
+   * Cancel the shared transport subscription.
+   */
+  const handleCancelSubscription =
+    async () => {
+      setIsCancelling(true);
 
-      await fetch('/api/auth/logout', { method: 'POST' });
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      clearAuth();
-      router.push('/login');
-    } catch {
-      toast.error('Failed to cancel subscription');
-      setIsCancelling(false);
-    }
-  };
+      try {
+        await subscriptionService.cancelSubscription();
 
-  const handleSetupSubscription = async (paymentData: any) => {
-    setIsSubmitting(true);
-    try {
-      await subscriptionService.setupSubscription({
-        subscriptionTier: selectedTier,
-        paymentMethodId: paymentData.paymentMethodId,
-      });
-      toast.success('Subscription setup successful!');
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+        });
 
-      // Update auth store to reflect the new subscription
-      await hydrateFromSession();
+        clearAuth();
 
-      // Fetch the dashboard data
-      await fetchData(false);
+        localStorage.removeItem(
+          'gozolt-selected-service'
+        );
 
-      // Show success message card
-      setSetupStep(3);
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to setup subscription');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+        useSidebarStore
+          .getState()
+          .setActiveModule(null);
 
+        setShowCancelDialog(false);
+
+        toast.success(
+          'Subscription cancelled successfully.'
+        );
+
+        router.push('/');
+      } catch (error: unknown) {
+        let message =
+          'Failed to cancel subscription';
+
+        if (
+          typeof error === 'object' &&
+          error !== null
+        ) {
+          const apiError = error as {
+            response?: {
+              data?: {
+                message?: string | string[];
+              };
+            };
+            message?: string;
+          };
+
+          message =
+            Array.isArray(
+              apiError.response?.data?.message
+            )
+              ? apiError.response.data.message.join(
+                  ', '
+                )
+              : apiError.response?.data
+                  ?.message ||
+                apiError.message ||
+                message;
+        }
+
+        toast.error(message);
+      } finally {
+        setIsCancelling(false);
+      }
+    };
+
+  /*
+   * Loading screen.
+   */
   if (isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
@@ -218,21 +503,32 @@ export default function SubscriptionPage() {
     );
   }
 
-
+  /*
+   * Payment success screen.
+   */
   if (setupStep === 3) {
     return (
       <div className="flex min-h-[80vh] items-center justify-center">
-        <div className="w-full max-w-4xl flex flex-col items-center justify-center py-12 px-4 text-center rounded-lg border border-[#27272A] bg-[#0F0F0F]">
+        <div className="flex w-full max-w-4xl flex-col items-center justify-center rounded-lg border border-[#27272A] bg-[#0F0F0F] px-4 py-12 text-center">
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-500/20 text-green-500">
             <CheckCircle2 className="h-12 w-12" />
           </div>
-          <h2 className="mb-3 text-3xl font-bold text-white">Payment Completed Successfully!</h2>
+
+          <h2 className="mb-3 text-3xl font-bold text-white">
+            Payment Completed Successfully!
+          </h2>
+
           <p className="mb-8 max-w-md text-[#A1A1AA]">
-            Your payment was successful and your subscription plan is now active. You can now use this plan and access your Gozolt Supplier Portal.
+            Your payment was successful and
+            your subscription plan is now
+            active. You can now access your
+            selected GOZOLT supplier service.
           </p>
+
           <button
-            onClick={() => router.push('/')}
-            className="rounded-full bg-[#FACC15] px-8 py-3 text-sm font-semibold text-black transition-colors hover:bg-[#EAB308] shadow-lg shadow-[#FACC15]/20"
+            type="button"
+            onClick={openSelectedDashboard}
+            className="rounded-full bg-[#FACC15] px-8 py-3 text-sm font-semibold text-black shadow-lg shadow-[#FACC15]/20 transition-colors hover:bg-[#EAB308]"
           >
             Go to Dashboard
           </button>
@@ -241,46 +537,44 @@ export default function SubscriptionPage() {
     );
   }
 
-  if (setupStep === 4) {
-    return (
-      <div className="flex min-h-[80vh] items-center justify-center">
-        <div className="w-full max-w-4xl flex flex-col items-center justify-center py-12 px-4 text-center rounded-lg border border-[#27272A] bg-[#0F0F0F]">
-          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-500/20 text-red-500">
-            <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </div>
-          <h2 className="mb-3 text-3xl font-bold text-white">Subscription Cancelled!</h2>
-          <p className="mb-8 max-w-md text-[#A1A1AA]">
-            Your subscription has been successfully cancelled and all details have been removed. You will need to subscribe again to access the full portal.
-          </p>
-          <button
-            onClick={() => setSetupStep(1)}
-            className="rounded-full bg-[#FACC15] px-8 py-3 text-sm font-semibold text-black transition-colors hover:bg-[#EAB308] shadow-lg shadow-[#FACC15]/20"
-          >
-            Subscribe Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">Subscription</h1>
+      {/* Subscription header */}
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white">
+            {selectedService
+              ? `${SUPPLIER_SERVICE_NAMES[selectedService]} Subscription`
+              : 'Subscription'}
+          </h1>
+
+          {selectedService && (
+            <p className="mt-1 text-sm text-[#A1A1AA]">
+              Select a subscription plan for{' '}
+              {
+                SUPPLIER_SERVICE_NAMES[
+                  selectedService
+                ]
+              }
+              .
+            </p>
+          )}
+        </div>
+
         {subscription && !isExpired && (
           <button
-            onClick={() => setShowCancelDialog(true)}
-            className="rounded-md border border-red-500/30 bg-transparent px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 hover:text-red-400 transition-colors"
+            type="button"
+            onClick={() =>
+              setShowCancelDialog(true)
+            }
+            className="shrink-0 rounded-md border border-red-500/30 bg-transparent px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-400"
           >
             Cancel Subscription
           </button>
         )}
       </div>
 
-      {/* Current Plan Banner - Only show if subscribed and not expired */}
+      {/* Current subscription information */}
       {subscription && !isExpired && (
         <CurrentPlanBanner
           subscription={subscription}
@@ -290,74 +584,119 @@ export default function SubscriptionPage() {
         />
       )}
 
-      {/* Welcome Message - Show only if not subscribed or expired */}
+      {/* Welcome message */}
       {(!subscription || isExpired) && (
-        <div className="mb-4 text-center space-y-2 py-8">
-          <h1 className="text-3xl font-bold text-white">Welcome to Gozolt</h1>
+        <div className="mb-4 space-y-2 py-8 text-center">
+          <h2 className="text-3xl font-bold text-white">
+            Welcome to GOZOLT
+          </h2>
+
           <p className="text-[#A1A1AA]">
-            Supplier not yet subscribed. To use the app, please subscribe to a plan.
+            Your account does not have an
+            active subscription. Please select
+            a plan to continue.
           </p>
         </div>
       )}
 
-      {/* Plan Comparison Cards */}
+      {/* Subscription plans */}
       <PlanComparisonCards
         plans={PLAN_CONFIG}
-        currentTier={subscription?.tier || null}
+        currentTier={
+          subscription?.tier || null
+        }
         isChanging={isChanging}
         onSelectPlan={handleSelectPlan}
       />
 
-      {/* Cancel Subscription Dialog */}
+      {/* Cancel subscription dialog */}
       {showCancelDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="mx-4 w-full max-w-[420px] rounded-xl border border-[#27272A] bg-[#111111] p-6">
-            <h3 className="text-lg font-bold text-white">Cancel Subscription</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-[420px] rounded-xl border border-[#27272A] bg-[#111111] p-6">
+            <h3 className="text-lg font-bold text-white">
+              Cancel Subscription
+            </h3>
+
             <p className="mt-2 text-sm leading-relaxed text-[#A1A1AA]">
-              Are you sure? Cancelling your subscription will immediately lock you out of the Gozolt Supplier Portal. You will need to subscribe again to regain access to the application.
+              Are you sure? Cancelling your
+              subscription will immediately
+              lock you out of the GOZOLT
+              Supplier Portal. You will need to
+              subscribe again to regain access.
             </p>
+
             <div className="mt-6 flex gap-3">
               <button
-                onClick={() => setShowCancelDialog(false)}
-                className="flex-1 rounded-lg bg-[#3F3F46] py-2.5 text-sm font-medium text-white hover:bg-[#52525B] transition-colors"
+                type="button"
+                onClick={() =>
+                  setShowCancelDialog(false)
+                }
+                disabled={isCancelling}
+                className="flex-1 rounded-lg bg-[#3F3F46] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#52525B] disabled:opacity-50"
               >
                 Keep Subscription
               </button>
+
               <button
-                onClick={handleCancelSubscription}
+                type="button"
+                onClick={
+                  handleCancelSubscription
+                }
                 disabled={isCancelling}
-                className="flex-1 rounded-lg bg-red-500 py-2.5 text-sm font-medium text-white hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-500 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isCancelling && <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />}
-                {isCancelling ? 'Cancelling...' : 'Yes, Cancel'}
+                {isCancelling && (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                )}
+
+                {isCancelling
+                  ? 'Cancelling...'
+                  : 'Yes, Cancel'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Confirm Plan Change Dialog */}
+      {/* Confirm plan change dialog */}
       {showConfirmPlanDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="mx-4 w-full max-w-[420px] rounded-xl border border-[#27272A] bg-[#111111] p-6">
-            <h3 className="text-lg font-bold text-white">Change Subscription Plan</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-[420px] rounded-xl border border-[#27272A] bg-[#111111] p-6">
+            <h3 className="text-lg font-bold text-white">
+              Change Subscription Plan
+            </h3>
+
             <p className="mt-2 text-sm text-[#A1A1AA]">
-              Are you sure you want to switch to{' '}
+              Are you sure you want to switch
+              to{' '}
               <span className="font-semibold text-white">
-                {PLAN_CONFIG.find((p) => p.tier === showConfirmPlanDialog)?.name}
+                {
+                  PLAN_CONFIG.find(
+                    (plan) =>
+                      plan.tier ===
+                      showConfirmPlanDialog
+                  )?.name
+                }
               </span>
-              ? Your subscription will change immediately.
+              ? Your subscription will change
+              after payment confirmation.
             </p>
+
             <div className="mt-6 flex gap-3">
               <button
-                onClick={() => setShowConfirmPlanDialog(null)}
-                className="flex-1 rounded-lg bg-[#3F3F46] py-2.5 text-sm font-medium text-white hover:bg-[#52525B] transition-colors"
+                type="button"
+                onClick={() =>
+                  setShowConfirmPlanDialog(null)
+                }
+                className="flex-1 rounded-lg bg-[#3F3F46] py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#52525B]"
               >
                 Cancel
               </button>
+
               <button
+                type="button"
                 onClick={confirmPlanChange}
-                className="flex-1 rounded-lg bg-[#FACC15] py-2.5 text-sm font-medium text-black hover:bg-[#EAB308] transition-colors"
+                className="flex-1 rounded-lg bg-[#FACC15] py-2.5 text-sm font-medium text-black transition-colors hover:bg-[#EAB308]"
               >
                 Yes, Switch
               </button>
@@ -366,24 +705,38 @@ export default function SubscriptionPage() {
         </div>
       )}
 
-      {/* Payment Modal for Plan Change */}
+      {/* Payment modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="relative w-full max-w-[600px] rounded-xl border border-[#27272A] bg-[#111111] p-6 max-h-[90vh] overflow-y-auto">
-            <div className="mb-4 flex items-end justify-end">
+          <div className="relative max-h-[90vh] w-full max-w-[600px] overflow-y-auto rounded-xl border border-[#27272A] bg-[#111111] p-6">
+            <div className="mb-4 flex justify-end">
               <button
-                onClick={() => setShowPaymentModal(null)}
-                className="text-[#A1A1AA] hover:text-white transition-colors"
+                type="button"
+                onClick={() =>
+                  setShowPaymentModal(null)
+                }
+                disabled={isSubmitting}
+                aria-label="Close payment modal"
+                className="text-[#A1A1AA] transition-colors hover:text-white disabled:opacity-50"
               >
                 ✕
               </button>
             </div>
+
             <Step5Payment
-              selectedTier={showPaymentModal}
+              selectedTier={
+                showPaymentModal
+              }
               initialValues={cardData}
-              ownerName={user?.companyName || ''}
-              companyAddress={user?.address || ''}
-              companyCity={user?.city || ''}
+              ownerName={
+                user?.companyName || ''
+              }
+              companyAddress={
+                user?.address || ''
+              }
+              companyCity={
+                user?.city || ''
+              }
               isSubmitting={isSubmitting}
               onNext={handleConfirmPayment}
             />
@@ -393,3 +746,4 @@ export default function SubscriptionPage() {
     </div>
   );
 }
+

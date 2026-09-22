@@ -78,6 +78,42 @@ export default function RegisterPage() {
 
       const formData = new FormData();
 
+      // Get the service selected on the landing page
+      const selectedService = localStorage.getItem( 'gozolt-selected-service');
+
+      // Stop registration if no service was selected
+      if (!selectedService) {
+      toast.error('Please select a service.');
+      router.push('/');
+      return;
+      }
+
+      // Send the selected service to the backend
+      formData.append('serviceType', selectedService);
+
+      if ( selectedService === 'QUICK_SERVICES') {
+        const quickServices = localStorage.getItem(
+          'gozolt-selected-quick-services'
+       );
+
+      if (!quickServices) {
+        toast.error(
+          'Please select at least one Quick Service.'
+        );
+
+        router.push(
+          '/quick-services-selection'
+       );
+
+       return;
+      }
+
+      formData.append(
+        'quickServices',
+        quickServices
+     );
+    }
+
       // Append Step 1 Text fields
       Object.entries(step1Data).forEach(([key, value]) => {
         if (value && key !== 'confirmPassword') {

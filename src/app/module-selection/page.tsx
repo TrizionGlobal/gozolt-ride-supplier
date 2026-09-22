@@ -23,7 +23,7 @@ export default function ModuleSelectionPage() {
     }
   }, [user, isLoading, router]);
 
-  const handleSelection = (module: 'CAB' | 'RENTAL' | 'BIKE_RENTAL') => {
+  const handleSelection = (module: 'CAB' | 'RENTAL' | 'BIKE_RENTAL'| 'QUICK_SERVICES') => {
     setActiveModule(module);
     if (module === 'CAB') {
       router.push('/dashboard');
@@ -31,6 +31,8 @@ export default function ModuleSelectionPage() {
       router.push('/car-rentals/dashboard');
     } else if (module === 'BIKE_RENTAL') {
       router.push('/bike-rentals/dashboard');
+    } else if (module === 'QUICK_SERVICES') {
+      router.push('/quick-services/dashboard');
     }
   };
 
@@ -48,7 +50,7 @@ export default function ModuleSelectionPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
             {/* Cab Booking Card */}
             <button
               onClick={() => handleSelection('CAB')}
@@ -57,7 +59,7 @@ export default function ModuleSelectionPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-[#FACC15]/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-3xl" />
               <div className="relative z-10 flex flex-col items-center gap-4">
                 <div className="flex h-20 w-20 items-center justify-center rounded-2xl overflow-hidden shadow-lg border border-[#27272A] group-hover:border-[#FACC15]/50 transition-colors">
-                  <Image src="/cab-icon.jpg" alt="Cab Booking" width={80} height={80} className="object-cover w-full h-full" />
+                  <Image src="/cab-booking-icon.png" alt="Cab Booking" width={80} height={80} className="object-cover w-full h-full" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-white mb-2">Cab Booking</h2>
@@ -76,7 +78,7 @@ export default function ModuleSelectionPage() {
               <div className="absolute inset-0 bg-gradient-to-br from-[#FACC15]/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-3xl" />
               <div className="relative z-10 flex flex-col items-center gap-4">
                 <div className="flex h-20 w-20 items-center justify-center rounded-2xl overflow-hidden shadow-lg border border-[#27272A] group-hover:border-[#FACC15]/50 transition-colors">
-                  <Image src="/rental-icon.jpg" alt="Car Rentals" width={80} height={80} className="object-cover w-full h-full" />
+                  <Image src="/car-rental-icon.png" alt="Car Rentals" width={80} height={80} className="object-cover w-full h-full" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-white mb-2">Car Rentals</h2>
@@ -96,12 +98,31 @@ export default function ModuleSelectionPage() {
               <div className="relative z-10 flex flex-col items-center gap-4">
                 <div className="flex h-20 w-20 items-center justify-center rounded-2xl overflow-hidden shadow-lg border border-[#27272A] group-hover:border-[#FACC15]/50 transition-colors bg-white">
                   {/* Using bike rental icon placeholder */}
-                  <Image src="/bike-rental-icon-v2.jpg" alt="Bike Rentals" width={80} height={80} className="object-cover w-full h-full" />
+                  <Image src="/bike-rental-icon.png" alt="Bike Rentals" width={80} height={80} className="object-cover w-full h-full" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-white mb-2">Bike Rentals</h2>
                   <p className="text-xs text-gray-400 leading-relaxed">
                     Manage bike fleet, rental bookings, and vehicle operations.
+                  </p>
+                </div>
+              </div>
+            </button>
+            {/* Quick Services Card */}
+            <button
+              onClick={() => handleSelection('QUICK_SERVICES')} 
+              className="group relative flex flex-col items-center justify-start h-full p-8 rounded-3xl border border-[#27272A] bg-[#111111] transition-all duration-300 hover:border-[#FACC15] hover:bg-[#1A1A1A] hover:shadow-[0_0_30px_rgba(250,204,21,0.15)] text-center"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FACC15]/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-3xl" />
+              <div className="relative z-10 flex flex-col items-center gap-4">
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl overflow-hidden shadow-lg border border-[#27272A] group-hover:border-[#FACC15]/50 transition-colors bg-white">
+                  {/* Using quick services icon placeholder */}
+                  <Image src="/quick-services-icon.png" alt="Quick Services" width={80} height={80} className="object-cover w-full h-full" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-white mb-2">Quick Services</h2>
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Manage quick service requests, appointments, and customer interactions.
                   </p>
                 </div>
               </div>

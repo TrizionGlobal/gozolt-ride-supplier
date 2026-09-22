@@ -42,9 +42,17 @@ export const ROUTES = {
   CAR_RENTALS: '/car-rentals',
   BIKE_RENTALS: '/bike-rentals',
   RENTAL_EARNINGS: '/earnings',
+  QUICK_SERVICES_DASHBOARD: '/quick-services/dashboard',
+  QUICK_SERVICES_BOOKING_MANAGEMENT: '/quick-services/booking-management',
+  QUICK_SERVICES_ANALYTICS: '/quick-services/analytics',
 } as const;
 
 export const SIDEBAR_ITEMS = [
+
+  { label: 'Dashboard', href: ROUTES.QUICK_SERVICES_DASHBOARD, icon: LayoutDashboard, module: 'QUICK_SERVICES', },
+  { label: 'Booking Management', href: ROUTES.QUICK_SERVICES_BOOKING_MANAGEMENT, icon: CalendarCheck, module: 'QUICK_SERVICES', },
+  { label: 'Analytics', href: ROUTES.QUICK_SERVICES_ANALYTICS, icon: BarChart3, module: 'QUICK_SERVICES',},
+
   { label: 'Dashboard', href: ROUTES.DASHBOARD, icon: LayoutDashboard, module: 'CAB' },
   { label: 'Dashboard', href: '/car-rentals/dashboard', icon: LayoutDashboard, module: 'RENTAL' },
   { label: 'Car rentals history', href: ROUTES.CAR_RENTALS, icon: Key, module: 'RENTAL' },

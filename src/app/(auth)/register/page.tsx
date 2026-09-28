@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { CheckCircle2, Building2, FileText, Banknote, ShieldCheck, Zap, CreditCard } from 'lucide-react';
@@ -11,6 +11,7 @@ import { Step3BankInfo, type Step3FormData } from '@/components/auth/step3-bank-
 import { Step4Terms } from '@/components/auth/step4-terms';
 import { RegistrationComplete } from '@/components/auth/registration-complete';
 import { supplierRegister } from '@/services/auth/auth.service';
+import { isSupplierService, SUPPLIER_SERVICE_NAMES, type SupplierService } from '@/types/supplier-service';
 
 const REGISTRATION_STEPS = [
   { number: 1, label: 'Company Information' },
@@ -50,6 +51,27 @@ export default function RegisterPage() {
   const [supplierId, setSupplierId] = useState<string | null>(null);
   const [registrationComplete, setRegistrationComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedService, setSelectedService] = useState<SupplierService | null>(null);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const serviceFromUrl = urlParams.get('service');
+    const savedService = localStorage.getItem('gozolt-selected-service');
+
+    const service = isSupplierService(serviceFromUrl)
+      ? serviceFromUrl
+      : isSupplierService(savedService)
+        ? savedService
+        : null;
+
+    if (!service) {
+      router.replace('/');
+      return;
+    }
+
+    localStorage.setItem('gozolt-selected-service', service);
+    setSelectedService(service);
+  }, [router]);
 
   // Step 1 state
   const [step1Data, setStep1Data] = useState<Partial<Step1FormData>>(defaultStep1);
@@ -79,40 +101,40 @@ export default function RegisterPage() {
       const formData = new FormData();
 
       // Get the service selected on the landing page
-      const selectedService = localStorage.getItem( 'gozolt-selected-service');
+      const selectedService = localStorage.getItem('gozolt-selected-service');
 
       // Stop registration if no service was selected
       if (!selectedService) {
-      toast.error('Please select a service.');
-      router.push('/');
-      return;
+        toast.error('Please select a service.');
+        router.push('/');
+        return;
       }
 
       // Send the selected service to the backend
       formData.append('serviceType', selectedService);
 
-      if ( selectedService === 'QUICK_SERVICES') {
+      if (selectedService === 'QUICK_SERVICES') {
         const quickServices = localStorage.getItem(
           'gozolt-selected-quick-services'
-       );
-
-      if (!quickServices) {
-        toast.error(
-          'Please select at least one Quick Service.'
         );
 
-        router.push(
-          '/quick-services-selection'
-       );
+        if (!quickServices) {
+          toast.error(
+            'Please select at least one Quick Service.'
+          );
 
-       return;
+          router.push(
+            '/quick-services-selection'
+          );
+
+          return;
+        }
+
+        formData.append(
+          'quickServices',
+          quickServices
+        );
       }
-
-      formData.append(
-        'quickServices',
-        quickServices
-     );
-    }
 
       // Append Step 1 Text fields
       Object.entries(step1Data).forEach(([key, value]) => {
@@ -172,10 +194,20 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="w-full py-6 max-w-[750px]">
+    <div className="w-full py-2 max-w-[750px]">
 
       {flow === 'REGISTRATION' && (
         <>
+          {selectedService && (
+            <div className="mb-6 rounded-lg border border-[#FCD223]/30 bg-[#FCD223]/10 px-4 py-3 text-center">
+              <p className="text-xs text-[#A1A1AA]">
+                Registering for
+              </p>
+              <p className="mt-1 text-base font-bold text-[#FCD223]">
+                {SUPPLIER_SERVICE_NAMES[selectedService]}
+              </p>
+            </div>
+          )}
           <RegistrationStepper currentStep={currentStep} steps={REGISTRATION_STEPS} />
 
           {currentStep === 1 && (

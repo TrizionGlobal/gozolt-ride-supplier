@@ -6,6 +6,7 @@ import { BellRing, Check, Crown, Loader2, ShieldCheck, X, Zap, } from 'lucide-re
 import { toast } from 'sonner';
 import { quickServicesSubscriptionService, type QuickServicesPaidPlan, } from '@/services/quick-services/quick-services-subscription.service';
 import { useSidebarStore } from '@/stores/sidebar.store';
+import { useAuthStore } from '@/stores/auth.store';
 
 type AccessChoice =
   | 'WITH_SUBSCRIPTION'
@@ -108,10 +109,26 @@ export default function QuickServicesSubscriptionPage() {
   try {
     await quickServicesSubscriptionService.continueWithoutSubscription();
 
-    localStorage.setItem(
-      'quick-services-access-mode',
-      'WITHOUT_SUBSCRIPTION'
-    );
+    // Mock updating the user's subscription in auth store so layout.tsx routing unlocks
+    useAuthStore.setState((state) => ({
+      user: state.user
+        ? {
+            ...state.user,
+            subscription: {
+              id: 'qs_sub_' + Math.random().toString(36).substr(2, 9),
+              tier: 'STARTER', // Or any string that satisfies the types
+              status: 'ACTIVE',
+              maxDrivers: 999,
+              maxVehicles: 999,
+              maxRides: 999,
+              currentPeriodEnd: null,
+              cancelAtPeriodEnd: false,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          }
+        : null,
+    }));
 
     toast.success(
       'Quick Services access activated successfully.'

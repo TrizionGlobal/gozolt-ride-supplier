@@ -75,12 +75,12 @@ export default function QuickServicesSelectionPage() {
       const updatedChildren =
         childAlreadySelected
           ? currentChildren.filter(
-              (id) => id !== childId
-            )
+            (id) => id !== childId
+          )
           : [
-              ...currentChildren,
-              childId,
-            ];
+            ...currentChildren,
+            childId,
+          ];
 
       if (updatedChildren.length === 0) {
         delete next[serviceId];
@@ -140,13 +140,13 @@ export default function QuickServicesSelectionPage() {
     );
 
     router.push(
-      '/login?service=QUICK_SERVICES'
+      '/register?service=QUICK_SERVICES'
     );
   };
 
   return (
-    <main className="min-h-screen bg-black px-4 py-10 text-white sm:px-6">
-      <div className="mx-auto max-w-7xl">
+    <main className="h-screen w-full overflow-y-auto bg-black px-4 py-10 text-white sm:px-6">
+      <div className="mx-auto max-w-7xl pb-24">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#FCD223]">
             GOZOLT Quick Services
@@ -177,11 +177,10 @@ export default function QuickServicesSelectionPage() {
               return (
                 <article
                   key={service.id}
-                  className={`rounded-2xl border p-5 transition-all ${
-                    parentSelected
+                  className={`rounded-2xl border p-5 transition-all ${parentSelected
                       ? 'border-[#FCD223] bg-[#FCD223]/10 shadow-lg shadow-[#FCD223]/5'
                       : 'border-[#27272A] bg-[#111111] hover:border-[#FCD223]/50'
-                  }`}
+                    }`}
                 >
                   <button
                     type="button"
@@ -213,11 +212,10 @@ export default function QuickServicesSelectionPage() {
                         </h2>
 
                         <span
-                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
-                            parentSelected
+                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${parentSelected
                               ? 'border-[#FCD223] bg-[#FCD223]'
                               : 'border-[#52525B]'
-                          }`}
+                            }`}
                         >
                           {parentSelected && (
                             <Check className="h-4 w-4 text-black" />
@@ -233,54 +231,53 @@ export default function QuickServicesSelectionPage() {
 
                   {service.children.length >
                     0 && (
-                    <div className="mt-5 border-t border-[#27272A] pt-4">
-                      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#71717A]">
-                        Select services
-                      </p>
+                      <div className="mt-5 border-t border-[#27272A] pt-4">
+                        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#71717A]">
+                          Select services
+                        </p>
 
-                      <div className="flex flex-wrap gap-2">
-                        {service.children.map(
-                          (child) => {
-                            const childSelected =
-                              selectedChildren.includes(
-                                child.id
-                              );
-
-                            return (
-                              <button
-                                key={
+                        <div className="flex flex-wrap gap-2">
+                          {service.children.map(
+                            (child) => {
+                              const childSelected =
+                                selectedChildren.includes(
                                   child.id
-                                }
-                                type="button"
-                                onClick={() =>
-                                  toggleChild(
-                                    service.id,
+                                );
+
+                              return (
+                                <button
+                                  key={
                                     child.id
-                                  )
-                                }
-                                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                                  childSelected
-                                    ? 'border-[#FCD223] bg-[#FCD223] text-black'
-                                    : 'border-[#3F3F46] bg-[#18181B] text-[#D4D4D8] hover:border-[#FCD223]/60'
-                                }`}
-                              >
-                                {childSelected &&
-                                  '✓ '}
-                                {child.name}
-                              </button>
-                            );
-                          }
-                        )}
+                                  }
+                                  type="button"
+                                  onClick={() =>
+                                    toggleChild(
+                                      service.id,
+                                      child.id
+                                    )
+                                  }
+                                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${childSelected
+                                      ? 'border-[#FCD223] bg-[#FCD223] text-black'
+                                      : 'border-[#3F3F46] bg-[#18181B] text-[#D4D4D8] hover:border-[#FCD223]/60'
+                                    }`}
+                                >
+                                  {childSelected &&
+                                    '✓ '}
+                                  {child.name}
+                                </button>
+                              );
+                            }
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </article>
               );
             }
           )}
         </div>
 
-        <div className="sticky bottom-4 mt-10 rounded-2xl border border-[#27272A] bg-[#0A0A0A]/95 p-4 shadow-2xl backdrop-blur">
+        <div className="sticky bottom-0 mt-10 border-t border-[#27272A] bg-[#0A0A0A]/95 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] backdrop-blur">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
             <div>
               <p className="font-semibold text-white">
@@ -310,7 +307,7 @@ export default function QuickServicesSelectionPage() {
               }
               className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FCD223] px-8 py-3 text-sm font-bold text-black transition-colors hover:bg-[#EAB308] disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
             >
-              Continue to Login
+              Continue to Register
 
               <ChevronRight className="h-4 w-4" />
             </button>

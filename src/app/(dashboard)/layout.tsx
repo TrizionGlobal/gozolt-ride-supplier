@@ -47,10 +47,6 @@ export default function DashboardLayout({
       'gozolt-selected-service'
     );
 
-    const quickServicesMode = localStorage.getItem(
-      'quick-services-access-mode'
-    );
-
     const activeModule =
       useSidebarStore.getState().activeModule;
 
@@ -64,11 +60,6 @@ export default function DashboardLayout({
 
     const hasActiveSubscription =
       !isMissingSubscription && !isExpired;
-
-    const hasQuickServicesAccess =
-      selectedService === 'QUICK_SERVICES' &&
-      (quickServicesMode === 'WITH_SUBSCRIPTION' ||
-        quickServicesMode === 'WITHOUT_SUBSCRIPTION');
 
     const isCommonSubscriptionPage =
       pathname === '/subscription';
@@ -97,7 +88,7 @@ export default function DashboardLayout({
      */
     if (selectedService === 'QUICK_SERVICES') {
       if (
-        !hasQuickServicesAccess &&
+        !hasActiveSubscription &&
         !isQuickServicesSubscriptionPage
       ) {
         router.replace('/quick-services/subscription');
@@ -105,7 +96,7 @@ export default function DashboardLayout({
       }
 
       if (
-        hasQuickServicesAccess &&
+        hasActiveSubscription &&
         isQuickServicesSubscriptionPage
       ) {
         router.replace('/quick-services/dashboard');

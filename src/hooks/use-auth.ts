@@ -122,30 +122,24 @@ export function useAuth() {
           new Date(subscription.currentPeriodEnd) > new Date();
 
         if (!hasActiveSubscription) {
-          const quickServicesMode = localStorage.getItem(
-            'quick-services-access-mode'  
-          );
-           if (
+          if (selectedService === 'QUICK_SERVICES') {
+            const quickServicesMode = localStorage.getItem(
+              'quick-services-access-mode'  
+            );
+            if (
               quickServicesMode !== 'WITH_SUBSCRIPTION' &&
               quickServicesMode !== 'WITHOUT_SUBSCRIPTION'
-              ) {
+            ) {
               router.push('/quick-services/subscription');
               return;
             }
-
-            router.push('/quick-services/dashboard');
-            return;
-            }
-
-            if (!hasActiveSubscription) {
+          } else {
             router.push(
-             `/subscription?service=${encodeURIComponent(
-             selectedService
-            )}`
+              `/subscription?service=${encodeURIComponent(selectedService)}`
             );
-             return;
-        } 
-        router.push(dashboardPath);
+            return;
+          }
+        }
 
         // 7. Open the selected service dashboard
         router.push(dashboardPath);

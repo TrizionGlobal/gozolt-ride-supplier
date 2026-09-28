@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { useAuthStore } from '@/stores/auth.store';
@@ -11,6 +11,15 @@ export default function ModuleSelectionPage() {
   const router = useRouter();
   const { setActiveModule } = useSidebarStore();
   const { user, isLoading } = useAuthStore();
+  
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'register') {
+      setMode('register');
+    }
+  }, []);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -25,6 +34,16 @@ export default function ModuleSelectionPage() {
 
   const handleSelection = (module: 'CAB' | 'RENTAL' | 'BIKE_RENTAL'| 'QUICK_SERVICES') => {
     setActiveModule(module);
+    
+    if (mode === 'register') {
+      if (module === 'QUICK_SERVICES') {
+        router.push('/quick-services-selection');
+      } else {
+        router.push(`/register?service=${module}`);
+      }
+      return;
+    }
+
     if (module === 'CAB') {
       router.push('/dashboard');
     } else if (module === 'RENTAL') {
@@ -43,10 +62,16 @@ export default function ModuleSelectionPage() {
         <div className="max-w-6xl w-full text-center space-y-12">
           <div className="space-y-4">
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">
-              Welcome to the <span className="text-[#FACC15]">Supplier Portal</span>
+              {mode === 'register' ? (
+                <>Select a service to <span className="text-[#FACC15]">Register</span></>
+              ) : (
+                <>Welcome to the <span className="text-[#FACC15]">Supplier Portal</span></>
+              )}
             </h1>
             <p className="text-gray-400 text-lg max-w-2xl mx-auto">
-              Select the module you wish to manage today. You can always switch between modules later from the sidebar.
+              {mode === 'register' 
+                ? "Select the module you wish to provide services for through GOZOLT."
+                : "Select the module you wish to manage today. You can always switch between modules later from the sidebar."}
             </p>
           </div>
 

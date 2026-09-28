@@ -166,13 +166,10 @@ export default function LoginPage() {
         ? savedService
         : null;
 
-    if (!service) {
-      router.replace('/');
-      return;
+    if (service) {
+      localStorage.setItem('gozolt-selected-service', service);
+      setSelectedService(service);
     }
-
-    localStorage.setItem('gozolt-selected-service', service);
-    setSelectedService(service);
   }, [router]);
 
   const {
@@ -211,25 +208,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleChangeService = () => {
-    localStorage.removeItem('gozolt-selected-service');
-    router.push('/');
-  };
-
   return (
       <div className="w-full max-w-[400px]">
-    {/* Selected Service Login Heading */}
-
-    {selectedService && (
-      <div className="rounded-lg border border-[#FCD223]/30 bg-[#FCD223]/10 px-4 py-3 text-center">
-        <p className="text-xs text-[#A1A1AA]">
-          Sign-in to
-        </p>
-        <p className="mt-1 text-base font-bold text-[#FCD223]">
-          {SUPPLIER_SERVICE_NAMES[selectedService]}
-        </p>
-      </div>
-    )}
 
       <div className="rounded-lg border border-[#27272A] bg-[#0F0F0F] p-8">
       <form
@@ -359,20 +339,11 @@ export default function LoginPage() {
 
         {/* Register */}
         <Link
-          href={selectedService ? `/register?service=${selectedService}`: '/'}
+          href="/welcome?mode=register"
           className="flex w-full items-center justify-center rounded-full border border-[#FCD223] py-2.5 text-sm font-semibold text-[#FCD223] transition-colors hover:bg-[#FCD223]/10"
         >
           Register as New Supplier
         </Link>
-
-        {/* Change Service */}
-        <button
-          type="button"
-          onClick={handleChangeService}
-          className="w-full text-center text-xs text-[#A1A1AA] transition-colors hover:text-[#FCD223]"
-        >
-          Change Service
-        </button>
       </form>
     </div>
     </div>

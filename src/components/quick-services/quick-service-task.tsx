@@ -10,6 +10,7 @@ export function QuickServiceTask({ token }: { token: string }) {
   const [step, setStep] = useState<'VERIFY' | 'SCAN' | 'ACTIONS' | 'SUCCESS'>('VERIFY');
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
   const [actionLoading, setActionLoading] = useState(false);
+  const [finalInvoice, setFinalInvoice] = useState<{ hours: number; hourlyRate: number; finalAmount: number } | null>(null);
 
   let features: Record<string, any> = {};
   let addOns: any[] = [];
@@ -80,9 +81,29 @@ export function QuickServiceTask({ token }: { token: string }) {
   const handleEndWork = async () => {
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/proxy/quick-services/public/task/${token}/complete`, { method: 'POST' });
+      let finalAmount = task.booking.totalAmount;
+      let hours = 1;
+      const hourlyRate = getQuickServiceHourlyRate(task.booking.serviceTitle);
+      
+      if (task.booking.status === 'IN_PROGRESS' && task.booking.options?.startedAt) {
+        const startedAt = new Date(task.booking.options.startedAt);
+        const endedAt = new Date();
+        const diffMs = endedAt.getTime() - startedAt.getTime();
+        hours = Math.ceil(diffMs / (1000 * 60 * 60));
+        if (hours < 1) hours = 1;
+        
+        const upfront = Number(task.booking.upfrontFee || 0);
+        finalAmount = upfront + (hours * hourlyRate);
+      }
+
+      const res = await fetch(`/api/proxy/quick-services/public/task/${token}/complete`, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ totalAmount: finalAmount })
+      });
       const data = await res.json();
       if (res.ok) {
+        setFinalInvoice({ hours, hourlyRate, finalAmount });
         setStep('SUCCESS');
       } else {
         alert(data.message || 'Failed to end work');
@@ -370,10 +391,46 @@ export function QuickServiceTask({ token }: { token: string }) {
       )}
 
       {step === 'SUCCESS' && (
-        <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+        <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
           <CheckCircle2 className="h-20 w-20 text-[#FACC15]" />
           <h2 className="text-2xl font-bold">Task Completed!</h2>
-          <p className="text-gray-400">The quick service booking has been marked as completed successfully. You can safely close this window.</p>
+          <p className="text-gray-400">The quick service booking has been marked as completed successfully.</p>
+          
+          {finalInvoice && (
+            <div className="w-full bg-gray-900 border border-gray-800 rounded-xl p-5 mt-4 text-left">
+              <h3 className="text-white font-semibold mb-4 text-center">Invoice Summary</h3>
+              <div className="flex justify-between text-sm text-gray-400 mb-2">
+                <span>Hours Worked:</span>
+                <span className="text-white font-medium">{finalInvoice.hours} {finalInvoice.hours === 1 ? 'hour' : 'hours'}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-400 mb-2">
+                <span>Hourly Rate:</span>
+                <span className="text-white font-medium">€{finalInvoice.hourlyRate.toFixed(2)}/hr</span>
+              </div>
+              <div className="h-px bg-white/10 my-3"></div>
+              <div className="flex justify-between text-lg font-bold text-[#FACC15]">
+                <span>Total Amount:</span>
+                <span>€{finalInvoice.finalAmount.toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+
+          {task.booking.supplier && (
+            <div className="w-full bg-white/5 border border-[#FACC15]/30 rounded-xl p-5 mt-4 text-left space-y-3">
+              <h3 className="text-[#FACC15] font-semibold text-center mb-2">Payment Methods</h3>
+              <p className="text-sm text-gray-300 text-center mb-4">Please request payment from the customer using one of the following methods:</p>
+              
+              {task.booking.supplier.bankName && task.booking.supplier.iban && (
+                <div className="bg-black/50 p-3 rounded-lg border border-white/10">
+                  <p className="text-xs text-gray-500 mb-1">Bank Transfer (IBAN)</p>
+                  <p className="text-sm font-bold text-white">{task.booking.supplier.iban}</p>
+                  <p className="text-xs text-gray-400 mt-1">{task.booking.supplier.bankName} - {task.booking.supplier.accountHolder}</p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          <p className="text-emerald-500 text-sm font-medium mt-6">You can now safely close this app/window. This link is no longer valid.</p>
         </div>
       )}
     </div>

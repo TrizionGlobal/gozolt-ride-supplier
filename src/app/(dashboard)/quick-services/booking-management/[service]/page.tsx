@@ -4,6 +4,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { apiClient } from '@/lib/api-client';
 
 import {
   ArrowLeft,
@@ -144,6 +146,24 @@ export default function ServiceBookingManagementPage() {
     );
   }
 
+  const handleStartWorkSelf = async (bookingId: string) => {
+    try {
+      const res = await apiClient.post(`/quick-services/supplier/bookings/${bookingId}/assign-task`, {
+        workerId: 'self',
+        magicLinkBaseUrl: window.location.origin
+      });
+      if (res.data?.magicLink) {
+        toast.success('Assigned to self. Starting work...');
+        router.push(res.data.magicLink);
+      } else {
+        toast.error('Failed to start work');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to start work');
+    }
+  };
+
   const clearFilters = () => {
     setSearch('');
     setChildService('');
@@ -210,9 +230,15 @@ export default function ServiceBookingManagementPage() {
       ),
     },
     {
-      key: 'status',
-      title: 'Status',
-      render: (row) => <StatusBadge status={row.status} />,
+      key: 'serviceStatus',
+      title: 'Service Status',
+      render: (row) => {
+        let displayStatus = row.status;
+        if (['PENDING', 'CONFIRMED', 'TO_ASSIGN', 'ASSIGNED'].includes(row.status)) {
+          displayStatus = 'PENDING';
+        }
+        return <StatusBadge status={displayStatus} />;
+      }
     },
     {
       key: 'actions',
@@ -242,6 +268,7 @@ export default function ServiceBookingManagementPage() {
                   Assign to Worker
                 </DropdownMenuItem>
                 <DropdownMenuItem 
+                  onClick={() => handleStartWorkSelf(row.id || (row as any)._id)}
                   className="cursor-pointer focus:bg-[#27272A] focus:text-white text-[#FACC15]"
                 >
                   Start Work

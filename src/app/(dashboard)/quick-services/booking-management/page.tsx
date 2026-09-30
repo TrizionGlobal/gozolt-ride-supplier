@@ -8,8 +8,38 @@ import {
 } from 'lucide-react';
 
 import { SUPPLIER_QUICK_SERVICE_CATEGORIES } from '@/lib/supplier-quick-services';
+import { QUICK_SERVICES_CATALOG } from '@/lib/quick-services-catalog';
+import { useAuthStore } from '@/stores/auth.store';
 
 export default function QuickServicesBookingManagementPage() {
+  const { user } = useAuthStore();
+  
+  let userCategories: string[] = [];
+  let userChildServices: Record<string, string[]> = {};
+
+  try {
+    const parsed = typeof user?.quickServicesOffered === 'string' 
+      ? JSON.parse(user.quickServicesOffered) 
+      : user?.quickServicesOffered;
+      
+    if (Array.isArray(parsed)) {
+      parsed.forEach((s: any) => {
+        if (s.category) {
+          userCategories.push(s.category);
+          userChildServices[s.category] = s.services || [];
+        }
+      });
+    }
+  } catch (e) {
+    console.error(e);
+  }
+
+  const displayedServices = SUPPLIER_QUICK_SERVICE_CATEGORIES.filter(service => 
+    userCategories.includes(service.id) || 
+    userCategories.includes(service.name) || 
+    userCategories.includes(service.slug)
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -43,47 +73,64 @@ export default function QuickServicesBookingManagementPage() {
         <ClipboardList className="h-5 w-5 shrink-0 text-[#FCD223]" />
 
         <p className="text-sm text-white">
-          Select one of the 12 categories below to open its
+          Select one of your registered categories below to open its
           Booking Management page.
         </p>
       </div>
 
       {/* Twelve service cards */}
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {SUPPLIER_QUICK_SERVICE_CATEGORIES.map(
-          (service) => (
-            <Link
-              key={service.id}
-              href={`/quick-services/booking-management/${service.slug}`}
-              className="group flex min-h-[230px] flex-col items-center justify-center rounded-2xl border border-[#27272A] bg-[#111111] p-6 text-center transition-all hover:-translate-y-1 hover:border-[#FCD223] hover:shadow-[0_0_25px_rgba(252,210,35,0.12)]"
-            >
-              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border border-[#27272A] bg-[#04213C]">
-                <Image
-                  src={service.icon}
-                  alt={service.name}
-                  width={80}
-                  height={80}
-                  className="h-full w-full object-cover"
-                />
-              </div>
+        {displayedServices.length > 0 ? (
+          displayedServices.map((service) => {
+            const catalogEntry = QUICK_SERVICES_CATALOG.find((c) => c.id === service.id);
+            const childIds = userChildServices[service.id] || [];
 
-              <h2 className="mt-5 text-lg font-bold text-white">
-                {service.name}
-              </h2>
+            const childNames = childIds.map((cid) => {
+              const child = catalogEntry?.children?.find((c) => c.id === cid);
+              return child ? child.name : cid;
+            });
 
-              <p className="mt-2 min-h-10 text-xs leading-relaxed text-[#8793B2]">
-                {service.childServices.length > 0
-                  ? service.childServices.join(' • ')
-                  : 'View service bookings'}
-              </p>
+            const displayChildrenText =
+              childNames.length > 0
+                ? childNames.join(' • ')
+                : 'View service bookings';
 
-              <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#FCD223]">
+            return (
+              <Link
+                key={service.id}
+                href={`/quick-services/booking-management/${service.slug}`}
+                className="group flex min-h-[230px] flex-col items-center justify-center rounded-2xl border border-[#27272A] bg-[#111111] p-6 text-center transition-all hover:-translate-y-1 hover:border-[#FCD223] hover:shadow-[0_0_25px_rgba(252,210,35,0.12)]"
+              >
+                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border border-[#27272A] bg-[#04213C]">
+                  <Image
+                    src={service.icon}
+                    alt={service.name}
+                    width={80}
+                    height={80}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+
+                <h2 className="mt-5 text-lg font-bold text-white">
+                  {service.name}
+                </h2>
+
+                <p className="mt-2 min-h-10 text-xs leading-relaxed text-[#8793B2]">
+                  {displayChildrenText}
+                </p>
+
+                <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#FCD223]">
                 View Bookings
 
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </div>
             </Link>
-          )
+            );
+          })
+        ) : (
+          <div className="col-span-full py-12 text-center text-[#A1A1AA]">
+            No Quick Services found. Please ensure you selected services during registration.
+          </div>
         )}
       </div>
     </div>

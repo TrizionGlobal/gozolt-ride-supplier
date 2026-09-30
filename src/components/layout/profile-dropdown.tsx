@@ -30,6 +30,19 @@ export function ProfileDropdown() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleWorkersNavigation = () => {
+    setIsOpen(false);
+    if (activeModule === 'RENTAL') router.push('/car-rentals/workers');
+    else if (activeModule === 'BIKE_RENTAL') router.push('/bike-rentals/workers');
+    else router.push('/workers');
+  };
+
+  const handleSubscriptionNavigation = () => {
+    setIsOpen(false);
+    if (activeModule === 'QUICK_SERVICES') router.push('/quick-services/subscription');
+    else router.push('/subscription');
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -60,23 +73,15 @@ export function ProfileDropdown() {
           <div className="py-1">
             {pathname !== '/module-selection' && (
               <>
-                <button
-                  onClick={() => { setIsOpen(false); router.push('/payouts'); }}
-                  className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:text-[#FACC15] hover:bg-[#1A1A1A] transition-colors border-b border-[#27272A]"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-3">
-                    <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-                    <line x1="2" x2="22" y1="10" y2="10"></line>
-                  </svg>
-                  Payments & Settlements
-                </button>
-                <button
-                  onClick={() => { setIsOpen(false); router.push('/workers'); }}
-                  className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:text-[#FACC15] hover:bg-[#1A1A1A] transition-colors border-b border-[#27272A]"
-                >
-                  <Users className="h-4 w-4 mr-3 text-[#A1A1AA]" />
-                  Staff & Workers
-                </button>
+                {activeModule !== 'QUICK_SERVICES' && activeModule !== 'CAB' && (
+                  <button
+                    onClick={handleWorkersNavigation}
+                    className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:text-[#FACC15] hover:bg-[#1A1A1A] transition-colors border-b border-[#27272A]"
+                  >
+                    <Users className="h-4 w-4 mr-3 text-[#A1A1AA]" />
+                    Staff & Workers
+                  </button>
+                )}
                 <button
                   onClick={() => { setIsOpen(false); router.push('/settings'); }}
                   className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
@@ -85,7 +90,7 @@ export function ProfileDropdown() {
                   Settings & Team
                 </button>
                 <button
-                  onClick={() => { setIsOpen(false); router.push('/subscription'); }}
+                  onClick={handleSubscriptionNavigation}
                   className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
                 >
                   <CreditCard className="h-4 w-4 mr-3 text-[#A1A1AA]" />

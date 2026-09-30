@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/use-auth';
+import { useAuthStore } from '@/stores/auth.store';
 import { isSupplierService, SUPPLIER_SERVICE_NAMES, type SupplierService, } from '@/types/supplier-service';
 
 const loginSchema = z.object({
@@ -172,6 +173,18 @@ export default function LoginPage() {
     }
   }, [router]);
 
+  const { isAuthenticated, user, isLoading } = useAuthStore();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      const service = user.registeredService;
+      if (service === 'CAB') router.push('/dashboard');
+      else if (service === 'CAR_RENTAL' || service === 'RENTAL') router.push('/car-rentals/dashboard');
+      else if (service === 'BIKE_RENTAL') router.push('/bike-rentals/dashboard');
+      else if (service === 'QUICK_SERVICES') router.push('/quick-services/dashboard');
+    }
+  }, [isAuthenticated, isLoading, user, router]);
+
   const {
     register,
     handleSubmit,
@@ -327,7 +340,7 @@ export default function LoginPage() {
         {/* Sign In */}
         <button
           type="submit"
-          disabled={isSubmitting || !selectedService}
+          disabled={isSubmitting}
           className="flex w-full items-center justify-center rounded-full bg-[#FCD223] py-2.5 text-sm font-semibold text-black transition-colors hover:bg-[#EAB308] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting ? (
@@ -338,12 +351,13 @@ export default function LoginPage() {
         </button>
 
         {/* Register */}
-        <Link
-          href="/welcome?mode=register"
+        <button
+          type="button"
+          onClick={() => router.push('/welcome?mode=register')}
           className="flex w-full items-center justify-center rounded-full border border-[#FCD223] py-2.5 text-sm font-semibold text-[#FCD223] transition-colors hover:bg-[#FCD223]/10"
         >
           Register as New Supplier
-        </Link>
+        </button>
       </form>
     </div>
     </div>

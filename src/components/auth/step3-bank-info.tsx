@@ -10,7 +10,7 @@ const step3Schema = z.object({
   supplierAccountHolder: z.string().min(1, 'Account holder name is required'),
   supplierBankName: z.string().min(1, 'Bank name is required'),
   supplierAccountNumber: z.string().min(1, 'IBAN/Account number is required'),
-  supplierSwiftCode: z.string().min(1, 'SWIFT/BIC code is required'),
+  supplierSwiftCode: z.string().optional(),
 });
 
 export type Step3FormData = z.infer<typeof step3Schema>;
@@ -32,7 +32,7 @@ export function Step3BankInfo({ defaultValues, onNext, onPrevious }: Step3Props)
   });
 
   const inputClassName =
-    'h-10 rounded-lg border-[#27272A] bg-[#0A0A0A] text-white placeholder:text-[#71717A] focus-visible:border-[#FACC15] focus-visible:ring-[#FACC15]/20 text-sm';
+    'h-10 rounded-lg border-[#27272A] bg-[#0A0A0A] text-white placeholder:text-[#71717A] placeholder:normal-case focus-visible:border-[#FACC15] focus-visible:ring-[#FACC15]/20 text-sm';
 
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#0F0F0F] p-6">
@@ -45,7 +45,7 @@ export function Step3BankInfo({ defaultValues, onNext, onPrevious }: Step3Props)
           <label className="mb-1.5 block text-xs text-white">
             Account Holder Name<span className="text-[#FACC15]">*</span>
           </label>
-          <Input placeholder="Enter Account Holder Name" className={inputClassName} {...register('supplierAccountHolder')} />
+          <Input placeholder="Enter Account Holder Name" className={`${inputClassName} capitalize`} {...register('supplierAccountHolder')} />
           {errors.supplierAccountHolder && <p className="mt-1 text-xs text-red-500">{errors.supplierAccountHolder.message}</p>}
         </div>
 
@@ -53,7 +53,7 @@ export function Step3BankInfo({ defaultValues, onNext, onPrevious }: Step3Props)
           <label className="mb-1.5 block text-xs text-white">
             Bank Name<span className="text-[#FACC15]">*</span>
           </label>
-          <Input placeholder="Enter Bank Name" className={inputClassName} {...register('supplierBankName')} />
+          <Input placeholder="Enter Bank Name" className={`${inputClassName} capitalize`} {...register('supplierBankName')} />
           {errors.supplierBankName && <p className="mt-1 text-xs text-red-500">{errors.supplierBankName.message}</p>}
         </div>
 
@@ -61,15 +61,15 @@ export function Step3BankInfo({ defaultValues, onNext, onPrevious }: Step3Props)
           <label className="mb-1.5 block text-xs text-white">
             IBAN Number<span className="text-[#FACC15]">*</span>
           </label>
-          <Input placeholder="Enter IBAN Number" className={inputClassName} {...register('supplierAccountNumber')} />
+          <Input placeholder="Enter IBAN Number" className={`${inputClassName} uppercase`} {...register('supplierAccountNumber')} />
           {errors.supplierAccountNumber && <p className="mt-1 text-xs text-red-500">{errors.supplierAccountNumber.message}</p>}
         </div>
 
         <div>
           <label className="mb-1.5 block text-xs text-white">
-            SWIFT / BIC Code<span className="text-[#FACC15]">*</span>
+            SWIFT / BIC Code (Optional)
           </label>
-          <Input placeholder="Enter SWIFT/BIC Code" className={inputClassName} {...register('supplierSwiftCode')} />
+          <Input placeholder="Enter SWIFT/BIC Code" className={`${inputClassName} uppercase`} {...register('supplierSwiftCode')} />
           {errors.supplierSwiftCode && <p className="mt-1 text-xs text-red-500">{errors.supplierSwiftCode.message}</p>}
         </div>
 

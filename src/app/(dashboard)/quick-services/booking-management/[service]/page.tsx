@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { MdFilterList } from 'react-icons/md';
+
 import {
   ArrowLeft,
   CalendarDays,
@@ -14,26 +14,68 @@ import {
   RefreshCw,
   Search,
   UserRound,
+  Filter,
+  MoreVertical,
 } from 'lucide-react';
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+
+import { AssignWorkerModal } from '@/components/quick-services/assign-worker-modal';
 
 import { getSupplierQuickServiceBySlug } from '@/lib/supplier-quick-services';
 import { useSupplierQuickServiceBookings } from '@/hooks/use-supplier-quick-service-bookings';
+import { useDebounce } from '@/hooks/use-debounce';
 
-import type {
+import {
   QuickServiceAssignmentFilter,
   QuickServiceBooking,
   QuickServiceBookingStatus,
 } from '@/services/quick-services/quick-service-booking.types';
 
+import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
+import { QUICK_SERVICES_CATALOG } from '@/lib/quick-services-catalog';
+import { useAuthStore } from '@/stores/auth.store';
+
 export default function ServiceBookingManagementPage() {
   const params = useParams<{ service: string }>();
+  const router = useRouter();
 
   const service = getSupplierQuickServiceBySlug(
     params.service
   );
 
-  const [searchInput, setSearchInput] = useState('');
+  const { user } = useAuthStore();
+  let userChildServices: string[] = [];
+  try {
+    const parsed = typeof user?.quickServicesOffered === 'string' 
+      ? JSON.parse(user.quickServicesOffered) 
+      : user?.quickServicesOffered;
+      
+    if (Array.isArray(parsed)) {
+      parsed.forEach((s: any) => {
+        if (s.category === service?.id) {
+          userChildServices = s.services || [];
+        }
+      });
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  
+  const catalogEntry = QUICK_SERVICES_CATALOG.find((c) => c.id === service?.id);
+  const childNames = userChildServices.map((cid) => {
+    const child = catalogEntry?.children?.find((c) => c.id === cid);
+    return child ? child.name : cid;
+  });
+
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [childService, setChildService] =
     useState('');
 
@@ -46,12 +88,15 @@ export default function ServiceBookingManagementPage() {
   const [selectedBooking, setSelectedBooking] =
     useState<QuickServiceBooking | null>(null);
 
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+
   const [page, setPage] = useState(1);
   const limit = 20;
 
   const filters = useMemo(
     () => ({
-      search: search || undefined,
+      search: debouncedSearch || undefined,
       categoryId: service?.id,
       childService: childService || undefined,
       status,
@@ -60,7 +105,7 @@ export default function ServiceBookingManagementPage() {
       limit,
     }),
     [
-      search,
+      debouncedSearch,
       service?.id,
       childService,
       status,
@@ -99,13 +144,7 @@ export default function ServiceBookingManagementPage() {
     );
   }
 
-  const applySearch = () => {
-    setSearch(searchInput.trim());
-    setPage(1);
-  };
-
   const clearFilters = () => {
-    setSearchInput('');
     setSearch('');
     setChildService('');
     setStatus('');
@@ -113,57 +152,144 @@ export default function ServiceBookingManagementPage() {
     setPage(1);
   };
 
+  const columns: ColumnDef<QuickServiceBooking>[] = [
+    {
+      key: 'customer',
+      title: 'Customer',
+      render: (row) => (
+        <div className="flex items-start gap-2">
+          <UserRound className="mt-0.5 h-4 w-4 text-[#71717A]" />
+          <div>
+            <p className="text-white">
+              {row.customer?.name || row.userName || (row.user ? `${row.user.firstName} ${row.user.lastName}` : 'Unknown')}
+            </p>
+            <p className="text-xs text-[#71717A]">
+              {row.customer?.mobile || row.userPhone || row.user?.phone || 'N/A'}
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'service',
+      title: 'Service',
+      render: (row) => (
+        <div>
+          <p className="text-white text-sm">{row.serviceCategory || row.categoryName || 'Quick Service'}</p>
+          <p className="text-xs text-[#FCD223]">{row.serviceTitle || row.childService || 'General'}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'schedule',
+      title: 'Schedule',
+      render: (row) => (
+        <span className="flex items-start gap-2 text-sm text-[#D4D4D8]">
+          <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#FCD223]" />
+          {formatDateTime(row.scheduledAt)}
+        </span>
+      ),
+    },
+    {
+      key: 'location',
+      title: 'Location',
+      render: (row) => (
+        <span className="flex max-w-[220px] items-start gap-2 text-sm text-[#D4D4D8]">
+          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#FCD223]" />
+          {row.serviceAddress}
+        </span>
+      ),
+    },
+    {
+      key: 'worker',
+      title: 'Worker',
+      render: (row) => (
+        <span className="text-sm text-[#D4D4D8]">
+          {row.assignedToSelf ? 'Assigned to me' : row.worker?.name ?? 'Unassigned'}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      title: 'Status',
+      render: (row) => <StatusBadge status={row.status} />,
+    },
+    {
+      key: 'actions',
+      title: 'Actions',
+      className: 'text-center',
+      render: (row) => {
+        return (
+          <div className="flex justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="rounded bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1 transition-colors outline-none">
+                Options <MoreVertical className="h-3 w-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40 bg-[#111111] border-[#27272A] text-white">
+                <DropdownMenuItem 
+                  onClick={() => router.push(`/quick-services/booking-management/${params.service}/${row.id || (row as any)._id}`)}
+                  className="cursor-pointer focus:bg-[#27272A] focus:text-white"
+                >
+                  View Details
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => {
+                    setSelectedBookingId(row.id || (row as any)._id);
+                    setIsAssignModalOpen(true);
+                  }}
+                  className="cursor-pointer focus:bg-[#27272A] focus:text-white"
+                >
+                  Assign to Worker
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="cursor-pointer focus:bg-[#27272A] focus:text-white text-[#FACC15]"
+                >
+                  Start Work
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#27272A] bg-[#04213C]">
-            <Image
-              src={service.icon}
-              alt={service.name}
-              width={64}
-              height={64}
-              className="h-full w-full object-cover"
-              priority
-            />
-          </div>
+      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div>
+          <Link
+            href="/quick-services/booking-management"
+            className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-[#A1A1AA] hover:text-[#FCD223] transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Categories
+          </Link>
 
-          <div>
-            <h1 className="text-2xl font-bold text-white">
-              {service.name} Booking Management
-            </h1>
+          <h1 className="text-2xl font-bold text-white mb-1">
+            {service.name} Bookings
+          </h1>
 
-            <p className="mt-1 text-sm text-[#8793B2]">
-              Review bookings, customer requirements,
-              schedules and assigned workers.
-            </p>
-          </div>
+          <p className="text-sm text-[#A1A1AA]">
+            Manage all your {service.name.toLowerCase()} requests and assignments.
+          </p>
         </div>
 
         <button
           type="button"
           onClick={refresh}
           disabled={isLoading}
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#27272A] bg-[#111111] px-4 py-2.5 text-sm font-medium text-white hover:border-[#FCD223] disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/5 border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50"
         >
           <RefreshCw
-            className={`h-4 w-4 text-[#FCD223] ${
+            className={`h-4 w-4 ${
               isLoading ? 'animate-spin' : ''
             }`}
           />
-
           Refresh
         </button>
       </div>
-
-      <Link
-        href="/quick-services/booking-management"
-        className="inline-flex items-center gap-2 text-sm font-semibold text-[#FCD223] hover:underline"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        All Quick Services
-      </Link>
 
       {/* Filters */}
       {/* Filters */}
@@ -176,27 +302,15 @@ export default function ServiceBookingManagementPage() {
 
         <input
           type="text"
-          value={searchInput}
-          onChange={(event) =>
-            setSearchInput(event.target.value)
-          }
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              applySearch();
-            }
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setPage(1);
           }}
-          placeholder="Search"
-          className="h-10 w-full rounded-l-lg border border-r-0 border-[#27272A] bg-[#0A0A0A] pl-10 pr-3 text-sm text-white outline-none placeholder:text-[#71717A] focus:border-[#FCD223]"
+          placeholder="Search..."
+          className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2 pl-10 pr-3 text-sm text-white placeholder-[#71717A] outline-none focus:border-[#FCD223]"
         />
       </div>
-
-      <button
-        type="button"
-        onClick={applySearch}
-        className="h-10 shrink-0 rounded-r-lg bg-[#FCD223] px-4 text-sm font-semibold text-black transition-colors hover:bg-[#EAB308]"
-      >
-        Search
-      </button>
     </div>
 
     {/* Child service */}
@@ -212,7 +326,7 @@ export default function ServiceBookingManagementPage() {
         All {service.name} services
       </option>
 
-      {service.childServices.map((child) => (
+      {childNames.map((child) => (
         <option key={child} value={child}>
           {child}
         </option>
@@ -281,7 +395,7 @@ export default function ServiceBookingManagementPage() {
       aria-label="Clear filters"
       className="flex h-10 w-11 items-center justify-center rounded-lg border border-[#27272A] bg-[#0A0A0A] text-[#A1A1AA] transition-colors hover:border-[#FCD223] hover:bg-[#FCD223]/10 hover:text-[#FCD223]"
     >
-      <MdFilterList className="h-5 w-5" />
+      <Filter className="h-5 w-5" />
     </button>
   </div>
 </div>
@@ -318,230 +432,42 @@ export default function ServiceBookingManagementPage() {
           <ClipboardList className="h-5 w-5 text-[#FCD223]" />
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1100px] text-left">
-            <thead className="bg-[#0A0A0A]">
-              <tr>
-                <TableHeading>Booking</TableHeading>
-                <TableHeading>Customer</TableHeading>
-                <TableHeading>Service</TableHeading>
-                <TableHeading>Schedule</TableHeading>
-                <TableHeading>Location</TableHeading>
-                <TableHeading>Worker</TableHeading>
-                <TableHeading>Status</TableHeading>
-                <TableHeading>Actions</TableHeading>
-              </tr>
-            </thead>
-
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-4 py-16 text-center text-sm text-[#71717A]"
-                  >
-                    Loading bookings...
-                  </td>
-                </tr>
-              ) : bookings.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={8}
-                    className="px-4 py-16 text-center"
-                  >
-                    <ClipboardList className="mx-auto h-10 w-10 text-[#52525B]" />
-
-                    <p className="mt-3 text-sm font-medium text-white">
-                      No bookings found
-                    </p>
-
-                    <p className="mt-1 text-xs text-[#71717A]">
-                      {service.name} bookings will appear
-                      here.
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                bookings.map((booking) => (
-                  <tr
-                    key={booking.id}
-                    className="border-t border-[#27272A] hover:bg-[#171717]"
-                  >
-                    <TableCell>
-                      <span className="font-medium text-[#FCD223]">
-                        {booking.bookingReference}
-                      </span>
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="flex items-start gap-2">
-                        <UserRound className="mt-0.5 h-4 w-4 text-[#71717A]" />
-
-                        <div>
-                          <p className="text-white">
-                            {booking.customer.name}
-                          </p>
-
-                          <p className="text-xs text-[#71717A]">
-                            {booking.customer.mobile}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-
-                    <TableCell>
-                      <p className="text-white">
-                        {booking.categoryName}
-                      </p>
-
-                      <p className="text-xs text-[#FCD223]">
-                        {booking.childService ??
-                          'General'}
-                      </p>
-                    </TableCell>
-
-                    <TableCell>
-                      <span className="flex items-start gap-2">
-                        <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#FCD223]" />
-                        {formatDateTime(
-                          booking.scheduledAt
-                        )}
-                      </span>
-                    </TableCell>
-
-                    <TableCell>
-                      <span className="flex max-w-[220px] items-start gap-2">
-                        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#FCD223]" />
-                        {booking.serviceAddress}
-                      </span>
-                    </TableCell>
-
-                    <TableCell>
-                      {booking.assignedToSelf
-                        ? 'Assigned to me'
-                        : booking.worker?.name ??
-                          'Unassigned'}
-                    </TableCell>
-
-                    <TableCell>
-                      <StatusBadge
-                        status={booking.status}
-                      />
-                    </TableCell>
-
-                    <TableCell>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedBooking(booking)
-                        }
-                        className="inline-flex items-center gap-2 rounded-lg border border-[#27272A] px-3 py-2 text-xs font-medium text-white hover:border-[#FCD223] hover:text-[#FCD223]"
-                      >
-                        <Eye className="h-4 w-4" />
-                        View Details
-                      </button>
-                    </TableCell>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex items-center justify-between border-t border-[#27272A] px-5 py-4">
-          <p className="text-xs text-[#71717A]">
-            Page {page} of {totalPages}
-          </p>
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={page <= 1 || isLoading}
-              onClick={() =>
-                setPage((current) =>
-                  Math.max(1, current - 1)
-                )
-              }
-              className="rounded-lg border border-[#27272A] px-3 py-2 text-xs text-white disabled:opacity-40"
-            >
-              Previous
-            </button>
-
-            <button
-              type="button"
-              disabled={
-                page >= totalPages || isLoading
-              }
-              onClick={() =>
-                setPage((current) =>
-                  Math.min(totalPages, current + 1)
-                )
-              }
-              className="rounded-lg border border-[#27272A] px-3 py-2 text-xs text-white disabled:opacity-40"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        <ServerSideTable<QuickServiceBooking>
+          columns={columns}
+          data={bookings}
+          isLoading={isLoading}
+          page={page}
+          limit={limit}
+          total={total}
+          onPageChange={setPage}
+          onLimitChange={() => {}}
+          rowKey="id"
+          emptyText={
+            <div className="flex flex-col items-center justify-center py-10">
+              <ClipboardList className="h-10 w-10 text-[#52525B]" />
+              <p className="mt-3 text-sm font-medium text-white">No bookings found</p>
+              <p className="mt-1 text-xs text-[#71717A]">{service.name} bookings will appear here.</p>
+            </div>
+          }
+        />
       </div>
 
-      {/* Temporary selected-booking confirmation */}
-      {selectedBooking && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-[#27272A] bg-[#111111] p-6">
-            <h2 className="text-xl font-bold text-white">
-              Booking Details
-            </h2>
-
-            <p className="mt-2 text-sm text-[#FCD223]">
-              {selectedBooking.bookingReference}
-            </p>
-
-            <p className="mt-4 text-sm text-[#A1A1AA]">
-              The complete customer, payment, requirement
-              and timeline details will be added in the next
-              step.
-            </p>
-
-            <button
-              type="button"
-              onClick={() =>
-                setSelectedBooking(null)
-              }
-              className="mt-6 w-full rounded-full bg-[#FCD223] py-2.5 text-sm font-semibold text-black"
-            >
-              Close
-            </button>
-          </div>
-        </div>
+      {isAssignModalOpen && selectedBookingId && (
+        <AssignWorkerModal
+          bookingId={selectedBookingId}
+          onClose={() => setIsAssignModalOpen(false)}
+          onAssigned={() => {
+            setIsAssignModalOpen(false);
+            // the page will reload or you could refetch if using a context
+            window.location.reload();
+          }}
+        />
       )}
     </div>
   );
 }
 
-function TableHeading({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <th className="whitespace-nowrap px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[#71717A]">
-      {children}
-    </th>
-  );
-}
 
-function TableCell({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <td className="px-4 py-4 text-sm text-[#D4D4D8]">
-      {children}
-    </td>
-  );
-}
 
 function StatusBadge({
   status,

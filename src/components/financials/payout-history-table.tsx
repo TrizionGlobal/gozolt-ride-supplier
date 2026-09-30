@@ -7,11 +7,18 @@ import { useReactToPrint } from 'react-to-print';
 import { formatCurrency, downloadCSV } from '@/lib/utils';
 import { InvoiceDocument } from '@/components/invoices/invoice-document';
 import { useAuth } from '@/hooks/use-auth';
+import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
 import type { PayoutRecord, SupplierProfile } from '@/types';
 
 interface PayoutHistoryTableProps {
   data: PayoutRecord[];
   isLoading: boolean;
+  page: number;
+  limit: number;
+  total: number;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
+  serviceName?: string;
 }
 
 const statusStyles: Record<string, { bg: string; text: string; label: string }> = {
@@ -33,7 +40,7 @@ function formatDate(dateStr: string | null): string {
   return new Date(dateStr).toLocaleDateString('en-CA');
 }
 
-function PrintRowButton({ row, supplier }: { row: PayoutRecord; supplier: SupplierProfile | null }) {
+function PrintRowButton({ row, supplier, serviceName }: { row: PayoutRecord; supplier: SupplierProfile | null; serviceName?: string }) {
   const contentRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({
     contentRef: contentRef,
@@ -49,13 +56,15 @@ function PrintRowButton({ row, supplier }: { row: PayoutRecord; supplier: Suppli
         <Printer className="h-4 w-4" />
       </button>
       <div className="hidden">
-        <InvoiceDocument ref={contentRef} payout={row} supplier={supplier} />
+        <InvoiceDocument ref={contentRef} payout={row} supplier={supplier} serviceName={serviceName} />
       </div>
     </>
   );
 }
 
-export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps) {
+export function PayoutHistoryTable({ 
+  data, isLoading, page, limit, total, onPageChange, onLimitChange, serviceName 
+}: PayoutHistoryTableProps) {
   const { user } = useAuth();
 
   const handleStatementPDF = () => {
@@ -66,15 +75,52 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
     const csvData = data.map((p) => ({
       Date: formatDate(p.processedAt || p.createdAt),
       Period: formatPeriodFull(p.periodStart, p.periodEnd),
-      'Cab Booking': p.details?.breakdown?.cab || 0,
-      'Car Rental': p.details?.breakdown?.carRental || 0,
-      'Bike Rental': p.details?.breakdown?.bikeRental || 0,
       Net: p.amount,
       Status: statusStyles[p.status]?.label || p.status,
     }));
     downloadCSV(csvData, 'payout-history');
     toast.success('Excel exported successfully');
   };
+
+  const columns: ColumnDef<PayoutRecord>[] = [
+    {
+      key: 'date',
+      title: 'DATE',
+      render: (row) => <span className="text-[#D4D4D8]">{formatDate(row.processedAt || row.createdAt)}</span>,
+    },
+    {
+      key: 'period',
+      title: 'PERIOD',
+      render: (row) => <span className="text-[#D4D4D8]">{formatPeriodFull(row.periodStart, row.periodEnd)}</span>,
+    },
+    {
+      key: 'amount',
+      title: 'AMOUNT',
+      render: (row) => <span className="font-semibold text-[#22C55E]">{formatCurrency(row.amount)}</span>,
+    },
+    {
+      key: 'status',
+      title: 'STATUS',
+      render: (row) => {
+        const style = statusStyles[row.status] || statusStyles.PENDING;
+        return (
+          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${style.bg} ${style.text}`}>
+            {style.label}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'invoice',
+      title: 'INVOICE',
+      className: 'text-center',
+      render: (row) => (
+        <div className="flex justify-center">
+          <PrintRowButton row={row} supplier={user} serviceName={serviceName} />
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-[#27272A] bg-[#111111]/80 p-6 backdrop-blur-xl">
@@ -102,89 +148,17 @@ export function PayoutHistoryTable({ data, isLoading }: PayoutHistoryTableProps)
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-10 rounded bg-[#27272A] animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-[#27272A] bg-[#0A0A0A]/50">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">DATE</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">PERIOD</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">AMOUNT</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-[#71717A]">STATUS</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-[#71717A]">INVOICE</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((row) => {
-                const style = statusStyles[row.status] || statusStyles.PENDING;
-                const hasBreakdown = !!row.details?.breakdown;
-                
-                return (
-                  <React.Fragment key={row.id}>
-                  <tr
-                    className={`border-[#27272A] transition-colors hover:bg-[#1A1A1A]/30 ${hasBreakdown ? 'border-b-0' : 'border-b last:border-b-0'}`}
-                  >
-                    <td className="px-4 py-3 text-sm text-[#D4D4D8]">
-                      {formatDate(row.processedAt || row.createdAt)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#D4D4D8]">
-                      {formatPeriodFull(row.periodStart, row.periodEnd)}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-semibold text-[#22C55E]">
-                      {formatCurrency(row.amount)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${style.bg} ${style.text}`}>
-                        {style.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <PrintRowButton row={row} supplier={user} />
-                    </td>
-                  </tr>
-                  {hasBreakdown && (
-                    <tr className="border-b border-[#27272A] last:border-b-0 bg-[#0A0A0A]/30">
-                      <td colSpan={5} className="px-4 py-3 pb-4">
-                        <div className="rounded-lg bg-[#111111] p-4 border border-[#27272A]">
-                          <p className="text-xs font-semibold text-[#A1A1AA] mb-3 uppercase tracking-wider">Earnings Breakdown by Service</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="bg-[#141414] border border-[#27272A] p-3 rounded-lg flex justify-between items-center">
-                              <span className="text-sm text-[#D4D4D8]">Cab Bookings</span>
-                              <span className="text-sm font-semibold text-white">{formatCurrency(row.details?.breakdown?.cab || 0)}</span>
-                            </div>
-                            <div className="bg-[#141414] border border-[#27272A] p-3 rounded-lg flex justify-between items-center">
-                              <span className="text-sm text-[#D4D4D8]">Car Rentals</span>
-                              <span className="text-sm font-semibold text-white">{formatCurrency(row.details?.breakdown?.carRental || 0)}</span>
-                            </div>
-                            <div className="bg-[#141414] border border-[#27272A] p-3 rounded-lg flex justify-between items-center">
-                              <span className="text-sm text-[#D4D4D8]">Bike Rentals</span>
-                              <span className="text-sm font-semibold text-white">{formatCurrency(row.details?.breakdown?.bikeRental || 0)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                  </React.Fragment>
-                );
-              })}
-              {data.length === 0 && !isLoading && (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-[#71717A] text-sm">
-                    No payouts recorded yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <ServerSideTable
+        columns={columns}
+        data={data}
+        isLoading={isLoading}
+        page={page}
+        limit={limit}
+        total={total}
+        onPageChange={onPageChange}
+        onLimitChange={onLimitChange}
+        emptyText="No payouts recorded yet."
+      />
     </div>
   );
 }

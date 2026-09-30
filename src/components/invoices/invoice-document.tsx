@@ -6,10 +6,11 @@ interface InvoiceDocumentProps {
   payout?: PayoutRecord | null;
   statement?: SupplierStatement | null;
   supplier: SupplierProfile | null;
+  serviceName?: string;
 }
 
 export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
-  ({ payout, statement, supplier }, ref) => {
+  ({ payout, statement, supplier, serviceName }, ref) => {
     const formatDate = (dateString?: string | null) => {
       if (!dateString) return 'N/A';
       return new Date(dateString).toLocaleDateString('en-US', {
@@ -23,30 +24,36 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
     const periodStart = statement?.periodStart || payout?.periodStart || payout?.createdAt || '';
     const periodEnd = statement?.periodEnd || payout?.periodEnd || payout?.processedAt || payout?.createdAt || '';
 
-    const cab = Number(payout?.details?.breakdown?.cab || 0);
-    const carRental = Number(payout?.details?.breakdown?.carRental || 0);
-    const bikeRental = Number(payout?.details?.breakdown?.bikeRental || 0);
-    const totalGross = statement?.grossRevenue ?? (cab + carRental + bikeRental);
-
-    // We can assume total deductions are the difference between gross and net
-    const netAmount = statement?.netBalance ?? Number(payout?.amount || 0);
-    const deductions = statement?.commissionEarned ?? (totalGross > 0 ? Math.max(0, totalGross - netAmount) : 0);
+    const d = payout?.details || {};
+    
+    // Extract properties like the admin email logic does
+    const cancelFees = Number(d.userCancellationFees || d.totalCancellations || 0);
+    const refunds = Number(d.totalRefunds || 0);
+    const netEarned = Number(d.totalSettledEarned || payout?.amount || 0);
+    const grossEarned = Number(d.totalGrossEarned || netEarned);
+    
+    const previouslyPaid = Number(d.totalAlreadyPaid || 0);
+    const payoutAmount = Number(payout?.amount || 0);
+    const totalPaidOut = previouslyPaid + payoutAmount;
+    const remainingBalance = Number(d.remainingPendingAfterThis || 0);
+    
+    const commission = grossEarned - netEarned;
     const status = payout?.status || 'COMPLETED';
 
     return (
       <div
         ref={ref}
-        className="bg-white p-12 text-black w-full"
+        className="bg-white text-black w-full"
         style={{
           width: '210mm',
           minHeight: '297mm',
-          padding: '20mm',
+          padding: '12mm 15mm',
           margin: '0 auto',
           boxSizing: 'border-box',
         }}
       >
         {/* Header */}
-        <div className="flex justify-between items-start border-b-2 border-gray-200 pb-8 mb-8">
+        <div className="flex justify-between items-start border-b-2 border-gray-200 pb-4 mb-6">
           <div>
             <h1 className="text-4xl font-extrabold text-[#FACC15] tracking-tight">GOZOLT</h1>
             <p className="text-gray-500 font-medium tracking-widest uppercase text-sm mt-1">
@@ -62,7 +69,7 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         </div>
 
         {/* Addresses */}
-        <div className="flex justify-between mb-12">
+        <div className="flex justify-between mb-8">
           <div>
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
               Billed To
@@ -95,7 +102,7 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         </div>
 
         {/* Invoice Info */}
-        <div className="flex gap-12 mb-12 bg-gray-50 p-6 rounded-lg border border-gray-100">
+        <div className="flex gap-12 mb-8 bg-gray-50 p-4 rounded-lg border border-gray-100">
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
               Period Start
@@ -117,77 +124,99 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         </div>
 
         {/* Line Items */}
-        <table className="w-full mb-12">
+        <table className="w-full mb-4">
           <thead>
             <tr className="border-b-2 border-gray-800 text-left">
-              <th className="py-3 text-sm font-bold text-gray-800 uppercase tracking-wider">
+              <th className="py-2 text-sm font-bold text-gray-800 uppercase tracking-wider">
                 Description
               </th>
-              <th className="py-3 text-right text-sm font-bold text-gray-800 uppercase tracking-wider">
+              <th className="py-2 text-right text-sm font-bold text-gray-800 uppercase tracking-wider">
                 Amount
               </th>
             </tr>
           </thead>
           <tbody className="text-gray-700">
-            {cab > 0 && (
+            {/* Service Name */}
+            <tr className="border-b border-gray-100">
+              <td className="py-2 font-medium">Service Name</td>
+              <td className="py-2 text-right font-bold text-gray-900">
+                {serviceName || 'All Services'}
+              </td>
+            </tr>
+
+            {/* Total Earned Amount */}
+            <tr className="border-b border-gray-100">
+              <td className="py-2 font-medium">Total Earned Amount</td>
+              <td className="py-2 text-right font-medium">
+                {formatCurrency(grossEarned)}
+              </td>
+            </tr>
+
+            {/* Cancellation Fee */}
+            {cancelFees > 0 && (
               <tr className="border-b border-gray-100">
-                <td className="py-5 font-medium">Cab Bookings Revenue</td>
-                <td className="py-5 text-right font-medium">
-                  {formatCurrency(cab)}
+                <td className="py-2 font-medium">Cancellation Fee</td>
+                <td className="py-2 text-right font-medium text-red-600">
+                  -{formatCurrency(cancelFees)}
                 </td>
               </tr>
             )}
-            {carRental > 0 && (
+
+            {/* Refunds */}
+            {refunds > 0 && (
               <tr className="border-b border-gray-100">
-                <td className="py-5 font-medium">Car Rentals Revenue</td>
-                <td className="py-5 text-right font-medium">
-                  {formatCurrency(carRental)}
+                <td className="py-2 font-medium">Refunds</td>
+                <td className="py-2 text-right font-medium text-red-600">
+                  -{formatCurrency(refunds)}
                 </td>
               </tr>
             )}
-            {bikeRental > 0 && (
-              <tr className="border-b border-gray-100">
-                <td className="py-5 font-medium">Bike Rentals Revenue</td>
-                <td className="py-5 text-right font-medium">
-                  {formatCurrency(bikeRental)}
-                </td>
-              </tr>
-            )}
-            {totalGross === 0 && (
-              <tr className="border-b border-gray-100">
-                <td className="py-5 font-medium">Gross Revenue</td>
-                <td className="py-5 text-right font-medium">
-                  {formatCurrency(0)}
-                </td>
-              </tr>
-            )}
-            {deductions > 0 && (
-              <tr className="border-b border-gray-100">
-                <td className="py-5 font-medium">Platform Commission (Deduction)</td>
-                <td className="py-5 text-right font-medium text-red-600">
-                  -{formatCurrency(deductions)}
-                </td>
-              </tr>
-            )}
+
+            {/* Total Paid Out */}
+            <tr className="border-b border-gray-100">
+              <td className="py-2 font-medium">Total Paid Out</td>
+              <td className="py-2 text-right font-bold text-[#22C55E]">
+                {formatCurrency(totalPaidOut)}
+              </td>
+            </tr>
+
+            {/* Remaining Balance */}
+            <tr className="border-b border-gray-100">
+              <td className="py-2 font-medium">Remaining Balance</td>
+              <td className="py-2 text-right font-bold text-[#EAB308]">
+                {formatCurrency(remainingBalance)}
+              </td>
+            </tr>
+
+            {/* Last Paid Date */}
+            <tr className="border-b border-gray-100">
+              <td className="py-2 font-medium">Last Paid Date</td>
+              <td className="py-2 text-right font-bold text-gray-900">
+                {formatDate(periodEnd)}
+              </td>
+            </tr>
           </tbody>
         </table>
 
         {/* Totals */}
         <div className="flex justify-end">
-          <div className="w-1/2">
-            <div className="flex justify-between py-3 border-b border-gray-100 text-gray-600 font-medium">
-              <span>Subtotal</span>
-              <span>{formatCurrency(totalGross)}</span>
-            </div>
-            <div className="flex justify-between py-4 mt-2 bg-gray-50 px-4 rounded-lg font-bold text-xl text-gray-900 border border-gray-200">
-              <span>Net Balance</span>
-              <span className="text-[#EAB308]">{formatCurrency(netAmount)}</span>
+          <div className="w-2/3">
+            <div className="flex justify-between py-3 bg-gray-50 px-4 rounded-lg font-bold text-lg text-gray-900 border border-gray-200">
+              <span>9-Days Settlement Amount</span>
+              <span className="text-gray-900">{formatCurrency(payoutAmount)}</span>
             </div>
           </div>
         </div>
 
+        {/* Note */}
+        <div className="mt-4 bg-gray-50 p-3 rounded border border-gray-200">
+          <p className="text-sm text-gray-500">
+            * Note: Drivers have physically collected cash fares. The Admin is not responsible for paying out cash fares.
+          </p>
+        </div>
+
         {/* Footer */}
-        <div className="mt-24 pt-8 border-t border-gray-200 text-center text-sm text-gray-400 font-medium">
+        <div className="mt-4 pt-4 border-t border-gray-200 text-center text-xs text-gray-400 font-medium">
           <p>Thank you for partnering with Gozolt.</p>
           <p className="mt-1">If you have any questions about this invoice, please contact support@gozolt.com.</p>
         </div>

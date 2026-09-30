@@ -20,10 +20,13 @@ const periodOptions = [
   'Custom Range',
 ];
 
+import { useSidebarStore } from '@/stores/sidebar.store';
+
 export default function FinancialsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [period, setPeriod] = useState('This Month');
   const [kpis, setKpis] = useState<FinancialKPIs | null>(null);
+  const { activeModule } = useSidebarStore();
   const [revenueTrend, setRevenueTrend] = useState<RevenueTrendPoint[]>([]);
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
@@ -61,7 +64,7 @@ export default function FinancialsPage() {
       const toStr = toDate ? toDate.toISOString() : undefined;
 
       const [kpiData, trendData] = await Promise.all([
-        financialService.getFinancialKPIs(fromStr, toStr),
+        financialService.getFinancialKPIs(fromStr, toStr, activeModule || undefined),
         financialService.getRevenueTrend(fromStr, toStr),
       ]);
       
@@ -72,7 +75,7 @@ export default function FinancialsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [period]);
+  }, [period, activeModule, customFrom, customTo]);
 
   useEffect(() => {
     // Only load if not Custom Range, or if Custom Range has both dates selected

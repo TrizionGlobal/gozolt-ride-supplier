@@ -54,18 +54,7 @@ export function useAuth() {
           response.accessToken
         );
 
-        // 3. Get the service selected on the landing page
-        const selectedService = localStorage.getItem(
-          'gozolt-selected-service'
-        );
-
-        if (!selectedService) {
-          useSidebarStore.getState().setActiveModule(null);
-          router.push('/');
-          return;
-        }
-
-        // 4. Fetch the authenticated supplier profile
+        // 3. Fetch the authenticated supplier profile first
         const meResponse = await fetch('/api/auth/me', {
           cache: 'no-store',
         });
@@ -81,6 +70,19 @@ export function useAuth() {
 
         setUser(supplier);
 
+        // 4. Get the service the supplier registered for from their profile
+        const selectedService = supplier.registeredService || localStorage.getItem('gozolt-selected-service');
+
+        if (selectedService) {
+          localStorage.setItem('gozolt-selected-service', selectedService);
+        }
+
+        if (!selectedService) {
+          useSidebarStore.getState().setActiveModule(null);
+          router.push('/welcome');
+          return;
+        }
+
         // 5. Set the sidebar module and its dashboard route
         const sidebarStore = useSidebarStore.getState();
 
@@ -92,7 +94,8 @@ export function useAuth() {
             dashboardPath = '/dashboard';
             break;
 
-          case 'CAR_RENTAL':
+          case 'RENTAL':
+          case 'CAR_RENTAL': // Handling potential legacy values
             sidebarStore.setActiveModule('RENTAL');
             dashboardPath = '/car-rentals/dashboard';
             break;
@@ -109,7 +112,7 @@ export function useAuth() {
 
           default:
             sidebarStore.setActiveModule(null);
-            router.push('/');
+            router.push('/welcome');
             return;
         }
 
@@ -177,7 +180,7 @@ export function useAuth() {
       clearAuth();
 
       // Return to the four-service landing page
-      router.push('/');
+      router.push('/welcome');
     }
   }, [router, clearAuth]);
 

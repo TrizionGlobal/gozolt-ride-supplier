@@ -9,11 +9,12 @@ export default function WorkersPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="mb-8 flex items-start justify-between">
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Staff & Workers</h1>
-          <p className="text-[#A1A1AA] mt-1">Manage the staff members who handle bike handovers and returns.</p>
+          <p className="text-[#A1A1AA] mt-1">Manage the staff members assigned to quick services bookings.</p>
         </div>
         <button
           onClick={openAddWorkerModal}
@@ -25,7 +26,7 @@ export default function WorkersPage() {
       </div>
 
       <div className="rounded-xl border border-[#27272A] bg-[#111111] overflow-hidden">
-        <WorkersTab moduleType="BIKE_RENTAL" />
+        <WorkersTab moduleType="QUICK_SERVICES" />
       </div>
     </div>
   );

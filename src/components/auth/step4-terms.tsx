@@ -235,7 +235,7 @@ export function Step4Terms({ isLoading, onSubmit, onPrevious }: Step4Props) {
           <button
             type="button"
             onClick={onPrevious}
-            className="flex items-center gap-1.5 rounded-full border border-[#3F3F46] bg-[#1A1A1A] px-5 py-2 text-sm text-white transition-colors hover:border-[#52525B]"
+            className="flex items-center gap-1.5 rounded-full border border-[#3F3F46] bg-[#1A1A1A] px-5 py-2 text-sm text-white transition-colors hover:border-[#52525B] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-[#3F3F46]"
             disabled={isLoading}
           >
             <ArrowLeft className="h-3.5 w-3.5" />

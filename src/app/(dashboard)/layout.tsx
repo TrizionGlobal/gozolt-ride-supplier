@@ -43,9 +43,13 @@ export default function DashboardLayout({
       return;
     }
 
-    const selectedService = localStorage.getItem(
+    const selectedService = user.registeredService || localStorage.getItem(
       'gozolt-selected-service'
     );
+    
+    if (selectedService && selectedService !== localStorage.getItem('gozolt-selected-service')) {
+      localStorage.setItem('gozolt-selected-service', selectedService);
+    }
 
     const activeModule =
       useSidebarStore.getState().activeModule;
@@ -75,7 +79,7 @@ export default function DashboardLayout({
 
     // No service was selected
     if (!selectedService) {
-      router.replace('/');
+      router.replace('/welcome');
       return;
     }
 
@@ -87,21 +91,19 @@ export default function DashboardLayout({
      * 2. Without Subscription
      */
     if (selectedService === 'QUICK_SERVICES') {
+      const qsAccessMode = localStorage.getItem('quick-services-access-mode');
+      const hasChosenWithoutSub = qsAccessMode === 'WITHOUT_SUBSCRIPTION';
+
       if (
         !hasActiveSubscription &&
+        !hasChosenWithoutSub &&
         !isQuickServicesSubscriptionPage
       ) {
         router.replace('/quick-services/subscription');
         return;
       }
 
-      if (
-        hasActiveSubscription &&
-        isQuickServicesSubscriptionPage
-      ) {
-        router.replace('/quick-services/dashboard');
-        return;
-      }
+
     }
 
     /*
@@ -123,39 +125,7 @@ export default function DashboardLayout({
       return;
     }
 
-    // After completing the common subscription,
-    // open the selected service dashboard.
-    if (
-      selectedService !== 'QUICK_SERVICES' &&
-      hasActiveSubscription &&
-      isCommonSubscriptionPage
-    ) {
-      switch (selectedService) {
-        case 'CAB':
-          useSidebarStore
-            .getState()
-            .setActiveModule('CAB');
 
-          router.replace('/dashboard');
-          return;
-
-        case 'CAR_RENTAL':
-          useSidebarStore
-            .getState()
-            .setActiveModule('RENTAL');
-
-          router.replace('/car-rentals/dashboard');
-          return;
-
-        case 'BIKE_RENTAL':
-          useSidebarStore
-            .getState()
-            .setActiveModule('BIKE_RENTAL');
-
-          router.replace('/bike-rentals/dashboard');
-          return;
-      }
-    }
 
     // If the sidebar module was lost, restore it
     // from the selected service.

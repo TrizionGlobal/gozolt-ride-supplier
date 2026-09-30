@@ -44,6 +44,7 @@ export const ROUTES = {
   RENTAL_EARNINGS: '/earnings',
   QUICK_SERVICES_DASHBOARD: '/quick-services/dashboard',
   QUICK_SERVICES_BOOKING_MANAGEMENT: '/quick-services/booking-management',
+  QUICK_SERVICES_WORKERS: '/quick-services/workers',
   QUICK_SERVICES_ANALYTICS: '/quick-services/analytics',
 } as const;
 
@@ -51,6 +52,8 @@ export const SIDEBAR_ITEMS = [
 
   { label: 'Dashboard', href: ROUTES.QUICK_SERVICES_DASHBOARD, icon: LayoutDashboard, module: 'QUICK_SERVICES', },
   { label: 'Booking Management', href: ROUTES.QUICK_SERVICES_BOOKING_MANAGEMENT, icon: CalendarCheck, module: 'QUICK_SERVICES', },
+  { label: 'Staff & Workers', href: ROUTES.QUICK_SERVICES_WORKERS, icon: Users, module: 'QUICK_SERVICES', },
+  { label: 'Payments & Settlements', href: '/quick-services/payouts', icon: Wallet, module: 'QUICK_SERVICES', },
   { label: 'Analytics', href: ROUTES.QUICK_SERVICES_ANALYTICS, icon: BarChart3, module: 'QUICK_SERVICES',},
 
   { label: 'Dashboard', href: ROUTES.DASHBOARD, icon: LayoutDashboard, module: 'CAB' },
@@ -58,17 +61,21 @@ export const SIDEBAR_ITEMS = [
   { label: 'Car rentals history', href: ROUTES.CAR_RENTALS, icon: Key, module: 'RENTAL' },
   { label: 'Fleet', href: '/car-rentals/fleet', icon: Truck, module: 'RENTAL' },
   { label: 'Booking Management', href: '/car-rentals/bookings', icon: CalendarCheck, module: 'RENTAL' },
+  { label: 'Payments & Settlements', href: '/car-rentals/payouts', icon: Wallet, module: 'RENTAL' },
   { label: 'Reviews & Ratings', href: '/car-rentals/reviews', icon: Star, module: 'RENTAL' },
   
   { label: 'Dashboard', href: '/bike-rentals/dashboard', icon: LayoutDashboard, module: 'BIKE_RENTAL' },
   { label: 'Bike rentals history', href: ROUTES.BIKE_RENTALS, icon: Key, module: 'BIKE_RENTAL' },
   { label: 'Fleet', href: '/bike-rentals/fleet', icon: Truck, module: 'BIKE_RENTAL' },
   { label: 'Booking Management', href: '/bike-rentals/bookings', icon: CalendarCheck, module: 'BIKE_RENTAL' },
+  { label: 'Payments & Settlements', href: '/bike-rentals/payouts', icon: Wallet, module: 'BIKE_RENTAL' },
   { label: 'Reviews & Ratings', href: '/bike-rentals/reviews', icon: Star, module: 'BIKE_RENTAL' },
+
   { label: 'Fleet', href: ROUTES.FLEET, icon: Truck, module: 'CAB' },
   { label: 'My Fleet Drivers', href: ROUTES.DRIVERS, icon: Users, module: 'CAB' },
   { label: 'Find New Drivers', href: ROUTES.NEW_DRIVERS, icon: Users, module: 'CAB' },
   { label: 'Driver Settlements', href: ROUTES.DRIVER_SETTLEMENTS, icon: Wallet, module: 'CAB' },
+  { label: 'Payments & Settlements', href: ROUTES.PAYOUTS, icon: Banknote, module: 'CAB' },
   { label: 'Rides', href: ROUTES.RIDES, icon: Navigation, module: 'CAB' },
   { label: 'GPS Tracking', href: ROUTES.GPS_TRACKING, icon: MapPin, module: 'CAB' },
   { label: 'Documents', href: ROUTES.DOCUMENTS, icon: FileText, module: 'CAB' },

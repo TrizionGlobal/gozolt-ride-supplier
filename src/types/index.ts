@@ -146,6 +146,7 @@ export interface SupplierProfile {
   postalCode?: string | null;
   logoUrl?: string | null;
   editBankDetails?: boolean;
+  registeredService?: string | null;
   createdAt: string;
 }
 

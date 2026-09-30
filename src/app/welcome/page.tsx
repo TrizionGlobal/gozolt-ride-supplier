@@ -10,6 +10,7 @@ export default function Home() {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useAuthStore } from '@/stores/auth.store';
 
 type SupplierService =
   | 'CAB'
@@ -58,6 +59,18 @@ export default function HomePage() {
       setMode('register');
     }
   }, []);
+
+  const { isAuthenticated, user, isLoading } = useAuthStore();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      const service = user.registeredService;
+      if (service === 'CAB') router.push('/dashboard');
+      else if (service === 'CAR_RENTAL' || service === 'RENTAL') router.push('/car-rentals/dashboard');
+      else if (service === 'BIKE_RENTAL') router.push('/bike-rentals/dashboard');
+      else if (service === 'QUICK_SERVICES') router.push('/quick-services/dashboard');
+    }
+  }, [isAuthenticated, isLoading, user, router]);
 
   const selectService = (service: SupplierService) => {
     localStorage.removeItem('gozolt-selected-quick-services');

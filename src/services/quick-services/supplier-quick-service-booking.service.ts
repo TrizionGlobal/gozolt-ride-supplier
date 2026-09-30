@@ -54,10 +54,25 @@ export const supplierQuickServiceBookingService = {
     );
 
     const responseData = response.data;
-    const bookings =
+    const rawBookings =
       responseData?.data ??
       responseData?.bookings ??
       [];
+
+    const bookings = rawBookings.map((booking: any) => ({
+      ...booking,
+      bookingReference: booking.bookingReference || booking.id.split('-')[0].toUpperCase(),
+      customer: booking.customer || {
+        id: booking.user?.id || booking.userId || '',
+        name: booking.userName || (booking.user ? `${booking.user.firstName} ${booking.user.lastName}`.trim() : 'Unknown'),
+        mobile: booking.userPhone || booking.user?.phone || 'Unknown',
+        email: booking.userEmail || booking.user?.email,
+      },
+      categoryName: booking.categoryName || booking.serviceCategory || 'Unknown Category',
+      childService: booking.childService || booking.serviceTitle || null,
+      serviceAddress: booking.serviceAddress || booking.location || 'Unknown Location',
+      scheduledAt: booking.scheduledAt || booking.bookingDate || booking.createdAt,
+    }));
 
     return {
       bookings,

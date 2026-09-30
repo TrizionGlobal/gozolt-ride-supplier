@@ -5,24 +5,37 @@ import type { FinancialKPIs, PerDriverEarning, PayoutRecord, RevenueTrendPoint, 
 
 
 export const financialService = {
-  async getFinancialKPIs(from?: string, to?: string): Promise<FinancialKPIs> {
+  async getFinancialKPIs(from?: string, to?: string, module?: string): Promise<FinancialKPIs> {
     try {
       const params: any = {};
       if (from) params.from = from;
       if (to) params.to = to;
+      if (module) params.module = module;
 
       const [analyticsRes, profileRes, payoutsRes] = await Promise.all([
         apiClient.get('/suppliers/analytics', { params }),
         apiClient.get('/suppliers/me'),
-        apiClient.get('/suppliers/payouts', { params: { page: 1, limit: 100 } }),
+        apiClient.get('/suppliers/payouts', { params: { page: 1, limit: 100, module } }),
       ]);
 
       const analytics = analyticsRes.data;
       const profile = profileRes.data;
       const payouts = payoutsRes.data.data || payoutsRes.data;
 
-      const grossRevenue = analytics.totalGrossRevenue || analytics.totalRevenue || 0;
-      const netRevenue = analytics.totalNetRevenue || analytics.totalRevenue || 0;
+      let bd = analytics.breakdown || {};
+      if (module === 'CAB') {
+        bd = { cab: bd.cab };
+      } else if (module === 'RENTAL') {
+        bd = { carRental: bd.carRental };
+      } else if (module === 'BIKE_RENTAL') {
+        bd = { bikeRental: bd.bikeRental };
+      } else if (module === 'QUICK_SERVICES') {
+        bd = { quickServices: bd.quickServices };
+      }
+
+      const grossRevenue = (bd.cab?.totalEarned || 0) + (bd.carRental?.totalEarned || 0) + (bd.bikeRental?.totalEarned || 0) + (bd.quickServices?.totalEarned || 0);
+      const netRevenue = (bd.cab?.netAmount || 0) + (bd.carRental?.netAmount || 0) + (bd.bikeRental?.netAmount || 0) + (bd.quickServices?.netAmount || 0);
+
       const commissionRate = profile.defaultDriverCommission || 0;
       const commissionAmount = grossRevenue - netRevenue;
       const pendingPayout = payouts
@@ -35,9 +48,8 @@ export const financialService = {
 
       const tipEarnings = analytics.tipEarnings || 0;
       
-      const bd = analytics.breakdown || {};
-      const totalRefunds = (bd.cab?.refunds || 0) + (bd.carRental?.refunds || 0) + (bd.bikeRental?.refunds || 0);
-      const totalCancellations = (bd.cab?.cancellations || 0) + (bd.carRental?.cancellations || 0) + (bd.bikeRental?.cancellations || 0);
+      const totalRefunds = (bd.cab?.refunds || 0) + (bd.carRental?.refunds || 0) + (bd.bikeRental?.refunds || 0) + (bd.quickServices?.refunds || 0);
+      const totalCancellations = (bd.cab?.cancellations || 0) + (bd.carRental?.cancellations || 0) + (bd.bikeRental?.cancellations || 0) + (bd.quickServices?.cancellations || 0);
 
       return { 
         grossRevenue, 
@@ -49,7 +61,7 @@ export const financialService = {
         totalRefunds,
         totalCancellations,
         tipEarnings,
-        breakdown: analytics.breakdown,
+        breakdown: bd,
         activeModules: {
           cab: profile.isCabActive ?? false,
           carRental: profile.isCarRentalActive ?? false,
@@ -128,23 +140,27 @@ export const financialService = {
     }
   },
 
-  async getPayoutHistory(): Promise<PayoutRecord[]> {    try {
+  async getPayoutHistory(module?: string, page = 1, limit = 10): Promise<{ data: PayoutRecord[], meta: { total: number } }> {    try {
       const res = await apiClient.get('/suppliers/payouts', {
-        params: { page: 1, limit: 10, sortBy: 'createdAt', order: 'desc' },
+        params: { page, limit, sortBy: 'createdAt', order: 'desc', module },
       });
       const payouts = res.data.data || res.data;
-      return payouts.map((p: PayoutRecord) => ({
-        id: p.id,
-        amount: p.amount,
-        status: p.status,
-        periodStart: p.periodStart,
-        periodEnd: p.periodEnd,
-        processedAt: p.processedAt,
-        createdAt: p.createdAt,
-        details: p.details,
-      }));
+      const total = res.data.meta?.total || payouts.length;
+      return {
+        data: payouts.map((p: PayoutRecord) => ({
+          id: p.id,
+          amount: p.amount,
+          status: p.status,
+          periodStart: p.periodStart,
+          periodEnd: p.periodEnd,
+          processedAt: p.processedAt,
+          createdAt: p.createdAt,
+          details: p.details,
+        })),
+        meta: { total }
+      };
     } catch {
-      return [];
+      return { data: [], meta: { total: 0 } };
     }
   },
 

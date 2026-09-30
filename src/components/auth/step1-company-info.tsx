@@ -12,6 +12,12 @@ import { Check, X } from 'lucide-react';
 import { Upload, Image } from 'antd';
 import { ImageCropperModal } from '@/components/ui/image-cropper-modal';
 import { toast } from 'sonner';
+import dynamic from 'next/dynamic';
+
+const LocationPicker = dynamic(() => import('@/components/settings/location-picker'), {
+  ssr: false,
+  loading: () => <div className="h-[300px] w-full rounded-lg bg-[#27272A] animate-pulse flex items-center justify-center text-[#A1A1AA]">Loading Map...</div>
+});
 
 const step1Schema = z
   .object({
@@ -25,6 +31,14 @@ const step1Schema = z
     contactPhone: z.string().min(1, 'Mobile number is required'),
     address: z.string().min(1, 'Business address is required'),
     city: z.string().min(1, 'City is required'),
+    country: z.string().min(1, 'Country is required'),
+    postalCode: z.string().min(1, 'Postal Code is required'),
+    defaultDriverCommission: z.preprocess(
+      (val) => Number(val),
+      z.number().min(0).max(100)
+    ).optional(),
+    latitude: z.number().nullable().optional(),
+    longitude: z.number().nullable().optional(),
     password: z
       .string()
       .min(8, 'Password must be at least 8 characters')
@@ -44,9 +58,10 @@ export type Step1FormData = z.infer<typeof step1Schema>;
 interface Step1Props {
   defaultValues: Partial<Step1FormData>;
   onNext: (data: Step1FormData) => void;
+  selectedService?: string | null;
 }
 
-export function Step1CompanyInfo({ defaultValues, onNext }: Step1Props) {
+export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Step1Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -84,7 +99,7 @@ export function Step1CompanyInfo({ defaultValues, onNext }: Step1Props) {
   };
 
   const inputClassName =
-    'h-10 rounded-lg border-[#27272A] bg-[#0A0A0A] text-white placeholder:text-[#71717A] focus-visible:border-[#FACC15] focus-visible:ring-[#FACC15]/20 text-sm';
+    'h-10 rounded-lg border-[#27272A] bg-[#0A0A0A] text-white placeholder:text-[#71717A] placeholder:normal-case focus-visible:border-[#FACC15] focus-visible:ring-[#FACC15]/20 text-sm';
 
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#0F0F0F] p-6">
@@ -147,14 +162,14 @@ export function Step1CompanyInfo({ defaultValues, onNext }: Step1Props) {
             <label className="mb-1.5 block text-xs text-white">
               Company Name<span className="text-[#FACC15]">*</span>
             </label>
-            <Input placeholder="Enter Company Name" className={inputClassName} {...register('companyName')} />
+            <Input placeholder="Enter Company Name" className={`${inputClassName} capitalize`} {...register('companyName')} />
             {errors.companyName && <p className="mt-1 text-xs text-red-500">{errors.companyName.message}</p>}
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-white">
               Registration Number<span className="text-[#FACC15]">*</span>
             </label>
-            <Input placeholder="Enter Registration Number" className={inputClassName} {...register('registrationNo')} />
+            <Input placeholder="Enter Registration Number" className={`${inputClassName} uppercase`} {...register('registrationNo')} />
             {errors.registrationNo && <p className="mt-1 text-xs text-red-500">{errors.registrationNo.message}</p>}
           </div>
         </div>
@@ -164,14 +179,14 @@ export function Step1CompanyInfo({ defaultValues, onNext }: Step1Props) {
             <label className="mb-1.5 block text-xs text-white">
               VAT Number
             </label>
-            <Input placeholder="Enter VAT Number" className={inputClassName} {...register('vatNumber')} />
+            <Input placeholder="Enter VAT Number" className={`${inputClassName} uppercase`} {...register('vatNumber')} />
             {errors.vatNumber && <p className="mt-1 text-xs text-red-500">{errors.vatNumber.message}</p>}
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-white">
               TIN Number<span className="text-[#FACC15]">*</span>
             </label>
-            <Input placeholder="Enter TIN Number" className={inputClassName} {...register('tinNumber')} />
+            <Input placeholder="Enter TIN Number" className={`${inputClassName} uppercase`} {...register('tinNumber')} />
             {errors.tinNumber && <p className="mt-1 text-xs text-red-500">{errors.tinNumber.message}</p>}
           </div>
         </div>
@@ -180,7 +195,7 @@ export function Step1CompanyInfo({ defaultValues, onNext }: Step1Props) {
           <label className="mb-1.5 block text-xs text-white">
             Owner / Authorized Person Name<span className="text-[#FACC15]">*</span>
           </label>
-          <Input placeholder="Enter Full Name" className={inputClassName} {...register('ownerName')} />
+          <Input placeholder="Enter Full Name" className={`${inputClassName} capitalize`} {...register('ownerName')} />
           {errors.ownerName && <p className="mt-1 text-xs text-red-500">{errors.ownerName.message}</p>}
         </div>
 
@@ -216,17 +231,69 @@ export function Step1CompanyInfo({ defaultValues, onNext }: Step1Props) {
             <label className="mb-1.5 block text-xs text-white">
               Business Address<span className="text-[#FACC15]">*</span>
             </label>
-            <Input placeholder="Enter Full Address" className={inputClassName} {...register('address')} />
+            <Input placeholder="Enter Full Address" className={`${inputClassName} capitalize`} {...register('address')} />
             {errors.address && <p className="mt-1 text-xs text-red-500">{errors.address.message}</p>}
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-white">
               City<span className="text-[#FACC15]">*</span>
             </label>
-            <Input placeholder="Enter City" className={inputClassName} {...register('city')} />
+            <Input placeholder="Enter City" className={`${inputClassName} capitalize`} {...register('city')} />
             {errors.city && <p className="mt-1 text-xs text-red-500">{errors.city.message}</p>}
           </div>
         </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="mb-1.5 block text-xs text-white">
+              Country<span className="text-[#FACC15]">*</span>
+            </label>
+            <Input placeholder="Enter Country" className={`${inputClassName} capitalize`} {...register('country')} />
+            {errors.country && <p className="mt-1 text-xs text-red-500">{errors.country.message}</p>}
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs text-white">
+              Postal Code<span className="text-[#FACC15]">*</span>
+            </label>
+            <Input placeholder="Enter Postal Code" className={`${inputClassName} uppercase`} {...register('postalCode')} />
+            {errors.postalCode && <p className="mt-1 text-xs text-red-500">{errors.postalCode.message}</p>}
+          </div>
+        </div>
+
+        {selectedService === 'CAB' && (
+          <div>
+            <label className="mb-1.5 block text-xs text-white">
+              Company Percentage (%)
+            </label>
+            <Input 
+              type="number" 
+              placeholder="Enter Company Commission %" 
+              className={inputClassName} 
+              {...register('defaultDriverCommission', { valueAsNumber: true })} 
+              min={0}
+              max={100}
+            />
+            {errors.defaultDriverCommission && <p className="mt-1 text-xs text-red-500">{errors.defaultDriverCommission.message}</p>}
+          </div>
+        )}
+
+        {(selectedService === 'CAR_RENTAL' || selectedService === 'BIKE_RENTAL') && (
+          <div className="mt-4">
+            <label className="mb-2 block text-xs text-white">
+              Company Map Location (Pinpoint for Distance Calculation)
+            </label>
+            <div className="border border-[#27272A] rounded-lg overflow-hidden">
+              <LocationPicker
+                latitude={watch('latitude') || null}
+                longitude={watch('longitude') || null}
+                onChange={(lat, lng) => {
+                  setValue('latitude', lat, { shouldValidate: true });
+                  setValue('longitude', lng, { shouldValidate: true });
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-4">
           <div>

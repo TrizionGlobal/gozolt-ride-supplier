@@ -48,8 +48,8 @@ export default function PayoutsPage() {
     setIsLoading(true);
     try {
       const [payoutsData, kpiData] = await Promise.all([
-        financialService.getPayoutHistory('CAB', page, limit),
-        financialService.getFinancialKPIs(undefined, undefined, 'CAB')
+        financialService.getPayoutHistory('RENTAL', page, limit),
+        financialService.getFinancialKPIs(undefined, undefined, 'RENTAL')
       ]);
       setPayouts(payoutsData.data);
       setTotal(payoutsData.meta.total);
@@ -92,7 +92,7 @@ export default function PayoutsPage() {
     { name: 'Quick Services', id: 'QUICK_SERVICES', icon: Wrench, iconColor: 'bg-green-500/10 text-green-500', accentColor: 'border-green-500/40', data: kpis?.breakdown?.quickServices },
   ];
 
-  const services = allServices.filter(s => s.id === 'CAB');
+  const services = allServices.filter(s => s.id === 'RENTAL');
 
   return (
     <div className="space-y-8">
@@ -134,7 +134,7 @@ export default function PayoutsPage() {
           page={page}
           limit={limit}
           total={total}
-          serviceName="Cab Bookings"
+          serviceName="Car Rentals"
           onPageChange={setPage}
           onLimitChange={setLimit}
         />

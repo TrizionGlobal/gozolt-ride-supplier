@@ -11,6 +11,7 @@ import { Step3BankInfo, type Step3FormData } from '@/components/auth/step3-bank-
 import { Step4Terms } from '@/components/auth/step4-terms';
 import { RegistrationComplete } from '@/components/auth/registration-complete';
 import { supplierRegister } from '@/services/auth/auth.service';
+import { useAuthStore } from '@/stores/auth.store';
 import { isSupplierService, SUPPLIER_SERVICE_NAMES, type SupplierService } from '@/types/supplier-service';
 
 const REGISTRATION_STEPS = [
@@ -32,6 +33,11 @@ const defaultStep1: Partial<Step1FormData> = {
   contactPhone: '',
   address: '',
   city: '',
+  country: '',
+  postalCode: '',
+  defaultDriverCommission: 0,
+  latitude: null,
+  longitude: null,
   password: '',
   confirmPassword: '',
 };
@@ -72,6 +78,18 @@ export default function RegisterPage() {
     localStorage.setItem('gozolt-selected-service', service);
     setSelectedService(service);
   }, [router]);
+
+  const { isAuthenticated, user, isLoading: isAuthLoading } = useAuthStore();
+
+  useEffect(() => {
+    if (!isAuthLoading && isAuthenticated && user) {
+      const service = user.registeredService;
+      if (service === 'CAB') router.push('/dashboard');
+      else if (service === 'CAR_RENTAL' || service === 'RENTAL') router.push('/car-rentals/dashboard');
+      else if (service === 'BIKE_RENTAL') router.push('/bike-rentals/dashboard');
+      else if (service === 'QUICK_SERVICES') router.push('/quick-services/dashboard');
+    }
+  }, [isAuthenticated, isAuthLoading, user, router]);
 
   // Step 1 state
   const [step1Data, setStep1Data] = useState<Partial<Step1FormData>>(defaultStep1);
@@ -211,7 +229,7 @@ export default function RegisterPage() {
           <RegistrationStepper currentStep={currentStep} steps={REGISTRATION_STEPS} />
 
           {currentStep === 1 && (
-            <Step1CompanyInfo defaultValues={step1Data} onNext={handleStep1Next} />
+            <Step1CompanyInfo defaultValues={step1Data} onNext={handleStep1Next} selectedService={selectedService} />
           )}
 
           {currentStep === 2 && (

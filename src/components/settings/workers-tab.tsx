@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 
 const MySwal = withReactContent(Swal);
 
-export function WorkersTab() {
+export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
   const [workers, setWorkers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -27,7 +27,12 @@ export function WorkersTab() {
   const fetchWorkers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get(`/car-rentals/supplier/workers?page=${page}&limit=${limit}`);
+      const endpoint = moduleType === 'QUICK_SERVICES'
+        ? '/quick-services/supplier/workers'
+        : moduleType === 'BIKE_RENTAL'
+          ? '/bike-rentals/supplier/workers'
+          : '/car-rentals/supplier/workers';
+      const res = await apiClient.get(`${endpoint}?page=${page}&limit=${limit}`);
       const items = res.data?.data || res.data || [];
       const newTotal = res.data?.meta?.total || items.length;
 
@@ -49,7 +54,12 @@ export function WorkersTab() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await apiClient.post('/car-rentals/supplier/workers', newWorker);
+      const endpoint = moduleType === 'QUICK_SERVICES'
+        ? '/quick-services/supplier/workers'
+        : moduleType === 'BIKE_RENTAL'
+          ? '/bike-rentals/supplier/workers'
+          : '/car-rentals/supplier/workers';
+      await apiClient.post(endpoint, newWorker);
       setNewWorker({ name: '', email: '', phone: '' });
       setIsAddModalOpen(false);
       toast.success('Worker added successfully');
@@ -66,7 +76,12 @@ export function WorkersTab() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await apiClient.put(`/car-rentals/supplier/workers/${currentWorker.id}`, currentWorker);
+      const endpoint = moduleType === 'QUICK_SERVICES'
+        ? '/quick-services/supplier/workers'
+        : moduleType === 'BIKE_RENTAL'
+          ? '/bike-rentals/supplier/workers'
+          : '/car-rentals/supplier/workers';
+      await apiClient.put(`${endpoint}/${currentWorker.id}`, currentWorker);
       setIsEditModalOpen(false);
       toast.success('Worker updated successfully');
       fetchWorkers();
@@ -129,7 +144,12 @@ export function WorkersTab() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          await apiClient.delete(`/car-rentals/supplier/workers/${id}`);
+          const endpoint = moduleType === 'QUICK_SERVICES'
+            ? '/quick-services/supplier/workers'
+            : moduleType === 'BIKE_RENTAL'
+              ? '/bike-rentals/supplier/workers'
+              : '/car-rentals/supplier/workers';
+          await apiClient.delete(`${endpoint}/${id}`);
           toast.success('Worker removed successfully');
           if (workers.length === 1 && page > 1) {
             setPage(page - 1);
@@ -195,7 +215,7 @@ export function WorkersTab() {
       title: 'Status',
       render: (worker) => {
         const hasTasks = (worker.tasks?.length > 0) || (worker.bikeTasks?.length > 0);
-        
+
         if (hasTasks) {
           return (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2 py-1 text-xs font-medium text-blue-500 border border-blue-500/20">
@@ -267,7 +287,7 @@ export function WorkersTab() {
                   value={newWorker.name}
                   onChange={(e) => setNewWorker({ ...newWorker, name: e.target.value })}
                   className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none focus:border-[#FACC15]"
-                  placeholder="e.g. John Doe"
+                  placeholder="Enter Name"
                 />
               </div>
               <div>
@@ -278,14 +298,14 @@ export function WorkersTab() {
                   value={newWorker.email}
                   onChange={(e) => setNewWorker({ ...newWorker, email: e.target.value })}
                   className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none focus:border-[#FACC15]"
-                  placeholder="john@example.com"
+                  placeholder="Enter Email Address"
                 />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-400">Phone Number (Optional)</label>
                 <input
                   type="tel"
-                  placeholder="Enter your number"
+                  placeholder="Enter Phone Number"
                   value={newWorker.phone}
                   onChange={(e) => setNewWorker({ ...newWorker, phone: e.target.value })}
                   className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none focus:border-[#FACC15]"

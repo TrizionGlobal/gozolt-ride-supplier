@@ -63,7 +63,7 @@ export function ServerSideTable<T extends Record<string, any>>({
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`${cellPadding} text-xs font-medium uppercase text-[#71717A] whitespace-nowrap ${col.className || ''}`}
+                  className={`${cellPadding} text-xs font-medium capitalize text-[#71717A] whitespace-nowrap ${col.className || ''}`}
                 >
                   {col.title}
                 </th>

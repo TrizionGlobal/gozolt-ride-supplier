@@ -172,8 +172,11 @@ export function CompanyProfileTab() {
     { label: 'City', key: 'city' },
     { label: 'Country', key: 'country' },
     { label: 'Postal Code', key: 'postalCode' },
-    { label: 'Company Percentage (%)', key: 'defaultDriverCommission', type: 'number' },
   ];
+
+  if (user?.registeredService === 'CAB') {
+    fields.push({ label: 'Company Percentage (%)', key: 'defaultDriverCommission', type: 'number' });
+  }
 
   return (
     <div>
@@ -259,7 +262,10 @@ export function CompanyProfileTab() {
                 value={form[key] as string | number}
                 placeholder={`Enter ${label}`}
                 onChange={(e) => handleChange(key, e.target.value)}
-                className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15] transition-colors"
+                className={`w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white placeholder-[#52525B] placeholder:normal-case outline-none focus:border-[#FACC15] transition-colors ${
+                  ['companyName', 'address', 'city', 'country'].includes(key) ? 'capitalize' : 
+                  ['registrationNumber', 'vatNumber', 'postalCode'].includes(key) ? 'uppercase' : ''
+                }`}
                 disabled={key === 'email'}
                 min={type === 'number' ? 0 : undefined}
                 max={type === 'number' ? 100 : undefined}
@@ -270,19 +276,21 @@ export function CompanyProfileTab() {
       </div>
 
 
-      <div className="mt-8">
-        <label className="mb-2 block text-sm font-medium text-[#A1A1AA]">
-          Company Map Location (Pinpoint for Distance Calculation)
-        </label>
-        <LocationPicker
-          latitude={form.latitude}
-          longitude={form.longitude}
-          onChange={(lat, lng) => {
-            handleChange('latitude', lat);
-            handleChange('longitude', lng);
-          }}
-        />
-      </div>
+      {(user?.registeredService === 'CAR_RENTAL' || user?.registeredService === 'RENTAL' || user?.registeredService === 'BIKE_RENTAL') && (
+        <div className="mt-8">
+          <label className="mb-2 block text-sm font-medium text-[#A1A1AA]">
+            Company Map Location (Pinpoint for Distance Calculation)
+          </label>
+          <LocationPicker
+            latitude={form.latitude}
+            longitude={form.longitude}
+            onChange={(lat, lng) => {
+              handleChange('latitude', lat);
+              handleChange('longitude', lng);
+            }}
+          />
+        </div>
+      )}
 
       <div className="mt-8 flex justify-end">
         <button

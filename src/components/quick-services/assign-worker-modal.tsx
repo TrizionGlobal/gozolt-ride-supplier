@@ -1,27 +1,30 @@
 import { useState, useEffect } from 'react';
-import { useAuthStore } from '@/stores/auth.store';
 import { Mail } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 interface Props {
   bookingId: string;
-  taskType: 'HANDOVER' | 'RETURN';
   onClose: () => void;
   onAssigned: () => void;
 }
 
-export function AssignWorkerModal({ bookingId, taskType, onClose, onAssigned }: Props) {
+export function AssignWorkerModal({ bookingId, onClose, onAssigned }: Props) {
   const [workers, setWorkers] = useState<any[]>([]);
   const [selectedWorkerId, setSelectedWorkerId] = useState('');
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
-    apiClient.get('/bike-rentals/supplier/workers')
+    apiClient.get('/quick-services/supplier/workers')
       .then(res => {
         const workersArray = res.data.data || [];
         setWorkers(workersArray);
         if (workersArray.length > 0) setSelectedWorkerId(workersArray[0].id);
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error('Failed to load workers');
       })
       .finally(() => setLoading(false));
   }, []);
@@ -30,15 +33,15 @@ export function AssignWorkerModal({ bookingId, taskType, onClose, onAssigned }: 
     e.preventDefault();
     setAssigning(true);
     try {
-      await apiClient.post(`/bike-rentals/supplier/bookings/${bookingId}/assign-task`, { 
-        workerId: selectedWorkerId, 
-        taskType,
+      await apiClient.post(`/quick-services/supplier/bookings/${bookingId}/assign-task`, { 
+        workerId: selectedWorkerId,
         magicLinkBaseUrl: window.location.origin
       });
+      toast.success('Worker assigned successfully and magic link sent!');
       onAssigned();
     } catch (err) {
       console.error(err);
-      alert('Failed to assign task');
+      toast.error('Failed to assign task');
     } finally {
       setAssigning(false);
     }
@@ -49,7 +52,7 @@ export function AssignWorkerModal({ bookingId, taskType, onClose, onAssigned }: 
       <div className="w-full max-w-md rounded-xl border border-[#27272A] bg-[#111111] p-6 shadow-2xl">
         <h3 className="mb-4 text-xl font-bold text-white">Assign to Worker</h3>
         <p className="text-sm text-gray-400 mb-6">
-          Select a worker to handle this {taskType.toLowerCase()}. An email with a Magic Link will be sent to them.
+          Select a worker to handle this service booking. An email with a Magic Link will be sent to them.
         </p>
 
         {loading ? (

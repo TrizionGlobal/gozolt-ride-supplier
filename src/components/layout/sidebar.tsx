@@ -15,7 +15,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { isCollapsed, toggle, activeModule, setActiveModule } = useSidebarStore();
   const { logout } = useAuth();
-  
+
   const [source, setSource] = useState<string | null>(null);
 
   useEffect(() => {
@@ -79,27 +79,27 @@ export function Sidebar() {
           // Prevent "Car Rentals" or "Bike Rentals" from being active when in its distinct sub-modules
           if (
             (item.href === ROUTES.CAR_RENTALS &&
-            (pathname.startsWith('/car-rentals/dashboard') ||
-             pathname.startsWith('/car-rentals/fleet') ||
-             pathname.startsWith('/car-rentals/reviews') ||
-             pathname.startsWith('/car-rentals/workers') ||
-             pathname.startsWith('/car-rentals/bookings') ||
-             pathname.startsWith('/car-rentals/payouts') ||
-             pathname.startsWith('/car-rentals/operational') ||
-             pathname === '/car-rentals/new' ||
-             pathname.match(/^\/car-rentals\/[a-zA-Z0-9-]+\/edit$/) ||
-             (isBookingSubPage && source === 'bookings'))) ||
+              (pathname.startsWith('/car-rentals/dashboard') ||
+                pathname.startsWith('/car-rentals/fleet') ||
+                pathname.startsWith('/car-rentals/reviews') ||
+                pathname.startsWith('/car-rentals/workers') ||
+                pathname.startsWith('/car-rentals/bookings') ||
+                pathname.startsWith('/car-rentals/payouts') ||
+                pathname.startsWith('/car-rentals/operational') ||
+                pathname === '/car-rentals/new' ||
+                pathname.match(/^\/car-rentals\/[a-zA-Z0-9-]+\/edit$/) ||
+                (isBookingSubPage && source === 'bookings'))) ||
             (item.href === ROUTES.BIKE_RENTALS &&
-            (pathname.startsWith('/bike-rentals/dashboard') ||
-             pathname.startsWith('/bike-rentals/fleet') ||
-             pathname.startsWith('/bike-rentals/reviews') ||
-             pathname.startsWith('/bike-rentals/workers') ||
-             pathname.startsWith('/bike-rentals/bookings') ||
-             pathname.startsWith('/bike-rentals/payouts') ||
-             pathname.startsWith('/bike-rentals/operational') ||
-             pathname === '/bike-rentals/new' ||
-             pathname.match(/^\/bike-rentals\/[a-zA-Z0-9-]+\/edit$/) ||
-             (isBookingSubPage && source === 'bookings')))
+              (pathname.startsWith('/bike-rentals/dashboard') ||
+                pathname.startsWith('/bike-rentals/fleet') ||
+                pathname.startsWith('/bike-rentals/reviews') ||
+                pathname.startsWith('/bike-rentals/workers') ||
+                pathname.startsWith('/bike-rentals/bookings') ||
+                pathname.startsWith('/bike-rentals/payouts') ||
+                pathname.startsWith('/bike-rentals/operational') ||
+                pathname === '/bike-rentals/new' ||
+                pathname.match(/^\/bike-rentals\/[a-zA-Z0-9-]+\/edit$/) ||
+                (isBookingSubPage && source === 'bookings')))
           ) {
             isActive = false;
           }
@@ -110,7 +110,7 @@ export function Sidebar() {
 
           // Make "Fleet" active for new vehicle and edit vehicle pages
           if ((item.href === '/car-rentals/fleet' && (pathname === '/car-rentals/new' || pathname.match(/^\/car-rentals\/[a-zA-Z0-9-]+\/edit$/))) ||
-              (item.href === '/bike-rentals/fleet' && (pathname === '/bike-rentals/new' || pathname.match(/^\/bike-rentals\/[a-zA-Z0-9-]+\/edit$/)))) {
+            (item.href === '/bike-rentals/fleet' && (pathname === '/bike-rentals/new' || pathname.match(/^\/bike-rentals\/[a-zA-Z0-9-]+\/edit$/)))) {
             isActive = true;
           }
 
@@ -144,22 +144,6 @@ export function Sidebar() {
       </nav>
 
 
-
-      {/* Switch Module Button */}
-      <div className={cn("px-3 pb-3", isCollapsed && "flex justify-center")}>
-        <Link 
-          href="/module-selection" 
-          onClick={() => setActiveModule(null)}
-          className={cn(
-            "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-[#71717A] transition-colors hover:bg-[#1A1A1A] hover:text-[#FACC15]",
-            isCollapsed && "px-2 justify-center"
-          )}
-          title={isCollapsed ? "Switch Module" : undefined}
-        >
-          <ArrowLeftRight className="h-5 w-5 shrink-0" />
-          {!isCollapsed && <span>Switch Module</span>}
-        </Link>
-      </div>
 
       {/* Footer */}
       <div className={cn("border-t border-[#27272A] px-4 py-3", isCollapsed && "px-2")}>

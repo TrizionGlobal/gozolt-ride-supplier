@@ -6,7 +6,7 @@ import {
   useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Step5Payment } from '@/components/auth/step5-payment';
@@ -170,37 +170,18 @@ export default function SubscriptionPage() {
    * Quick Services has a separate subscription page.
    */
   useEffect(() => {
-    const urlParams = new URLSearchParams(
-      window.location.search
-    );
+    const activeModule = useSidebarStore.getState().activeModule;
+    
+    // Map activeModule to SupplierService (activeModule uses RENTAL, SupplierService uses CAR_RENTAL)
+    let service: SupplierService | null = null;
+    if (activeModule === 'CAB') service = 'CAB';
+    if (activeModule === 'RENTAL') service = 'CAR_RENTAL';
+    if (activeModule === 'BIKE_RENTAL') service = 'BIKE_RENTAL';
 
-    const serviceFromUrl =
-      urlParams.get('service');
-
-    const savedService =
-      localStorage.getItem(
-        'gozolt-selected-service'
-      );
-
-    const service =
-      isSupplierService(serviceFromUrl)
-        ? serviceFromUrl
-        : isSupplierService(savedService)
-          ? savedService
-          : null;
-
-    if (
-      !service ||
-      service === 'QUICK_SERVICES'
-    ) {
+    if (!service) {
       router.replace('/');
       return;
     }
-
-    localStorage.setItem(
-      'gozolt-selected-service',
-      service
-    );
 
     setSelectedService(service);
   }, [router]);
@@ -435,27 +416,13 @@ export default function SubscriptionPage() {
       try {
         await subscriptionService.cancelSubscription();
 
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-        });
-
-        clearAuth();
-
-        localStorage.removeItem(
-          'gozolt-selected-service'
-        );
-
-        useSidebarStore
-          .getState()
-          .setActiveModule(null);
+        await hydrateFromSession();
 
         setShowCancelDialog(false);
 
         toast.success(
           'Subscription cancelled successfully.'
         );
-
-        router.push('/');
       } catch (error: unknown) {
         let message =
           'Failed to cancel subscription';
@@ -541,7 +508,17 @@ export default function SubscriptionPage() {
     <div className="space-y-6">
       {/* Subscription header */}
       <div className="flex items-center justify-between gap-4">
-        <div>
+        <div className="flex items-start gap-4">
+          {subscription && !isExpired && (
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="mt-1 flex shrink-0 items-center justify-center rounded-full bg-white/5 p-2 text-[#A1A1AA] transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          )}
+          <div>
           <h1 className="text-2xl font-bold text-white">
             {selectedService
               ? `${SUPPLIER_SERVICE_NAMES[selectedService]} Subscription`
@@ -559,6 +536,7 @@ export default function SubscriptionPage() {
               .
             </p>
           )}
+          </div>
         </div>
 
         {subscription && !isExpired && (

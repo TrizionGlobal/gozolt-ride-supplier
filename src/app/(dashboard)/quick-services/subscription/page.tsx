@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { BellRing, Check, Crown, Loader2, ShieldCheck, X, Zap, } from 'lucide-react';
+import { BellRing, Check, Crown, Loader2, ShieldCheck, X, Zap, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { quickServicesSubscriptionService, type QuickServicesPaidPlan, } from '@/services/quick-services/quick-services-subscription.service';
 import { useSidebarStore } from '@/stores/sidebar.store';
 import { useAuthStore } from '@/stores/auth.store';
+import { SubscriptionTier } from '@/types';
+import { Step5Payment } from '@/components/auth/step5-payment';
 
 type AccessChoice =
   | 'WITH_SUBSCRIPTION'
@@ -69,35 +71,82 @@ export default function QuickServicesSubscriptionPage() {
   const [choice, setChoice] =
     useState<AccessChoice>(null);
 
+  const [currentMode, setCurrentMode] = useState<AccessChoice>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  const [activeTier, setActiveTier] = useState<string | null>(null);
+
+  useEffect(() => {
+    const mode = localStorage.getItem('quick-services-access-mode') as AccessChoice;
+    const storedTier = localStorage.getItem('quick-services-subscription-tier');
+    setCurrentMode(mode);
+    setActiveTier(storedTier);
+  }, []);
+
   const [selectedPlan, setSelectedPlan] =
     useState<QuickServicesPaidPlan>('QUICK_BASIC');
 
   const [isSubmitting, setIsSubmitting] =
     useState(false);
 
+  const activePlanName = activeTier ? PAID_PLANS.find(p => p.code === activeTier)?.name : null;
+
+  const [showPaymentModal, setShowPaymentModal] = useState<QuickServicesPaidPlan | null>(null);
+
+  const [cardData] = useState({
+    paymentMethodId: '',
+    cardName: '',
+    last4: '',
+    brand: '',
+  });
+
   const continueWithSubscription = async () => {
+    setShowPaymentModal(selectedPlan);
+  };
+
+  const handleSetupSubscription = async (paymentData: any) => {
     setIsSubmitting(true);
-
+    
     try {
-      const result =
-        await quickServicesSubscriptionService.createCheckout(
-          selectedPlan
-        );
+      // Mock saving subscription and returning to dashboard
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      useAuthStore.setState((state) => ({
+        user: state.user
+          ? {
+              ...state.user,
+              subscription: {
+                id: 'qs_sub_' + Math.random().toString(36).substr(2, 9),
+                tier: selectedPlan as any,
+                status: 'ACTIVE',
+                maxDrivers: 999,
+                maxVehicles: 999,
+                maxRides: 999,
+                currentPeriodEnd: null,
+                cancelAtPeriodEnd: false,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+            }
+          : null,
+      }));
 
-      if (!result.checkoutUrl) {
-        throw new Error(
-          'Payment checkout URL was not received.'
-        );
-      }
+      localStorage.setItem('quick-services-access-mode', 'WITH_SUBSCRIPTION');
+      localStorage.setItem('quick-services-subscription-tier', selectedPlan);
+      setCurrentMode('WITH_SUBSCRIPTION');
+      setActiveTier(selectedPlan);
+      setShowPaymentModal(null);
+      setChoice(null);
 
-      window.location.href = result.checkoutUrl;
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message ||
-          error?.message ||
-          'Unable to start subscription payment.'
+      toast.success(
+        'Quick Services Premium access activated successfully.'
       );
 
+      router.push('/quick-services/subscription/success');
+    } catch (error: any) {
+      toast.error('Unable to setup subscription payment.');
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -116,7 +165,7 @@ export default function QuickServicesSubscriptionPage() {
             ...state.user,
             subscription: {
               id: 'qs_sub_' + Math.random().toString(36).substr(2, 9),
-              tier: 'STARTER', // Or any string that satisfies the types
+              tier: SubscriptionTier.STARTER, // Or any string that satisfies the types
               status: 'ACTIVE',
               maxDrivers: 999,
               maxVehicles: 999,
@@ -129,6 +178,11 @@ export default function QuickServicesSubscriptionPage() {
           }
         : null,
     }));
+
+    localStorage.setItem('quick-services-access-mode', 'WITHOUT_SUBSCRIPTION');
+    localStorage.removeItem('quick-services-subscription-tier');
+    setCurrentMode('WITHOUT_SUBSCRIPTION');
+    setActiveTier(null);
 
     toast.success(
       'Quick Services access activated successfully.'
@@ -145,21 +199,103 @@ export default function QuickServicesSubscriptionPage() {
   }
 };
 
+  const handleCancelSubscription = async () => {
+    setIsCancelling(true);
+    try {
+      // Mock API call to cancel
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      localStorage.removeItem('quick-services-access-mode');
+      localStorage.removeItem('quick-services-subscription-tier');
+      setCurrentMode(null);
+      setActiveTier(null);
+      setChoice(null);
+      setShowCancelDialog(false);
+      toast.success('Your subscription preference has been reset.');
+    } catch (error: any) {
+      toast.error('Unable to cancel subscription.');
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      <div className="text-center">
-        <h1 className="text-3xl font-black text-white">
-          Choose Your{' '}
-          <span className="text-[#FCD223]">
-            Quick Services Plan
-          </span>
-        </h1>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-start gap-4">
+          {currentMode && (
+            <button
+              type="button"
+              onClick={() => router.push('/quick-services/dashboard')}
+              className="mt-1 flex shrink-0 items-center justify-center rounded-full bg-white/5 p-2 text-[#A1A1AA] transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          )}
+          <div>
+          <h1 className="text-3xl font-black text-white">
+            {currentMode ? 'Quick Services Subscription' : (
+              <>
+                Choose Your{' '}
+                <span className="text-[#FCD223]">
+                  Quick Services Plan
+                </span>
+              </>
+            )}
+          </h1>
 
-        <p className="mx-auto mt-3 max-w-2xl text-sm text-[#A1A1AA]">
-          Select subscription access for additional benefits,
-          or continue using the standard pay-per-service model.
-        </p>
+          {!currentMode && (
+            <p className="mt-3 max-w-2xl text-sm text-[#A1A1AA]">
+              Select subscription access for additional benefits,
+              or continue using the standard pay-per-service model.
+            </p>
+          )}
+          </div>
+        </div>
+
+        {currentMode && (
+          <button
+            type="button"
+            onClick={() => setShowCancelDialog(true)}
+            className="shrink-0 rounded-md border border-red-500/30 bg-transparent px-3 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-400"
+          >
+            Cancel or Switch Access
+          </button>
+        )}
       </div>
+
+      {currentMode && (
+        <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                {currentMode === 'WITH_SUBSCRIPTION' ? (
+                  <Crown className="h-5 w-5 text-[#FCD223]" />
+                ) : (
+                  <Zap className="h-5 w-5 text-[#A1A1AA]" />
+                )}
+                <h3 className="text-lg font-bold text-white">
+                  {currentMode === 'WITH_SUBSCRIPTION' ? (activePlanName ? `${activePlanName} Plan` : 'Premium Paid Plan') : 'Standard Access (No Monthly Fee)'}
+                </h3>
+                <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500">
+                  Active
+                </span>
+              </div>
+              
+              <p className="mt-2 text-sm text-[#A1A1AA]">
+                {currentMode === 'WITH_SUBSCRIPTION' 
+                  ? 'You are currently subscribed to a premium plan with no per-service commissions.'
+                  : 'You are using standard access. Per-service platform charges and commissions apply.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {currentMode && (
+        <div className="mt-8">
+          <h2 className="mb-4 text-xl font-bold text-white">Want to switch plans?</h2>
+        </div>
+      )}
 
       {/* Main access choices */}
       <div className="grid gap-6 md:grid-cols-2">
@@ -256,16 +392,23 @@ export default function QuickServicesSubscriptionPage() {
                       {plan.name}
                     </h3>
 
-                    <div
-                      className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                        isSelected
-                          ? 'border-[#FCD223] bg-[#FCD223]'
-                          : 'border-[#52525B]'
-                      }`}
-                    >
-                      {isSelected && (
-                        <Check className="h-3.5 w-3.5 text-black" />
+                    <div className="flex items-center gap-2">
+                      {currentMode === 'WITH_SUBSCRIPTION' && (activeTier as string) === plan.code && (
+                        <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500 border border-green-500/20">
+                          Active
+                        </span>
                       )}
+                      <div
+                        className={`flex h-5 w-5 items-center justify-center rounded-full border ${
+                          isSelected
+                            ? 'border-[#FCD223] bg-[#FCD223]'
+                            : 'border-[#52525B]'
+                        }`}
+                      >
+                        {isSelected && (
+                          <Check className="h-3.5 w-3.5 text-black" />
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -296,20 +439,31 @@ export default function QuickServicesSubscriptionPage() {
             })}
           </div>
 
-          <button
-            type="button"
-            onClick={continueWithSubscription}
-            disabled={isSubmitting}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FCD223] py-3 font-bold text-black hover:bg-[#EAB308] disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <ShieldCheck className="h-5 w-5" />
-            )}
+          {currentMode === 'WITH_SUBSCRIPTION' && (activeTier as string) === selectedPlan ? (
+            <button
+              type="button"
+              disabled
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 py-3 font-bold text-green-500"
+            >
+              <CheckCircle2 className="h-5 w-5" />
+              Current Active Plan
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={continueWithSubscription}
+              disabled={isSubmitting}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#FCD223] py-3 font-bold text-black hover:bg-[#EAB308] disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <ShieldCheck className="h-5 w-5" />
+              )}
 
-            Continue to Secure Payment
-          </button>
+              {currentMode === 'WITH_SUBSCRIPTION' ? 'Switch Plan & Pay' : 'Continue to Secure Payment'}
+            </button>
+          )}
         </div>
       )}
 
@@ -346,18 +500,29 @@ export default function QuickServicesSubscriptionPage() {
             )}
           </ul>
 
-          <button
-            type="button"
-            onClick={continueWithoutSubscription}
-            disabled={isSubmitting}
-            className="mt-7 flex w-full items-center justify-center gap-2 rounded-full border border-[#FCD223] py-3 font-bold text-[#FCD223] hover:bg-[#FCD223]/10 disabled:opacity-50"
-          >
-            {isSubmitting && (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            )}
+          {currentMode === 'WITHOUT_SUBSCRIPTION' ? (
+            <button
+              type="button"
+              disabled
+              className="mt-7 flex w-full items-center justify-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 py-3 font-bold text-green-500"
+            >
+              <CheckCircle2 className="h-5 w-5" />
+              Current Active Plan
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={continueWithoutSubscription}
+              disabled={isSubmitting}
+              className="mt-7 flex w-full items-center justify-center gap-2 rounded-full border border-[#FCD223] py-3 font-bold text-[#FCD223] hover:bg-[#FCD223]/10 disabled:opacity-50"
+            >
+              {isSubmitting && (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              )}
 
-            Continue Without Subscription
-          </button>
+              Continue Without Subscription
+            </button>
+          )}
         </div>
       )}
 
@@ -370,6 +535,60 @@ export default function QuickServicesSubscriptionPage() {
           local regulations.
         </p>
       </div>
+
+      {showCancelDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-[420px] rounded-xl border border-[#27272A] bg-[#111111] p-6">
+            <h3 className="text-lg font-bold text-white">
+              Cancel or Switch Plan
+            </h3>
+
+            <p className="mt-2 text-sm text-[#A1A1AA]">
+              Are you sure you want to cancel or reset your current access mode? You will need to select a new plan to continue using Quick Services.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowCancelDialog(false)}
+                disabled={isCancelling}
+                className="rounded-full px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/10"
+              >
+                Keep Current Plan
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCancelSubscription}
+                disabled={isCancelling}
+                className="flex items-center gap-2 rounded-full bg-red-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+              >
+                {isCancelling ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <X className="h-4 w-4" />
+                )}
+                Confirm Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
+          <div className="relative w-full max-w-[600px] my-8 rounded-xl bg-[#111111]">
+            <Step5Payment
+              selectedTier={showPaymentModal}
+              initialValues={cardData}
+              onPrevious={() => setShowPaymentModal(null)}
+              onNext={handleSetupSubscription}
+              isSubmitting={isSubmitting}
+            />
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -119,7 +119,7 @@ export function BankDetailsTab() {
               onChange={handleChange}
               disabled={isLocked}
               placeholder="Enter Holder Name"
-              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed capitalize placeholder:normal-case"
             />
           </div>
 
@@ -133,7 +133,7 @@ export function BankDetailsTab() {
               onChange={handleChange}
               disabled={isLocked}
               placeholder="Enter Bank Name"
-              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed capitalize placeholder:normal-case"
             />
           </div>
 
@@ -147,13 +147,13 @@ export function BankDetailsTab() {
               onChange={handleChange}
               disabled={isLocked}
               placeholder="MTXX XXXX XXXX XXXX"
-              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors uppercase placeholder:normal-case disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
 
           {/* SWIFT/BIC Code */}
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#A1A1AA]">SWIFT/BIC Code</label>
+            <label className="mb-1.5 block text-sm font-medium text-[#A1A1AA]">SWIFT/BIC Code (Optional)</label>
             <input
               type="text"
               name="supplierSwiftCode"
@@ -161,7 +161,7 @@ export function BankDetailsTab() {
               onChange={handleChange}
               disabled={isLocked}
               placeholder="XXXXX"
-              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors uppercase disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors uppercase placeholder:normal-case disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>

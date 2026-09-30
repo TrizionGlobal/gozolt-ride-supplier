@@ -116,7 +116,9 @@ export function NotificationDropdown() {
       label: 'View',
       onClick: () => {
         setIsOpen(false);
-        if (data.bookingId) {
+        if (data.payoutId) {
+          router.push(`/payouts`);
+        } else if (data.bookingId) {
           router.push(`/${data.module}/${data.bookingId}/details`);
         } else {
           router.push(`/${data.module}`);

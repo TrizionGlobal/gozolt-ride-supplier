@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Camera, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { Scanner } from '@yudiel/react-qr-scanner';
 
+import { QuickServiceTask } from '@/components/quick-services/quick-service-task';
+
 export default function HandoverTaskPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const router = useRouter();
@@ -13,6 +15,7 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
   const [error, setError] = useState('');
   const [step, setStep] = useState<'VERIFY' | 'SCAN' | 'FORM' | 'SUCCESS'>('VERIFY');
   const [rentalType, setRentalType] = useState('car');
+  const [isQuickService, setIsQuickService] = useState(false);
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
   const [formData, setFormData] = useState({ fuelLevel: 'FULL', odometerReading: '', vehicleCondition: 'Good', damageNotes: '', refundAmount: '', refundAccountNumber: '', supplierSignature: '' });
   const [photos, setPhotos] = useState<string[]>([]);
@@ -46,6 +49,11 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
     const type = new URLSearchParams(window.location.search).get('type') || 'car';
     setRentalType(type);
     
+    if (type === 'quick-service') {
+      setIsQuickService(true);
+      return; // The QuickServiceTask component will handle its own fetching
+    }
+
     fetch(`/api/proxy/${type === 'bike' ? 'bike-rentals' : 'car-rentals'}/public/task/${token}`)
       .then(res => res.json())
       .then(data => {
@@ -59,6 +67,10 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
       .catch(err => setError('Failed to load task'))
       .finally(() => setLoading(false));
   }, [token]);
+
+  if (isQuickService) {
+    return <QuickServiceTask token={token} />;
+  }
 
   const handleScan = (result: string) => {
     if (result === task.booking.id) {

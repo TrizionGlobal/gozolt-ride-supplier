@@ -13,7 +13,7 @@ interface CardData {
 }
 
 interface Step5PaymentProps {
-  selectedTier: 'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE';
+  selectedTier: 'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE' | 'QUICK_BASIC' | 'QUICK_ADVANCED';
   companyAddress?: string;
   companyCity?: string;
   ownerName?: string;
@@ -23,11 +23,13 @@ interface Step5PaymentProps {
   onPrevious?: () => void;
 }
 
-const PLAN_INFO = {
+const PLAN_INFO: Record<string, { name: string; price: number }> = {
   STARTER: { name: 'Starter Fleet', price: 49 },
   GROWTH: { name: 'Growth Fleet', price: 99 },
   PROFESSIONAL: { name: 'Professional Fleet', price: 149 },
   ENTERPRISE: { name: 'Enterprise Fleet', price: 199 },
+  QUICK_BASIC: { name: 'Quick Services Basic', price: 100 },
+  QUICK_ADVANCED: { name: 'Quick Services Advanced', price: 250 },
 };
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
@@ -125,6 +127,7 @@ function Step5PaymentForm({
   const stripeElementOptions: any = {
     showIcon: true,
     disableLink: true,
+    disabled: isTokenizing || isSubmitting,
     style: {
       base: {
         color: '#fff',
@@ -221,7 +224,8 @@ function Step5PaymentForm({
                 placeholder="Name on Card"
                 value={cardName}
                 onChange={(e) => setCardName(e.target.value)}
-                className="w-full h-10 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15] transition-colors"
+                disabled={isTokenizing || isSubmitting}
+                className="w-full h-10 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -274,7 +278,8 @@ function Step5PaymentForm({
                   placeholder="Billing Address"
                   value={billingAddress}
                   onChange={(e) => setBillingAddress(e.target.value)}
-                  className="w-full h-10 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15] transition-colors"
+                  disabled={isTokenizing || isSubmitting}
+                  className="w-full h-10 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -285,7 +290,8 @@ function Step5PaymentForm({
                   placeholder="City"
                   value={billingCity}
                   onChange={(e) => setBillingCity(e.target.value)}
-                  className="w-full h-10 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15] transition-colors"
+                  disabled={isTokenizing || isSubmitting}
+                  className="w-full h-10 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -309,7 +315,8 @@ function Step5PaymentForm({
             <button
               type="button"
               onClick={onPrevious}
-              className="flex items-center gap-1 text-sm text-[#A1A1AA] hover:text-white transition-colors"
+              disabled={isTokenizing || isSubmitting}
+              className="flex items-center gap-1 text-sm text-[#A1A1AA] hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ArrowLeft className="h-4 w-4" />
               Previous

@@ -14,6 +14,13 @@ export type QuickServicePaymentStatus =
   | 'FAILED'
   | 'REFUNDED';
 
+export type QuickServiceExecutionStatus =
+  | 'PENDING'
+  | 'SELF_ASSIGNED'
+  | 'WORKER_ASSIGNED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED';
+
 export type QuickServiceAssignmentFilter =
   | 'ALL'
   | 'UNASSIGNED'
@@ -70,10 +77,14 @@ export interface QuickServiceBooking {
   scheduledAt: string;
 
   status: QuickServiceBookingStatus;
+  serviceStatus?: QuickServiceExecutionStatus;
   paymentStatus: QuickServicePaymentStatus;
 
   amount?: number;
   currency?: string;
+  
+  collectedAmount?: number;
+  paymentMethodType?: string;
 
   assignedToSupplier?: boolean;
   assignedToSelf?: boolean;

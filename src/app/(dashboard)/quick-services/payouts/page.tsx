@@ -1,14 +1,25 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   TrendingUp, TrendingDown, Landmark, Banknote, CreditCard,
   AlertCircle, Car, Bike, CheckCircle2, Clock, ArrowUpRight, ArrowDownRight, Wrench
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { financialService } from '@/services/financials/financial.service';
 import { PayoutHistoryTable } from '@/components/financials/payout-history-table';
 import type { PayoutRecord } from '@/types';
+import { supplierQuickServiceBookingService } from '@/services/quick-services/supplier-quick-service-booking.service';
+import type { QuickServiceBooking } from '@/services/quick-services/quick-service-booking.types';
+import { useAuthStore } from '@/stores/auth.store';
+
+const normalizeServiceName = (str: string) => {
+  if (!str) return 'Standard Service';
+  return str.replace(/_/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
 
 const Shimmer = ({ className = '' }: { className?: string }) => (
   <div className={`animate-pulse rounded-md bg-[#1F1F1F] ${className}`} />
@@ -33,35 +44,99 @@ function PageSkeleton() {
   );
 }
 
-import { useSidebarStore } from '@/stores/sidebar.store';
-
 export default function PayoutsPage() {
-  const [payouts, setPayouts] = useState<PayoutRecord[]>([]);
-  const [kpis, setKpis] = useState<any>(null);
+  const { user } = useAuthStore();
+  const [bookings, setBookings] = useState<QuickServiceBooking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [total, setTotal] = useState(0);
-  const { activeModule } = useSidebarStore();
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [payoutsData, kpiData] = await Promise.all([
-        financialService.getPayoutHistory('QUICK_SERVICES', page, limit),
-        financialService.getFinancialKPIs(undefined, undefined, 'QUICK_SERVICES')
-      ]);
-      setPayouts(payoutsData.data);
-      setTotal(payoutsData.meta.total);
-      setKpis(kpiData);
+      const res = await supplierQuickServiceBookingService.getBookings({ limit: 1000 });
+      setBookings(res.bookings || []);
     } catch {
       toast.error('Failed to load financial data');
     } finally {
       setIsLoading(false);
     }
-  }, [page, limit]);
+  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const validBookings = useMemo(() => {
+    const registered = new Set<string>();
+    try {
+      const parsed = typeof user?.quickServicesOffered === 'string' 
+        ? JSON.parse(user.quickServicesOffered) 
+        : user?.quickServicesOffered;
+        
+      if (Array.isArray(parsed)) {
+        parsed.forEach((s: any) => {
+          if (Array.isArray(s.services)) {
+            s.services.forEach((childService: string) => {
+              registered.add(normalizeServiceName(childService));
+            });
+          }
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    
+    return bookings.filter(b => {
+      const name = normalizeServiceName(b.childService || 'Standard Service');
+      return registered.has(name);
+    });
+  }, [bookings, user?.quickServicesOffered]);
+
+  const stats = useMemo(() => {
+    let grossUpfront = 0;
+    let pendingAdminPayout = 0;
+    let settledAdminPayout = 0;
+    let estimatedCashCollected = 0;
+    let refunds = 0;
+    let cancellations = 0;
+
+    validBookings.forEach((b) => {
+      const upfront = parseFloat((b as any).totalAmount?.toString() || '0');
+      const collected = parseFloat((b as any).collectedAmount?.toString() || '0');
+      const method = (b as any).paymentMethodType;
+      
+      // Calculate Gross Revenue based on paid bookings
+      if (b.paymentStatus === 'PAID') {
+        let adminHeldAmount = upfront;
+        
+        if (method === 'CASH') {
+           estimatedCashCollected += collected;
+        } else {
+           adminHeldAmount += collected;
+        }
+        
+        grossUpfront += adminHeldAmount;
+
+        if (b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED') {
+          settledAdminPayout += adminHeldAmount; // Settled payout to supplier
+        } else {
+          pendingAdminPayout += adminHeldAmount; 
+        }
+      }
+
+      if (b.status === 'CANCELLED') {
+        cancellations += 1;
+      }
+    });
+
+    return {
+      grossUpfront,
+      settledAdminPayout,
+      pendingAdminPayout,
+      estimatedCashCollected,
+      refunds,
+      cancellations
+    };
+  }, [validBookings]);
 
   const fmt = (val: number | undefined) => `€${(val || 0).toFixed(2)}`;
 
@@ -85,14 +160,25 @@ export default function PayoutsPage() {
     </div>
   );
 
-  const allServices = [
-    { name: 'Cab Bookings', id: 'CAB', icon: Car, iconColor: 'bg-yellow-500/10 text-yellow-500', accentColor: 'border-yellow-500/40', data: kpis?.breakdown?.cab },
-    { name: 'Car Rentals', id: 'RENTAL', icon: Car, iconColor: 'bg-blue-500/10 text-blue-500', accentColor: 'border-blue-500/40', data: kpis?.breakdown?.carRental },
-    { name: 'Bike Rentals', id: 'BIKE_RENTAL', icon: Bike, iconColor: 'bg-purple-500/10 text-purple-500', accentColor: 'border-purple-500/40', data: kpis?.breakdown?.bikeRental },
-    { name: 'Quick Services', id: 'QUICK_SERVICES', icon: Wrench, iconColor: 'bg-green-500/10 text-green-500', accentColor: 'border-green-500/40', data: kpis?.breakdown?.quickServices },
-  ];
-
-  const services = allServices.filter(s => s.id === 'QUICK_SERVICES');
+  // Generate fake payouts history from validBookings for demo purposes
+  // ONLY show PAID items in this table per user request
+  const generatedPayouts: PayoutRecord[] = useMemo(() => {
+    return validBookings
+      .filter(b => b.paymentStatus === 'PAID' && (b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED'))
+      .map(b => {
+        const netAmount = parseFloat((b as any).totalAmount?.toString() || '0');
+        return {
+          id: b.id,
+          amount: netAmount,
+          status: 'PAID',
+          periodStart: b.scheduledAt,
+          periodEnd: b.scheduledAt,
+          processedAt: b.updatedAt || b.scheduledAt,
+          createdAt: b.scheduledAt,
+          details: b.childService || 'Quick Service'
+        };
+      }).slice((page - 1) * limit, page * limit);
+  }, [validBookings, page, limit]);
 
   return (
     <div className="space-y-8">
@@ -100,7 +186,7 @@ export default function PayoutsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Payments &amp; Settlements</h1>
-          <p className="text-sm text-[#71717A] mt-1">Revenue summary, settlement status, and earnings breakdown across all services.</p>
+          <p className="text-sm text-[#71717A] mt-1">Revenue summary, settlement status, and earnings breakdown for Quick Services.</p>
         </div>
         <button
           onClick={fetchData}
@@ -113,27 +199,26 @@ export default function PayoutsPage() {
 
       {/* Body */}
       <div className="space-y-8">
-        {/* KPI Cards (Always visible) */}
+        {/* KPI Cards */}
         {isLoading ? (
           <PageSkeleton />
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-            <KpiCard label="Net Earnings" value={fmt(kpis?.netRevenue)} icon={Landmark} color="bg-green-500/10 text-green-500" trend="up" />
-            <KpiCard label="Gross Revenue" value={fmt(kpis?.grossRevenue)} icon={TrendingUp} color="bg-blue-500/10 text-blue-500" />
-            <KpiCard label="Pending" value={fmt(kpis?.pendingPayout)} icon={Clock} color="bg-yellow-500/10 text-yellow-500" />
-            <KpiCard label="Admin Settled" value={fmt(kpis?.settledPayout)} icon={CheckCircle2} color="bg-emerald-500/10 text-emerald-500" />
-            <KpiCard label="Cancellations" value={fmt(kpis?.totalCancellations)} icon={AlertCircle} color="bg-orange-500/10 text-orange-500" trend="down" />
-            <KpiCard label="Refunds" value={fmt(kpis?.totalRefunds)} icon={CreditCard} color="bg-red-500/10 text-red-500" trend="down" />
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            <KpiCard label="Admin Settled (Paid to You)" value={fmt(stats.settledAdminPayout)} icon={CheckCircle2} color="bg-emerald-500/10 text-emerald-500" trend="up" />
+            <KpiCard label="Pending Admin Payout" value={fmt(stats.pendingAdminPayout)} icon={Clock} color="bg-yellow-500/10 text-yellow-500" />
+            <KpiCard label="Platform Held (Upfront + Online)" value={fmt(stats.grossUpfront)} icon={Banknote} color="bg-blue-500/10 text-blue-500" />
+            <KpiCard label="Cash Collected (Kept by Worker)" value={fmt(stats.estimatedCashCollected)} icon={Landmark} color="bg-purple-500/10 text-purple-500" />
+            <KpiCard label="Cancellations" value={stats.cancellations.toString()} icon={AlertCircle} color="bg-orange-500/10 text-orange-500" trend="down" />
           </div>
         )}
 
         {/* History Table */}
         <PayoutHistoryTable 
-          data={payouts} 
+          data={generatedPayouts} 
           isLoading={isLoading} 
           page={page}
           limit={limit}
-          total={total}
+          total={validBookings.filter(b => b.paymentStatus === 'PAID' && (b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED')).length}
           serviceName="Quick Services"
           onPageChange={setPage}
           onLimitChange={setLimit}

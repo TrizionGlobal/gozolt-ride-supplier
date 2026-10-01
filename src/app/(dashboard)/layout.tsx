@@ -15,7 +15,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, hydrateFromSession, isLoading } =
+  const { user, hydrateFromSession, isLoading, authError } =
     useAuthStore();
 
   const isCollapsed = useSidebarStore(
@@ -32,10 +32,10 @@ export default function DashboardLayout({
 
   // Send unauthenticated users to Login
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && !user && !authError) {
       router.replace('/login');
     }
-  }, [isLoading, user, router]);
+  }, [isLoading, user, authError, router]);
 
   // Handle subscription and selected-service routing
   useEffect(() => {
@@ -91,7 +91,7 @@ export default function DashboardLayout({
      * 2. Without Subscription
      */
     if (selectedService === 'QUICK_SERVICES') {
-      const qsAccessMode = localStorage.getItem('quick-services-access-mode');
+      const qsAccessMode = user.quickServiceAccessMode || localStorage.getItem('quick-services-access-mode');
       const hasChosenWithoutSub = qsAccessMode === 'WITHOUT_SUBSCRIPTION';
 
       if (
@@ -177,8 +177,32 @@ export default function DashboardLayout({
   }
 
   // Prevent protected content from briefly appearing
-  if (!user) {
+  if (!user && !authError) {
     return null;
+  }
+
+  // Show Error screen if an API/Network error occurred
+  if (authError) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#0A0A0A]">
+        <div className="flex flex-col items-center gap-4 max-w-sm text-center">
+          <div className="rounded-full bg-red-500/10 p-3">
+            <svg className="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <p className="text-[#D4D4D8] font-medium">
+            {authError}
+          </p>
+          <button 
+            onClick={() => hydrateFromSession()}
+            className="mt-2 rounded-lg bg-[#27272A] px-4 py-2 text-sm font-medium text-white hover:bg-[#3f3f46] transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   /*

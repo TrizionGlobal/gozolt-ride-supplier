@@ -34,10 +34,13 @@ export const financialService = {
       }
 
       const grossRevenue = (bd.cab?.totalEarned || 0) + (bd.carRental?.totalEarned || 0) + (bd.bikeRental?.totalEarned || 0) + (bd.quickServices?.totalEarned || 0);
-      const netRevenue = (bd.cab?.netAmount || 0) + (bd.carRental?.netAmount || 0) + (bd.bikeRental?.netAmount || 0) + (bd.quickServices?.netAmount || 0);
-
+      
       const commissionRate = profile.defaultDriverCommission || 0;
-      const commissionAmount = grossRevenue - netRevenue;
+      
+      // ONLY CAB takes commission. Car Rental, Bike Rental, and Quick Services take 0 commission.
+      const commissionAmount = (bd.cab?.totalEarned || 0) - (bd.cab?.netAmount || 0);
+      
+      const netRevenue = grossRevenue - commissionAmount;
       const pendingPayout = payouts
         .filter((p: PayoutRecord) => p.status === 'PENDING')
         .reduce((sum: number, p: PayoutRecord) => sum + p.amount, 0);

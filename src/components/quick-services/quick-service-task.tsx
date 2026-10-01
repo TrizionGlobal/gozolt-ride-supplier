@@ -11,6 +11,8 @@ export function QuickServiceTask({ token }: { token: string }) {
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
   const [actionLoading, setActionLoading] = useState(false);
   const [finalInvoice, setFinalInvoice] = useState<{ hours: number; hourlyRate: number; finalAmount: number } | null>(null);
+  const [manualMode, setManualMode] = useState(false);
+  const [manualInput, setManualInput] = useState('');
 
   let features: Record<string, any> = {};
   let addOns: any[] = [];
@@ -51,7 +53,11 @@ export function QuickServiceTask({ token }: { token: string }) {
   }, [token]);
 
   const handleScan = (result: string) => {
-    if (result === task.booking.id) {
+    const expectedDisplayId = `GZ-QS-${task.booking.id.substring(0, 8).toUpperCase()}`;
+    const expectedShort = task.booking.id.substring(0, 8).toUpperCase();
+    
+    // Check if it matches the QR format OR if they manually typed the 8-char ID
+    if (result.includes(expectedDisplayId) || result.toUpperCase().includes(expectedShort)) {
       setScanStatus('SUCCESS');
       setTimeout(() => setStep('ACTIONS'), 1500);
     } else {
@@ -335,11 +341,31 @@ export function QuickServiceTask({ token }: { token: string }) {
           </div>
           
           <div className="w-64 h-64 bg-gray-900 rounded-2xl overflow-hidden border-2 border-[#FACC15] relative flex items-center justify-center">
-            {scanStatus === 'IDLE' && (
+            {scanStatus === 'IDLE' && !manualMode && (
               <Scanner 
                 constraints={{ facingMode: 'environment' }} 
                 onScan={(result) => handleScan(result[0].rawValue)} 
               />
+            )}
+            
+            {scanStatus === 'IDLE' && manualMode && (
+              <div className="flex flex-col items-center justify-center p-4 w-full text-center">
+                <p className="text-sm text-gray-400 mb-4">Enter the 8-character ID from the customer's screen (e.g. F73CA0C9)</p>
+                <input 
+                  type="text" 
+                  value={manualInput}
+                  onChange={(e) => setManualInput(e.target.value.toUpperCase())}
+                  placeholder="Service ID"
+                  className="bg-black border border-gray-700 rounded-lg px-4 py-3 w-full text-center text-xl font-bold tracking-widest uppercase mb-4"
+                  maxLength={8}
+                />
+                <button 
+                  onClick={() => handleScan(manualInput)}
+                  className="bg-[#FACC15] text-black font-bold py-2 px-6 rounded-lg hover:bg-yellow-500 transition w-full"
+                >
+                  Verify ID
+                </button>
+              </div>
             )}
             
             {scanStatus === 'SUCCESS' && (
@@ -350,13 +376,22 @@ export function QuickServiceTask({ token }: { token: string }) {
             )}
 
             {scanStatus === 'FAILED' && (
-              <div className="flex flex-col items-center justify-center text-red-500 animate-in fade-in zoom-in">
+              <div className="flex flex-col items-center justify-center text-red-500 animate-in fade-in zoom-in w-full h-full bg-gray-900 absolute top-0 left-0">
                 <AlertCircle className="w-20 h-20 mb-4" />
                 <p className="text-xl font-bold">Verification Failed</p>
-                <p className="text-sm mt-2 text-white">Invalid Booking QR</p>
+                <p className="text-sm mt-2 text-white text-center px-4">The ID does not match this booking.</p>
               </div>
             )}
           </div>
+          
+          {scanStatus === 'IDLE' && (
+            <button 
+              onClick={() => setManualMode(!manualMode)}
+              className="text-[#FACC15] text-sm underline mt-4"
+            >
+              {manualMode ? 'Use QR Scanner Instead' : 'Having trouble scanning? Enter ID Manually'}
+            </button>
+          )}
         </div>
       )}
 

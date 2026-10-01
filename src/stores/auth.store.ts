@@ -7,6 +7,7 @@ interface AuthState {
   user: SupplierProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  authError: string | null;
 
   setUser: (user: SupplierProfile) => void;
   setLoading: (loading: boolean) => void;
@@ -18,6 +19,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
+  authError: null,
 
   setUser: (user) => set({ user, isAuthenticated: true, isLoading: false }),
 
@@ -30,6 +32,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      authError: null,
     }),
 
   hydrateFromSession: async () => {
@@ -40,14 +43,17 @@ export const useAuthStore = create<AuthState>((set) => ({
         if (data.token) {
           localStorage.setItem('supplier_token', data.token);
         }
-        set({ user: data.user, isAuthenticated: true, isLoading: false });
+        set({ user: data.user, isAuthenticated: true, isLoading: false, authError: null });
       } else {
-        localStorage.removeItem('supplier_token');
-        set({ isLoading: false });
+        if (res.status === 401) {
+          localStorage.removeItem('supplier_token');
+          set({ user: null, isAuthenticated: false, isLoading: false, authError: null });
+        } else {
+          set({ isLoading: false, authError: 'Unable to connect to the server.' });
+        }
       }
     } catch {
-      localStorage.removeItem('supplier_token');
-      set({ isLoading: false });
+      set({ isLoading: false, authError: 'Network error. Please check your connection.' });
     }
   },
 }));

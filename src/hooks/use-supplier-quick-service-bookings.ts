@@ -14,6 +14,8 @@ import type {
   QuickServiceBookingFilters,
 } from '@/services/quick-services/quick-service-booking.types';
 
+const bookingsCache: Record<string, { bookings: QuickServiceBooking[], total: number, timestamp: number }> = {};
+
 export function useSupplierQuickServiceBookings(
   filters: QuickServiceBookingFilters
 ) {
@@ -39,7 +41,17 @@ export function useSupplierQuickServiceBookings(
     limit = 20,
   } = filters;
 
-  const fetchBookings = useCallback(async () => {
+  const fetchBookings = useCallback(async (force = false) => {
+    const cacheKey = JSON.stringify({ search, categoryId, childService, status, assignment, page, limit });
+
+    // If not forcing and cache exists and is less than 5 minutes old
+    if (!force && bookingsCache[cacheKey] && (Date.now() - bookingsCache[cacheKey].timestamp < 5 * 60 * 1000)) {
+      setBookings(bookingsCache[cacheKey].bookings);
+      setTotal(bookingsCache[cacheKey].total);
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -54,6 +66,12 @@ export function useSupplierQuickServiceBookings(
           page,
           limit,
         });
+
+      bookingsCache[cacheKey] = {
+        bookings: result.bookings,
+        total: result.total,
+        timestamp: Date.now()
+      };
 
       setBookings(result.bookings);
       setTotal(result.total);
@@ -73,6 +91,7 @@ export function useSupplierQuickServiceBookings(
   }, [
     search,
     categoryId,
+    childService,
     status,
     assignment,
     page,
@@ -103,7 +122,7 @@ export function useSupplierQuickServiceBookings(
 
         toast.success(successMessage);
 
-        await fetchBookings();
+        await fetchBookings(true);
 
         return updatedBooking;
       } catch (actionError: any) {
@@ -183,7 +202,7 @@ export function useSupplierQuickServiceBookings(
     isActionLoading,
     error,
 
-    refresh: fetchBookings,
+    refresh: () => fetchBookings(true),
     acceptBooking,
     rejectBooking,
     assignToMyself,

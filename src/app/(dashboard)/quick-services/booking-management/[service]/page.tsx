@@ -181,10 +181,10 @@ export default function ServiceBookingManagementPage() {
           <UserRound className="mt-0.5 h-4 w-4 text-[#71717A]" />
           <div>
             <p className="text-white">
-              {row.customer?.name || row.userName || (row.user ? `${row.user.firstName} ${row.user.lastName}` : 'Unknown')}
+              {row.customer?.name || 'Unknown'}
             </p>
             <p className="text-xs text-[#71717A]">
-              {row.customer?.mobile || row.userPhone || row.user?.phone || 'N/A'}
+              {row.customer?.mobile || 'N/A'}
             </p>
           </div>
         </div>
@@ -195,8 +195,8 @@ export default function ServiceBookingManagementPage() {
       title: 'Service',
       render: (row) => (
         <div>
-          <p className="text-white text-sm">{row.serviceCategory || row.categoryName || 'Quick Service'}</p>
-          <p className="text-xs text-[#FCD223]">{row.serviceTitle || row.childService || 'General'}</p>
+          <p className="text-white text-sm">{'Quick Service'}</p>
+          <p className="text-xs text-[#FCD223]">{row.childService || 'General'}</p>
         </div>
       ),
     },
@@ -233,10 +233,7 @@ export default function ServiceBookingManagementPage() {
       key: 'serviceStatus',
       title: 'Service Status',
       render: (row) => {
-        let displayStatus = row.status;
-        if (['PENDING', 'CONFIRMED', 'TO_ASSIGN', 'ASSIGNED'].includes(row.status)) {
-          displayStatus = 'PENDING';
-        }
+        let displayStatus = row.serviceStatus || 'PENDING';
         return <StatusBadge status={displayStatus} />;
       }
     },
@@ -374,15 +371,11 @@ export default function ServiceBookingManagementPage() {
     >
       <option value="">All statuses</option>
       <option value="PENDING">Pending</option>
-      <option value="CONFIRMED">Confirmed</option>
-      <option value="TO_ASSIGN">To Assign</option>
       <option value="ASSIGNED">Assigned</option>
       <option value="IN_PROGRESS">
         In Progress
       </option>
       <option value="COMPLETED">Completed</option>
-      <option value="CANCELLED">Cancelled</option>
-      <option value="REJECTED">Rejected</option>
     </select>
 
     {/* Assignment */}
@@ -428,20 +421,7 @@ export default function ServiceBookingManagementPage() {
 </div>
 
    
-      {/* Yellow API error */}
-      {error && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3">
-          <p className="text-sm font-medium text-amber-400">
-            Booking information could not be loaded.
-          </p>
 
-          <p className="mt-1 text-xs text-[#D4D4D8]">
-            Confirm that the supplier backend supports
-            categoryId, childService, status and
-            assignment filters.
-          </p>
-        </div>
-      )}
 
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-[#27272A] bg-[#111111]">
@@ -499,10 +479,10 @@ export default function ServiceBookingManagementPage() {
 function StatusBadge({
   status,
 }: {
-  status: QuickServiceBookingStatus;
+  status: string;
 }) {
   const styles: Record<
-    QuickServiceBookingStatus,
+    string,
     string
   > = {
     PENDING:
@@ -513,6 +493,10 @@ function StatusBadge({
       'border-orange-500/30 bg-orange-500/10 text-orange-400',
     ASSIGNED:
       'border-purple-500/30 bg-purple-500/10 text-purple-400',
+    SELF_ASSIGNED:
+      'border-indigo-500/30 bg-indigo-500/10 text-indigo-400',
+    WORKER_ASSIGNED:
+      'border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-400',
     IN_PROGRESS:
       'border-cyan-500/30 bg-cyan-500/10 text-cyan-400',
     COMPLETED:

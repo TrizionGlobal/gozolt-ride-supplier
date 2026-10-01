@@ -147,6 +147,8 @@ export interface SupplierProfile {
   logoUrl?: string | null;
   editBankDetails?: boolean;
   registeredService?: string | null;
+  quickServiceAccessMode?: string | null;
+  quickServicesOffered?: any;
   createdAt: string;
 }
 

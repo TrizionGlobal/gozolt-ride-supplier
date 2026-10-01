@@ -25,26 +25,12 @@ export const quickServicesSubscriptionService = {
     return response.data;
   },
 
-  async continueWithoutSubscription():
-    Promise<void> {
-    /*
-     * Temporary local frontend testing.
-     *
-     * The backend endpoint is not available yet.
-     * In production, the API request below will run.
-     */
-    if (
-      process.env.NODE_ENV === 'development'
-    ) {
-      return;
-    }
-
+  async continueWithoutSubscription(): Promise<void> {
     await apiClient.post(
       '/quick-services/supplier/subscription/standard-access',
       {
         serviceType: 'QUICK_SERVICES',
-        subscriptionMode:
-          'WITHOUT_SUBSCRIPTION',
+        subscriptionMode: 'WITHOUT_SUBSCRIPTION',
       }
     );
   },

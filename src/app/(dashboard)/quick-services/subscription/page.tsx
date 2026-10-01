@@ -158,23 +158,11 @@ export default function QuickServicesSubscriptionPage() {
   try {
     await quickServicesSubscriptionService.continueWithoutSubscription();
 
-    // Mock updating the user's subscription in auth store so layout.tsx routing unlocks
     useAuthStore.setState((state) => ({
       user: state.user
         ? {
             ...state.user,
-            subscription: {
-              id: 'qs_sub_' + Math.random().toString(36).substr(2, 9),
-              tier: SubscriptionTier.STARTER, // Or any string that satisfies the types
-              status: 'ACTIVE',
-              maxDrivers: 999,
-              maxVehicles: 999,
-              maxRides: 999,
-              currentPeriodEnd: null,
-              cancelAtPeriodEnd: false,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            },
+            quickServiceAccessMode: 'WITHOUT_SUBSCRIPTION',
           }
         : null,
     }));

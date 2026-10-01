@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle2, XCircle, UserRound } from 'lucide-react';
 import { supplierQuickServiceBookingService } from '@/services/quick-services/supplier-quick-service-booking.service';
 import { getExpertVisitName, getQuickServiceHourlyRate } from '@/lib/quick-services-pricing';
 
@@ -15,6 +15,27 @@ const formatDate = (dateString: string) => {
     minute: '2-digit'
   });
 };
+
+function StatusBadge({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    PENDING: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+    CONFIRMED: 'border-blue-500/30 bg-blue-500/10 text-blue-400',
+    TO_ASSIGN: 'border-orange-500/30 bg-orange-500/10 text-orange-400',
+    ASSIGNED: 'border-purple-500/30 bg-purple-500/10 text-purple-400',
+    SELF_ASSIGNED: 'border-indigo-500/30 bg-indigo-500/10 text-indigo-400',
+    WORKER_ASSIGNED: 'border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-400',
+    IN_PROGRESS: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400',
+    COMPLETED: 'border-green-500/30 bg-green-500/10 text-green-400',
+    CANCELLED: 'border-red-500/30 bg-red-500/10 text-red-400',
+    REJECTED: 'border-red-500/30 bg-red-500/10 text-red-400',
+  };
+
+  return (
+    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium uppercase ${styles[status]}`}>
+      {status.replaceAll('_', ' ')}
+    </span>
+  );
+}
 
 export default function SupplierQuickServiceBookingDetailsPage() {
   const params = useParams();
@@ -90,7 +111,6 @@ export default function SupplierQuickServiceBookingDetailsPage() {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-white">Booking Details</h1>
-            <p className="text-sm font-mono text-[#A1A1AA]">ID: {booking.bookingReference || booking.id}</p>
           </div>
         </div>
       </div>
@@ -228,42 +248,38 @@ export default function SupplierQuickServiceBookingDetailsPage() {
         <div className="space-y-6">
           <div className="bg-[#111111] rounded-xl border border-[#27272A] p-5">
             <h3 className="font-semibold text-white text-lg mb-4">Status</h3>
-            {(() => {
-              let colorClass = 'bg-gray-900/40 text-gray-400 border-gray-800';
-              let Icon = Clock;
-              let displayStatus = booking.status ? booking.status.charAt(0).toUpperCase() + booking.status.slice(1).toLowerCase() : 'Unknown';
+            <div className="flex justify-start">
+              <StatusBadge status={booking.serviceStatus || booking.status || 'PENDING'} />
+            </div>
 
-              if (booking.status === 'COMPLETED') {
-                colorClass = 'bg-green-900/40 text-green-400 border-green-800';
-                Icon = CheckCircle2;
-                displayStatus = 'Completed';
-              } else if (booking.status === 'ASSIGNED') {
-                colorClass = 'bg-blue-900/40 text-blue-400 border-blue-800';
-                Icon = CheckCircle2;
-                displayStatus = 'Assigned';
-              } else if (booking.status === 'IN_PROGRESS') {
-                colorClass = 'bg-purple-900/40 text-purple-400 border-purple-800';
-                Icon = Clock;
-                displayStatus = 'In Progress';
-              } else if (booking.status === 'PENDING') {
-                colorClass = 'bg-yellow-900/40 text-yellow-400 border-yellow-800';
-                Icon = Clock;
-                displayStatus = 'Pending';
-              } else if (booking.status === 'CANCELLED') {
-                colorClass = 'bg-red-900/40 text-red-400 border-red-800';
-                Icon = XCircle;
-                displayStatus = 'Cancelled';
-              }
-
-              return (
-                <div className="flex justify-start">
-                  <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium ${colorClass}`}>
-                    <Icon className="h-4 w-4" />
-                    {displayStatus}
-                  </span>
-                </div>
-              );
-            })()}
+            {(booking.assignedToSelf || booking.worker) && (
+              <div className="mt-4 pt-4 border-t border-[#27272A]">
+                <h4 className="text-[#A1A1AA] text-sm font-medium mb-3">Assignment</h4>
+                {booking.assignedToSelf ? (
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                      <UserRound className="h-5 w-5 text-indigo-400" />
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-medium">Assigned to Me</p>
+                      <p className="text-[#71717A] text-xs">Self-Assigned</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-fuchsia-500/10 flex items-center justify-center border border-fuchsia-500/20">
+                      <UserRound className="h-5 w-5 text-fuchsia-400" />
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-medium">{booking.worker?.name || 'Worker'}</p>
+                      {booking.worker?.phone && (
+                        <p className="text-[#71717A] text-xs">{booking.worker.phone}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="bg-[#111111] rounded-xl border border-[#27272A] p-5">

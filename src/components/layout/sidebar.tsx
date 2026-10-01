@@ -17,11 +17,28 @@ export function Sidebar() {
   const { logout } = useAuth();
 
   const [source, setSource] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     setSource(urlParams.get('source'));
   }, [pathname]);
+
+  if (!isMounted) {
+    return (
+      <aside
+        className={cn(
+          'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-[#27272A] bg-[#0A0A0A] transition-all duration-300',
+          'w-[240px]' // Default to open for SSR
+        )}
+      >
+      </aside>
+    );
+  }
 
   return (
     <aside

@@ -10,7 +10,7 @@ export function QuickServiceTask({ token }: { token: string }) {
   const [step, setStep] = useState<'VERIFY' | 'SCAN' | 'ACTIONS' | 'SUCCESS'>('VERIFY');
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
   const [actionLoading, setActionLoading] = useState(false);
-  const [finalInvoice, setFinalInvoice] = useState<{ hours: number; hourlyRate: number; finalAmount: number } | null>(null);
+  const [finalInvoice, setFinalInvoice] = useState<{ hours: number; hourlyRate: number; finalAmount: number; remainingToPay?: number; alreadyPaid?: number } | null>(null);
   const [manualMode, setManualMode] = useState(false);
   const [manualInput, setManualInput] = useState('');
 
@@ -109,7 +109,8 @@ export function QuickServiceTask({ token }: { token: string }) {
       });
       const data = await res.json();
       if (res.ok) {
-        setFinalInvoice({ hours, hourlyRate, finalAmount });
+        const upfront = Number(task.booking.upfrontFee || 0) + Number(task.booking.materialCost || 0);
+        setFinalInvoice({ hours, hourlyRate, finalAmount: data.totalAmount, remainingToPay: data.remainingToPay, alreadyPaid: upfront });
         setStep('SUCCESS');
       } else {
         alert(data.message || 'Failed to end work');
@@ -350,12 +351,12 @@ export function QuickServiceTask({ token }: { token: string }) {
             
             {scanStatus === 'IDLE' && manualMode && (
               <div className="flex flex-col items-center justify-center p-4 w-full text-center">
-                <p className="text-sm text-gray-400 mb-4">Enter the 8-character ID from the customer's screen (e.g. F73CA0C9)</p>
+                <p className="text-sm text-gray-400 mb-4">Enter the 8-character PIN from the customer's screen</p>
                 <input 
                   type="text" 
                   value={manualInput}
                   onChange={(e) => setManualInput(e.target.value.toUpperCase())}
-                  placeholder="Service ID"
+                  placeholder="Service PIN"
                   className="bg-black border border-gray-700 rounded-lg px-4 py-3 w-full text-center text-xl font-bold tracking-widest uppercase mb-4"
                   maxLength={8}
                 />
@@ -363,7 +364,7 @@ export function QuickServiceTask({ token }: { token: string }) {
                   onClick={() => handleScan(manualInput)}
                   className="bg-[#FACC15] text-black font-bold py-2 px-6 rounded-lg hover:bg-yellow-500 transition w-full"
                 >
-                  Verify ID
+                  Verify PIN
                 </button>
               </div>
             )}
@@ -379,7 +380,7 @@ export function QuickServiceTask({ token }: { token: string }) {
               <div className="flex flex-col items-center justify-center text-red-500 animate-in fade-in zoom-in w-full h-full bg-gray-900 absolute top-0 left-0">
                 <AlertCircle className="w-20 h-20 mb-4" />
                 <p className="text-xl font-bold">Verification Failed</p>
-                <p className="text-sm mt-2 text-white text-center px-4">The ID does not match this booking.</p>
+                <p className="text-sm mt-2 text-white text-center px-4">The PIN/QR does not match this booking.</p>
               </div>
             )}
           </div>
@@ -389,7 +390,7 @@ export function QuickServiceTask({ token }: { token: string }) {
               onClick={() => setManualMode(!manualMode)}
               className="text-[#FACC15] text-sm underline mt-4"
             >
-              {manualMode ? 'Use QR Scanner Instead' : 'Having trouble scanning? Enter ID Manually'}
+              {manualMode ? 'Use QR Scanner Instead' : 'Having trouble scanning? Manual PIN Entry'}
             </button>
           )}
         </div>
@@ -443,9 +444,18 @@ export function QuickServiceTask({ token }: { token: string }) {
                 <span className="text-white font-medium">€{finalInvoice.hourlyRate.toFixed(2)}/hr</span>
               </div>
               <div className="h-px bg-white/10 my-3"></div>
-              <div className="flex justify-between text-lg font-bold text-[#FACC15]">
-                <span>Total Amount:</span>
+              <div className="flex justify-between text-sm text-gray-400 mb-2">
+                <span>Total Amount (Gross):</span>
                 <span>€{finalInvoice.finalAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-400 mb-2">
+                <span>Already Paid (Online):</span>
+                <span>-€{(finalInvoice.alreadyPaid || 0).toFixed(2)}</span>
+              </div>
+              <div className="h-px bg-white/10 my-3"></div>
+              <div className="flex justify-between text-lg font-bold text-[#FACC15]">
+                <span>Remaining to Collect:</span>
+                <span>€{(finalInvoice.remainingToPay || 0).toFixed(2)}</span>
               </div>
             </div>
           )}

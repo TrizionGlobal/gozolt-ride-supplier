@@ -98,39 +98,44 @@ export default function PayoutsPage() {
     let estimatedCashCollected = 0;
     let refunds = 0;
     let cancellations = 0;
+    let supplierNetEarned = 0;
 
     validBookings.forEach((b) => {
-      const upfront = parseFloat((b as any).totalAmount?.toString() || '0');
+      if (b.status === 'CANCELLED') {
+        cancellations += 1;
+        return; // Supplier earns nothing on cancelled jobs
+      }
+
+      const totalAmount = parseFloat((b as any).totalAmount?.toString() || '0');
+      const upfrontFee = parseFloat((b as any).upfrontFee?.toString() || '0');
       const collected = parseFloat((b as any).collectedAmount?.toString() || '0');
       const method = (b as any).paymentMethodType;
       
-      // Calculate Gross Revenue based on paid bookings
-      if (b.paymentStatus === 'PAID') {
-        let adminHeldAmount = upfront;
-        
-        if (method === 'CASH') {
-           estimatedCashCollected += collected;
-        } else {
-           adminHeldAmount += collected;
-        }
-        
-        grossUpfront += adminHeldAmount;
+      const supplierShare = Math.max(0, totalAmount - upfrontFee);
+      supplierNetEarned += supplierShare;
 
-        if (b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED') {
-          settledAdminPayout += adminHeldAmount; // Settled payout to supplier
-        } else {
-          pendingAdminPayout += adminHeldAmount; 
-        }
+      let adminOwesThisJob = supplierShare;
+
+      if (method === 'CASH') {
+         estimatedCashCollected += collected;
+         adminOwesThisJob -= collected;
       }
+      
+      adminOwesThisJob = Math.max(0, adminOwesThisJob);
 
-      if (b.status === 'CANCELLED') {
-        cancellations += 1;
+      // In a real app we'd check against actual Payout records to see what is settled.
+      // For this UI, if it's PAID and COMPLETED, we'll mark it as pending admin payout
+      // (as it waits for the 9-day settlement cycle).
+      if (b.paymentStatus === 'PAID') {
+        if (b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED') {
+          pendingAdminPayout += adminOwesThisJob;
+        }
       }
     });
 
     return {
-      grossUpfront,
-      settledAdminPayout,
+      supplierNetEarned,
+      settledAdminPayout, // Would come from Payout API in production
       pendingAdminPayout,
       estimatedCashCollected,
       refunds,
@@ -166,16 +171,25 @@ export default function PayoutsPage() {
     return validBookings
       .filter(b => b.paymentStatus === 'PAID' && (b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED'))
       .map(b => {
-        const netAmount = parseFloat((b as any).totalAmount?.toString() || '0');
+        const totalAmount = parseFloat((b as any).totalAmount?.toString() || '0');
+        const upfrontFee = parseFloat((b as any).upfrontFee?.toString() || '0');
+        const materialCost = parseFloat((b as any).materialCost?.toString() || '0');
+        const finalServiceCharge = Math.max(0, totalAmount - upfrontFee - materialCost);
+        const supplierNetEarned = Math.max(0, totalAmount - upfrontFee);
+
         return {
           id: b.id,
-          amount: netAmount,
-          status: 'PAID',
+          amount: supplierNetEarned,
+          status: 'COMPLETED' as const,
           periodStart: b.scheduledAt,
           periodEnd: b.scheduledAt,
           processedAt: b.updatedAt || b.scheduledAt,
           createdAt: b.scheduledAt,
-          details: b.childService || 'Quick Service'
+          details: { 
+            service: b.childService || 'Quick Service',
+            materialCost,
+            finalServiceCharge
+          }
         };
       }).slice((page - 1) * limit, page * limit);
   }, [validBookings, page, limit]);
@@ -206,7 +220,7 @@ export default function PayoutsPage() {
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
             <KpiCard label="Admin Settled (Paid to You)" value={fmt(stats.settledAdminPayout)} icon={CheckCircle2} color="bg-emerald-500/10 text-emerald-500" trend="up" />
             <KpiCard label="Pending Admin Payout" value={fmt(stats.pendingAdminPayout)} icon={Clock} color="bg-yellow-500/10 text-yellow-500" />
-            <KpiCard label="Platform Held (Upfront + Online)" value={fmt(stats.grossUpfront)} icon={Banknote} color="bg-blue-500/10 text-blue-500" />
+            <KpiCard label="Total Net Earned (Total - Upfront)" value={fmt(stats.supplierNetEarned)} icon={Banknote} color="bg-blue-500/10 text-blue-500" />
             <KpiCard label="Cash Collected (Kept by Worker)" value={fmt(stats.estimatedCashCollected)} icon={Landmark} color="bg-purple-500/10 text-purple-500" />
             <KpiCard label="Cancellations" value={stats.cancellations.toString()} icon={AlertCircle} color="bg-orange-500/10 text-orange-500" trend="down" />
           </div>

@@ -78,7 +78,7 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
     setValue,
     formState: { errors },
   } = useForm<Step1FormData>({
-    resolver: zodResolver(step1Schema),
+    resolver: zodResolver(step1Schema) as any,
     defaultValues: defaultValues as any,
     mode: 'onChange',
   });

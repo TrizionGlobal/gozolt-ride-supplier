@@ -93,9 +93,29 @@ export function PayoutHistoryTable({
       title: 'PERIOD',
       render: (row) => <span className="text-[#D4D4D8]">{formatPeriodFull(row.periodStart, row.periodEnd)}</span>,
     },
+    ...(serviceName === 'Quick Services' ? [
+      {
+        key: 'material',
+        title: 'MATERIAL COST',
+        render: (row: PayoutRecord) => (
+          <span className="text-[#D4D4D8]">
+            {row.details?.materialCost !== undefined ? formatCurrency(row.details.materialCost) : '——'}
+          </span>
+        ),
+      },
+      {
+        key: 'serviceCharge',
+        title: 'SERVICE CHARGE',
+        render: (row: PayoutRecord) => (
+          <span className="text-[#D4D4D8]">
+            {row.details?.finalServiceCharge !== undefined ? formatCurrency(row.details.finalServiceCharge) : '——'}
+          </span>
+        ),
+      }
+    ] : []),
     {
       key: 'amount',
-      title: 'AMOUNT',
+      title: 'TOTAL (NET)',
       render: (row) => <span className="font-semibold text-[#22C55E]">{formatCurrency(row.amount)}</span>,
     },
     {

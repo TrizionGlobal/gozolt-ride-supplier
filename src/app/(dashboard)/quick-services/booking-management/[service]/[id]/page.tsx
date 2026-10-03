@@ -289,14 +289,29 @@ export default function SupplierQuickServiceBookingDetailsPage() {
                 <span className="text-[#A1A1AA]">Upfront Fee:</span>
                 <span className="text-white font-medium">€{Number(booking.upfrontFee || 0).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[#A1A1AA]">{getExpertVisitName(childService)}:</span>
-                <span className="text-white font-medium">€{getQuickServiceHourlyRate(childService).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#A1A1AA]">Materials Included:</span>
-                <span className="text-white font-medium">€{Number(booking.materialCost || 0).toFixed(2)}</span>
-              </div>
+              
+              {features.finalDurationHrs !== undefined ? (
+                <div className="flex justify-between">
+                  <span className="text-[#A1A1AA]">
+                    {getExpertVisitName(childService)} ({Number(features.finalDurationHrs).toFixed(1)} hrs):
+                  </span>
+                  <span className="text-white font-medium">
+                    €{Number(features.finalHourlyCost || 0).toFixed(2)}
+                  </span>
+                </div>
+              ) : (
+                <div className="flex justify-between">
+                  <span className="text-[#A1A1AA]">{getExpertVisitName(childService)} (Estimated):</span>
+                  <span className="text-white font-medium">€{getQuickServiceHourlyRate(childService).toFixed(2)} / hr</span>
+                </div>
+              )}
+
+              {Number(booking.materialCost || 0) > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-[#A1A1AA]">Materials Included:</span>
+                  <span className="text-white font-medium">€{Number(booking.materialCost || 0).toFixed(2)}</span>
+                </div>
+              )}
               {Number(booking.discountAmount) > 0 && (
                 <div className="flex justify-between">
                   <span className="text-[#A1A1AA]">GoCoins Discount:</span>
@@ -310,9 +325,21 @@ export default function SupplierQuickServiceBookingDetailsPage() {
                 </div>
               )}
               <div className="flex justify-between border-t border-[#27272A] pt-3 font-bold">
-                <span className="text-white">Total Amount:</span>
+                <span className="text-white">Total Amount {booking.status === 'CANCELLED' ? '(Initially Paid)' : ''}:</span>
                 <span className="text-[#FCD223]">€{Number(booking.totalAmount || 0).toFixed(2)}</span>
               </div>
+              {booking.status === 'CANCELLED' && booking.paymentStatus === 'PARTIALLY_REFUNDED' && (
+                <div className="flex justify-between text-red-400 mt-2">
+                  <span>Refunded (Materials):</span>
+                  <span className="font-bold">-€{Number(booking.materialCost || 0).toFixed(2)}</span>
+                </div>
+              )}
+              {booking.status === 'CANCELLED' && booking.paymentStatus === 'PARTIALLY_REFUNDED' && (
+                <div className="flex justify-between text-green-400 font-bold">
+                  <span>Platform Retained (Upfront Fee):</span>
+                  <span>€{Number(booking.upfrontFee || 0).toFixed(2)}</span>
+                </div>
+              )}
             </div>
             {booking.paymentMethodType && (
               <div className="mt-4 pt-4 border-t border-[#27272A]">

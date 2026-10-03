@@ -32,8 +32,7 @@ export function AssignWorkerModal({ bookingId, taskType, onClose, onAssigned }: 
     try {
       await apiClient.post(`/car-rentals/supplier/bookings/${bookingId}/assign-task`, { 
         workerId: selectedWorkerId, 
-        taskType,
-        magicLinkBaseUrl: window.location.origin
+        taskType
       });
       onAssigned();
     } catch (err) {

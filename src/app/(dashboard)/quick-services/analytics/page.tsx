@@ -99,6 +99,8 @@ export default function QuickServicesAnalyticsPage() {
     let completed = 0;
     let paid = 0;
     let hours = 0;
+    let materialTotal = 0;
+    let serviceChargeTotal = 0;
 
     const earningsMap: Record<string, number> = {};
     const statusMap: Record<string, number> = {
@@ -110,24 +112,30 @@ export default function QuickServicesAnalyticsPage() {
 
     validBookings.forEach((b) => {
       const name = normalizeServiceName((b as any).childService || (b as any).serviceTitle || 'Standard Service');
-      const amount = parseFloat((b as any).totalAmount?.toString() || '0');
+      const totalAmount = parseFloat((b as any).totalAmount?.toString() || '0');
+      const upfrontFee = parseFloat((b as any).upfrontFee?.toString() || '0');
+      const supplierEarned = Math.max(0, totalAmount - upfrontFee);
       
       // Status Grouping
       if (b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED') {
         statusMap['Completed'] += 1;
         completed += 1;
-        rev += amount;
+        rev += supplierEarned;
+        
+        const mat = parseFloat((b as any).materialCost?.toString() || '0');
+        materialTotal += mat;
+        serviceChargeTotal += Math.max(0, supplierEarned - mat);
         
         // Approximate 1.5 hours per completed job since we don't track exact timestamps yet
         hours += 1.5;
 
         // Earnings by Service
-        earningsMap[name] = (earningsMap[name] || 0) + amount;
+        earningsMap[name] = (earningsMap[name] || 0) + supplierEarned;
 
         // Revenue by Date
         const dateObj = new Date((b as any).bookingDate || (b as any).scheduledAt || (b as any).createdAt || Date.now());
         const dateStr = dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-        dateMap[dateStr] = (dateMap[dateStr] || 0) + amount;
+        dateMap[dateStr] = (dateMap[dateStr] || 0) + supplierEarned;
       } 
       else if (b.serviceStatus === 'IN_PROGRESS' || b.status === 'IN_PROGRESS') {
         statusMap['In Progress'] += 1;
@@ -137,7 +145,7 @@ export default function QuickServicesAnalyticsPage() {
 
       // Total Paid by User (regardless of completion, if paymentStatus is PAID)
       if (b.paymentStatus === 'PAID') {
-        paid += amount;
+        paid += totalAmount;
       }
     });
 
@@ -150,6 +158,8 @@ export default function QuickServicesAnalyticsPage() {
       totalCompleted: completed,
       totalPaid: paid,
       totalHours: hours,
+      totalMaterial: materialTotal,
+      totalServiceCharge: serviceChargeTotal,
       earningsByService: earningsArray,
       statusData: statusArray,
       revenueByDate: dateArray
@@ -227,11 +237,13 @@ export default function QuickServicesAnalyticsPage() {
       ) : (
         <>
           {/* Top KPI Cards */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard title="Total Earnings" value={`€${totalRevenue.toFixed(2)}`} icon={<CircleDollarSign className="h-5 w-5" />} color="green" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <MetricCard title="Total Net Earnings" value={`€${totalRevenue.toFixed(2)}`} icon={<CircleDollarSign className="h-5 w-5" />} color="green" />
+            <MetricCard title="Total Material Paid" value={`€${totalMaterial.toFixed(2)}`} icon={<CircleDollarSign className="h-5 w-5" />} color="yellow" />
+            <MetricCard title="Final Service Charge Earned" value={`€${totalServiceCharge.toFixed(2)}`} icon={<CircleDollarSign className="h-5 w-5" />} color="purple" />
+            <MetricCard title="Total Customer Payments" value={`€${totalPaid.toFixed(2)}`} icon={<Wallet className="h-5 w-5" />} color="yellow" />
             <MetricCard title="Est. Hours Worked" value={`${totalHours.toFixed(1)} hrs`} icon={<Clock className="h-5 w-5" />} color="blue" />
             <MetricCard title="Completed Jobs" value={totalCompleted.toString()} icon={<CheckCircle2 className="h-5 w-5" />} color="purple" />
-            <MetricCard title="Total Customer Payments" value={`€${totalPaid.toFixed(2)}`} icon={<Wallet className="h-5 w-5" />} color="yellow" />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">

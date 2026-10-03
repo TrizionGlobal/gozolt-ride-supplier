@@ -93,7 +93,9 @@ export default function QuickServicesAnalyticsPage() {
     totalHours,
     earningsByService,
     statusData,
-    revenueByDate
+    revenueByDate,
+    totalMaterial,
+    totalServiceCharge
   } = useMemo(() => {
     let rev = 0;
     let completed = 0;

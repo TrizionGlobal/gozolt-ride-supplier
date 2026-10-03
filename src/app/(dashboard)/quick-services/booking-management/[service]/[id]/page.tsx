@@ -87,7 +87,7 @@ export default function SupplierQuickServiceBookingDetailsPage() {
     else if (Array.isArray(booking.addOns)) addOns = booking.addOns;
   } catch (e) {}
 
-  let features = {};
+  let features: any = {};
   try {
     if (typeof booking.options === 'string') features = JSON.parse(booking.options);
     else if (booking.options && typeof booking.options === 'object') features = booking.options;

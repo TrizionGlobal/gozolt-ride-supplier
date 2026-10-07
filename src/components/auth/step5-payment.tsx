@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Lock, ArrowLeft, ChevronRight, ShieldCheck, CreditCard } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { CountrySelect } from '@/components/ui/country-select';
 
 interface CardData {
   paymentMethodId: string;
@@ -52,7 +53,7 @@ function Step5PaymentForm({
   const [cardName, setCardName] = useState(initialValues.cardName || ownerName);
   const [billingAddress, setBillingAddress] = useState('');
   const [billingCity, setBillingCity] = useState('');
-  const [billingCountry] = useState('Malta');
+  const [billingCountry, setBillingCountry] = useState('MT');
 
   const [useSavedToken, setUseSavedToken] = useState(!!initialValues.paymentMethodId);
   const [isTokenizing, setIsTokenizing] = useState(false);
@@ -298,13 +299,11 @@ function Step5PaymentForm({
 
             <div>
               <label className="mb-1.5 block text-xs text-white">Country</label>
-              <select
-                disabled
-                value={billingCountry}
-                className="w-full h-10 rounded-lg border border-[#27272A] bg-[#111111] px-3.5 py-2.5 text-sm text-[#A1A1AA] cursor-not-allowed outline-none"
-              >
-                <option value="Malta">🇲🇹 Malta</option>
-              </select>
+              <CountrySelect 
+                value={billingCountry} 
+                onChange={setBillingCountry} 
+                disabled={isTokenizing || isSubmitting}
+              />
             </div>
           </div>
         )}

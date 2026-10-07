@@ -32,7 +32,8 @@ export function AssignWorkerModal({ bookingId, taskType, onClose, onAssigned }: 
     try {
       await apiClient.post(`/bike-rentals/supplier/bookings/${bookingId}/assign-task`, { 
         workerId: selectedWorkerId, 
-        taskType
+        taskType,
+        magicLinkBaseUrl: window.location.origin
       });
       onAssigned();
     } catch (err) {

@@ -13,6 +13,7 @@ import { RegistrationComplete } from '@/components/auth/registration-complete';
 import { supplierRegister } from '@/services/auth/auth.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { isSupplierService, SUPPLIER_SERVICE_NAMES, type SupplierService } from '@/types/supplier-service';
+import { apiClient } from '@/lib/api-client';
 
 const REGISTRATION_STEPS = [
   { number: 1, label: 'Company Information' },
@@ -102,7 +103,24 @@ export default function RegisterPage() {
 
 
 
-  const handleStep1Next = (data: Step1FormData) => {
+  const handleStep1Next = async (data: Step1FormData) => {
+    try {
+      setIsLoading(true);
+      const res = await apiClient.get(`/auth/supplier/check-email?email=${encodeURIComponent(data.email)}`);
+      
+      if (res.data) {
+        if (!res.data.isAvailable) {
+          const serviceName = res.data.registeredService?.replace(/_/g, ' ') || 'another service';
+          toast.error(`This email is already registered for ${serviceName}. Please use a different email.`);
+          setIsLoading(false);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Email check error:', error);
+    }
+    
+    setIsLoading(false);
     setStep1Data(data);
     setCurrentStep(2);
   };

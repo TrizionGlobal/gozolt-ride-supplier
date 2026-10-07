@@ -179,8 +179,8 @@ export function useAuth() {
       useSidebarStore.getState().setActiveModule(null);
       clearAuth();
 
-      // Return to the four-service landing page
-      router.push('/welcome');
+      // Return to the login page
+      router.push('/login');
     }
   }, [router, clearAuth]);
 

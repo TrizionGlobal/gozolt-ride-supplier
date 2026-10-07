@@ -34,7 +34,8 @@ export function AssignWorkerModal({ bookingId, onClose, onAssigned }: Props) {
     setAssigning(true);
     try {
       await apiClient.post(`/quick-services/supplier/bookings/${bookingId}/assign-task`, { 
-        workerId: selectedWorkerId
+        workerId: selectedWorkerId,
+        magicLinkBaseUrl: window.location.origin
       });
       toast.success('Worker assigned successfully and magic link sent!');
       onAssigned();

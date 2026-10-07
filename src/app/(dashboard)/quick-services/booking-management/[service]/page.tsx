@@ -149,7 +149,8 @@ export default function ServiceBookingManagementPage() {
   const handleStartWorkSelf = async (bookingId: string) => {
     try {
       const res = await apiClient.post(`/quick-services/supplier/bookings/${bookingId}/assign-task`, {
-        workerId: 'self'
+        workerId: 'self',
+        magicLinkBaseUrl: window.location.origin
       });
       if (res.data?.magicLink) {
         toast.success('Assigned to self. Starting work...');

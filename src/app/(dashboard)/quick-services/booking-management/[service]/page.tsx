@@ -55,10 +55,10 @@ export default function ServiceBookingManagementPage() {
   const { user } = useAuthStore();
   let userChildServices: string[] = [];
   try {
-    const parsed = typeof user?.quickServicesOffered === 'string' 
-      ? JSON.parse(user.quickServicesOffered) 
+    const parsed = typeof user?.quickServicesOffered === 'string'
+      ? JSON.parse(user.quickServicesOffered)
       : user?.quickServicesOffered;
-      
+
     if (Array.isArray(parsed)) {
       parsed.forEach((s: any) => {
         if (s.category === service?.id) {
@@ -69,7 +69,7 @@ export default function ServiceBookingManagementPage() {
   } catch (e) {
     console.error(e);
   }
-  
+
   const catalogEntry = QUICK_SERVICES_CATALOG.find((c) => c.id === service?.id);
   const childNames = userChildServices.map((cid) => {
     const child = catalogEntry?.children?.find((c) => c.id === cid);
@@ -249,13 +249,13 @@ export default function ServiceBookingManagementPage() {
                 Options <MoreVertical className="h-3 w-3" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40 bg-[#111111] border-[#27272A] text-white">
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => router.push(`/quick-services/booking-management/${params.service}/${row.id || (row as any)._id}`)}
                   className="cursor-pointer focus:bg-[#27272A] focus:text-white"
                 >
                   View Details
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => {
                     setSelectedBookingId(row.id || (row as any)._id);
                     setIsAssignModalOpen(true);
@@ -264,11 +264,11 @@ export default function ServiceBookingManagementPage() {
                 >
                   Assign to Worker
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => handleStartWorkSelf(row.id || (row as any)._id)}
                   className="cursor-pointer focus:bg-[#27272A] focus:text-white text-[#FACC15]"
                 >
-                  Start Work
+                  Assign to self
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -307,9 +307,8 @@ export default function ServiceBookingManagementPage() {
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-white/5 border border-white/10 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition-colors disabled:opacity-50"
         >
           <RefreshCw
-            className={`h-4 w-4 ${
-              isLoading ? 'animate-spin' : ''
-            }`}
+            className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''
+              }`}
           />
           Refresh
         </button>
@@ -317,111 +316,111 @@ export default function ServiceBookingManagementPage() {
 
       {/* Filters */}
       {/* Filters */}
-<div className="rounded-xl border border-[#27272A] bg-[#111111] p-4">
-  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(280px,1.4fr)_minmax(190px,1fr)_minmax(160px,0.8fr)_minmax(180px,0.9fr)_44px]">
-    {/* Search */}
-    <div className="flex min-w-0">
-      <div className="relative min-w-0 flex-1">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#71717A]" />
+      <div className="rounded-xl border border-[#27272A] bg-[#111111] p-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[minmax(280px,1.4fr)_minmax(190px,1fr)_minmax(160px,0.8fr)_minmax(180px,0.9fr)_44px]">
+          {/* Search */}
+          <div className="flex min-w-0">
+            <div className="relative min-w-0 flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#71717A]" />
 
-        <input
-          type="text"
-          value={search}
-          onChange={(event) => {
-            setSearch(event.target.value);
-            setPage(1);
-          }}
-          placeholder="Search..."
-          className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2 pl-10 pr-3 text-sm text-white placeholder-[#71717A] outline-none focus:border-[#FCD223]"
-        />
+              <input
+                type="text"
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Search..."
+                className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2 pl-10 pr-3 text-sm text-white placeholder-[#71717A] outline-none focus:border-[#FCD223]"
+              />
+            </div>
+          </div>
+
+          {/* Child service */}
+          <select
+            value={childService}
+            onChange={(event) => {
+              setChildService(event.target.value);
+              setPage(1);
+            }}
+            className="h-10 min-w-0 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3 text-sm text-white outline-none focus:border-[#FCD223]"
+          >
+            <option value="">
+              All {service.name} services
+            </option>
+
+            {childNames.map((child) => (
+              <option key={child} value={child}>
+                {child}
+              </option>
+            ))}
+          </select>
+
+          {/* Status */}
+          <select
+            value={status}
+            onChange={(event) => {
+              setStatus(
+                event.target
+                  .value as QuickServiceBookingStatus | ''
+              );
+              setPage(1);
+            }}
+            className="h-10 min-w-0 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3 text-sm text-white outline-none focus:border-[#FCD223]"
+          >
+            <option value="">All statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="ASSIGNED">Assigned</option>
+            <option value="IN_PROGRESS">
+              In Progress
+            </option>
+            <option value="COMPLETED">Completed</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+
+          {/* Assignment */}
+          <select
+            value={assignment}
+            onChange={(event) => {
+              setAssignment(
+                event.target
+                  .value as QuickServiceAssignmentFilter
+              );
+              setPage(1);
+            }}
+            className="h-10 min-w-0 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3 text-sm text-white outline-none focus:border-[#FCD223]"
+          >
+            <option value="ALL">
+              All assignments
+            </option>
+
+            <option value="UNASSIGNED">
+              Unassigned
+            </option>
+
+            <option value="ASSIGNED_TO_ME">
+              Assigned to Me
+            </option>
+
+            <option value="WORKER_ASSIGNED">
+              Worker Assigned
+            </option>
+          </select>
+
+          {/* Clear filters icon */}
+          <button
+            type="button"
+            onClick={clearFilters}
+            title="Clear filters"
+            aria-label="Clear filters"
+            className="flex h-10 w-11 items-center justify-center rounded-lg border border-[#27272A] bg-[#0A0A0A] text-[#A1A1AA] transition-colors hover:border-[#FCD223] hover:bg-[#FCD223]/10 hover:text-[#FCD223]"
+          >
+            <Filter className="h-5 w-5" />
+          </button>
+        </div>
       </div>
-    </div>
 
-    {/* Child service */}
-    <select
-      value={childService}
-      onChange={(event) => {
-        setChildService(event.target.value);
-        setPage(1);
-      }}
-      className="h-10 min-w-0 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3 text-sm text-white outline-none focus:border-[#FCD223]"
-    >
-      <option value="">
-        All {service.name} services
-      </option>
 
-      {childNames.map((child) => (
-        <option key={child} value={child}>
-          {child}
-        </option>
-      ))}
-    </select>
-
-    {/* Status */}
-    <select
-      value={status}
-      onChange={(event) => {
-        setStatus(
-          event.target
-            .value as QuickServiceBookingStatus | ''
-        );
-        setPage(1);
-      }}
-      className="h-10 min-w-0 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3 text-sm text-white outline-none focus:border-[#FCD223]"
-    >
-      <option value="">All statuses</option>
-      <option value="PENDING">Pending</option>
-      <option value="ASSIGNED">Assigned</option>
-      <option value="IN_PROGRESS">
-        In Progress
-      </option>
-      <option value="COMPLETED">Completed</option>
-      <option value="CANCELLED">Cancelled</option>
-    </select>
-
-    {/* Assignment */}
-    <select
-      value={assignment}
-      onChange={(event) => {
-        setAssignment(
-          event.target
-            .value as QuickServiceAssignmentFilter
-        );
-        setPage(1);
-      }}
-      className="h-10 min-w-0 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3 text-sm text-white outline-none focus:border-[#FCD223]"
-    >
-      <option value="ALL">
-        All assignments
-      </option>
-
-      <option value="UNASSIGNED">
-        Unassigned
-      </option>
-
-      <option value="ASSIGNED_TO_ME">
-        Assigned to Me
-      </option>
-
-      <option value="WORKER_ASSIGNED">
-        Worker Assigned
-      </option>
-    </select>
-
-    {/* Clear filters icon */}
-    <button
-      type="button"
-      onClick={clearFilters}
-      title="Clear filters"
-      aria-label="Clear filters"
-      className="flex h-10 w-11 items-center justify-center rounded-lg border border-[#27272A] bg-[#0A0A0A] text-[#A1A1AA] transition-colors hover:border-[#FCD223] hover:bg-[#FCD223]/10 hover:text-[#FCD223]"
-    >
-      <Filter className="h-5 w-5" />
-    </button>
-  </div>
-</div>
-
-   
 
 
       {/* Table */}
@@ -448,7 +447,7 @@ export default function ServiceBookingManagementPage() {
           limit={limit}
           total={total}
           onPageChange={setPage}
-          onLimitChange={() => {}}
+          onLimitChange={() => { }}
           rowKey="id"
           emptyText={
             <div className="flex flex-col items-center justify-center py-10">

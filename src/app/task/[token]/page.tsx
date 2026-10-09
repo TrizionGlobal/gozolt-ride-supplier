@@ -1,21 +1,22 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, use, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Camera, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { Scanner } from '@yudiel/react-qr-scanner';
 
 import { QuickServiceTask } from '@/components/quick-services/quick-service-task';
 
-export default function HandoverTaskPage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = use(params);
+function HandoverTaskContent({ token }: { token: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const typeParam = searchParams.get('type') || 'car';
+  
   const [task, setTask] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(typeParam !== 'quick-service');
   const [error, setError] = useState('');
   const [step, setStep] = useState<'VERIFY' | 'SCAN' | 'FORM' | 'SUCCESS'>('VERIFY');
-  const [rentalType, setRentalType] = useState('car');
-  const [isQuickService, setIsQuickService] = useState(false);
+  const [rentalType, setRentalType] = useState(typeParam);
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
   const [formData, setFormData] = useState({ fuelLevel: 'FULL', odometerReading: '', vehicleCondition: 'Good', damageNotes: '', refundAmount: '', refundAccountNumber: '', supplierSignature: '' });
   const [photos, setPhotos] = useState<string[]>([]);
@@ -46,15 +47,11 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
   }, [task]);
 
   useEffect(() => {
-    const type = new URLSearchParams(window.location.search).get('type') || 'car';
-    setRentalType(type);
-    
-    if (type === 'quick-service') {
-      setIsQuickService(true);
+    if (typeParam === 'quick-service') {
       return; // The QuickServiceTask component will handle its own fetching
     }
 
-    fetch(`/api/proxy/${type === 'bike' ? 'bike-rentals' : 'car-rentals'}/public/task/${token}`)
+    fetch(`/api/proxy/${typeParam === 'bike' ? 'bike-rentals' : 'car-rentals'}/public/task/${token}`)
       .then(res => res.json())
       .then(data => {
         if (data.statusCode && data.statusCode !== 200) {
@@ -66,9 +63,9 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
       })
       .catch(err => setError('Failed to load task'))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, typeParam]);
 
-  if (isQuickService) {
+  if (typeParam === 'quick-service') {
     return <QuickServiceTask token={token} />;
   }
 
@@ -405,5 +402,14 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
         </div>
       )}
     </div>
+  );
+}
+
+export default function HandoverTaskPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = use(params);
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center text-white">Verifying Link...</div>}>
+      <HandoverTaskContent token={token} />
+    </Suspense>
   );
 }

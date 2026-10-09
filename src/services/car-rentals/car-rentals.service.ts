@@ -32,6 +32,7 @@ export interface MileagePackage {
 
 export interface CarRentalVehicle {
   id?: string;
+  brand?: string;
   name: string;
   category: string;
   registrationNo?: string;

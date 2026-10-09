@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuthStore } from '@/stores/auth.store';
 import { Building2, Bell, Users, Globe, Shield, Lock, Landmark } from 'lucide-react';
 import { CompanyProfileTab } from '@/components/settings/company-profile-tab';
+import { QuickServicesTab } from '@/components/settings/quick-services-tab';
 import { NotificationsTab } from '@/components/settings/notifications-tab';
 import { UsersTab } from '@/components/settings/users-tab';
 import { LanguageTab } from '@/components/settings/language-tab';
@@ -11,8 +13,9 @@ import { SecurityTab } from '@/components/settings/security-tab';
 import { BankDetailsTab } from '@/components/settings/bank-details-tab';
 import type { SettingsTab } from '@/types';
 
-const TABS: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
+const TABS: { key: SettingsTab; label: string; icon: React.ElementType; showFor?: string[] }[] = [
   { key: 'company', label: 'Company Profile', icon: Building2 },
+  { key: 'quick-services', label: 'Quick Services', icon: Bell, showFor: ['QUICK_SERVICES'] },
   { key: 'bank', label: 'Bank Details', icon: Landmark },
   { key: 'notifications', label: 'Notifications', icon: Bell },
   { key: 'users', label: 'Users', icon: Users },
@@ -22,7 +25,11 @@ const TABS: { key: SettingsTab; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function SettingsPage() {
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<SettingsTab>('company');
+
+  // Filter tabs based on user's registered service
+  const visibleTabs = TABS.filter(tab => !tab.showFor || (user?.registeredService && tab.showFor.includes(user.registeredService)));
 
   return (
     <div className="space-y-6">
@@ -31,7 +38,7 @@ export default function SettingsPage() {
 
       {/* Tab Navigation */}
       <div className="flex gap-1 overflow-x-auto rounded-lg border border-[#27272A] bg-[#0A0A0A] p-1">
-        {TABS.map(({ key, label, icon: Icon }) => (
+        {visibleTabs.map(({ key, label, icon: Icon }) => (
           <button
             key={key}
             onClick={() => setActiveTab(key)}
@@ -50,6 +57,7 @@ export default function SettingsPage() {
       {/* Tab Content */}
       <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
         {activeTab === 'company' && <CompanyProfileTab />}
+        {activeTab === 'quick-services' && <QuickServicesTab />}
         {activeTab === 'bank' && <BankDetailsTab />}
         {activeTab === 'notifications' && <NotificationsTab />}
         {activeTab === 'users' && <UsersTab />}

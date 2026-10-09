@@ -639,7 +639,7 @@ export interface LanguageSettings {
   driverAppLanguage: string;
 }
 
-export type SettingsTab = 'company' | 'notifications' | 'users' | 'workers' | 'language' | 'privacy' | 'security' | 'bank';
+export type SettingsTab = 'company' | 'quick-services' | 'notifications' | 'users' | 'workers' | 'language' | 'privacy' | 'security' | 'bank';
 
 export interface RegistrationFormData {
   companyName: string;

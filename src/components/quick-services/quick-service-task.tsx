@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Camera, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Scanner } from '@yudiel/react-qr-scanner';
+import dynamic from 'next/dynamic';
+const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), { ssr: false });
 import { getExpertVisitName, getQuickServiceHourlyRate } from '@/lib/quick-services-pricing';
 
 export function QuickServiceTask({ token }: { token: string }) {
@@ -41,7 +42,9 @@ export function QuickServiceTask({ token }: { token: string }) {
         } else {
           setTask(data);
           // If the booking is already in progress, jump to ACTIONS so they can complete it.
-          if (data.booking?.status === 'IN_PROGRESS') {
+          if (data.isUsed) {
+            setStep('SUCCESS');
+          } else if (data.booking?.status === 'IN_PROGRESS') {
             setStep('ACTIONS');
           } else {
             setStep('SCAN');

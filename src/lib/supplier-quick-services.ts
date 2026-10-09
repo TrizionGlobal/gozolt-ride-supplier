@@ -31,13 +31,7 @@ export const SUPPLIER_QUICK_SERVICE_CATEGORIES:
       'Scanner',
     ],
   },
-  {
-    id: 'PLUMBING_CARPENTRY',
-    slug: 'plumbing-carpentry',
-    name: 'Plumbing / Carpentry',
-    icon: '/plumbing-carpentry-icon.png',
-    childServices: ['Plumbing', 'Carpentry'],
-  },
+
   {
     id: 'VEHICLE_MECHANIC',
     slug: 'vehicle-mechanic',
@@ -53,11 +47,11 @@ export const SUPPLIER_QUICK_SERVICE_CATEGORIES:
     childServices: ['Car', 'Bike', 'Truck'],
   },
   {
-    id: 'ELECTRICAL_MECHANIC',
-    slug: 'electrical-mechanic',
-    name: 'Electrical Mechanic',
+    id: 'ELECTRICAL_REPAIR',
+    slug: 'electrical-repair',
+    name: 'Electrical Repair',
     icon: '/electrical-mechanic-icon.png',
-    childServices: ['Home', 'Lift'],
+    childServices: ['Home', 'Commercial', 'Events'],
   },
   {
     id: 'APPLIANCE_REPAIR',
@@ -67,11 +61,11 @@ export const SUPPLIER_QUICK_SERVICE_CATEGORIES:
     childServices: [],
   },
   {
-    id: 'BEAUTY_WELLNESS',
-    slug: 'beauty-wellness',
-    name: 'Beauty / Wellness',
+    id: 'BEAUTICIAN_WELLNESS',
+    slug: 'beautician-wellness',
+    name: 'Beautician / Wellness',
     icon: '/beauty-wellness-icon.png',
-    childServices: [],
+    childServices: ['Male', 'Female', 'Kids', 'Others'],
   },
   {
     id: 'HIRE_A_PERSON',
@@ -81,9 +75,9 @@ export const SUPPLIER_QUICK_SERVICE_CATEGORIES:
     childServices: [],
   },
   {
-    id: 'LAUNDRY_WORKER',
-    slug: 'laundry-worker',
-    name: 'Laundry Worker',
+    id: 'LAUNDRY',
+    slug: 'laundry',
+    name: 'Laundry',
     icon: '/laundry-worker-icon.png',
     childServices: [
       'Home',

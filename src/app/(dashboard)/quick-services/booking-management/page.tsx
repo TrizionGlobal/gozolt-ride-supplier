@@ -83,7 +83,12 @@ export default function QuickServicesBookingManagementPage() {
         {displayedServices.length > 0 ? (
           displayedServices.map((service) => {
             const catalogEntry = QUICK_SERVICES_CATALOG.find((c) => c.id === service.id);
-            const childIds = userChildServices[service.id] || [];
+            let childIds = userChildServices[service.id] || [];
+
+            // If the supplier has the category but the array is empty, it means they have all child services
+            if (childIds.length === 0 && catalogEntry?.children && catalogEntry.children.length > 0) {
+              childIds = catalogEntry.children.map(c => c.id);
+            }
 
             const childNames = childIds.map((cid) => {
               const child = catalogEntry?.children?.find((c) => c.id === cid);

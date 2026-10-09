@@ -3,7 +3,8 @@
 import { useState, useEffect, use, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Camera, CheckCircle2, AlertCircle, X } from 'lucide-react';
-import { Scanner } from '@yudiel/react-qr-scanner';
+import dynamic from 'next/dynamic';
+const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), { ssr: false });
 
 import { QuickServiceTask } from '@/components/quick-services/quick-service-task';
 
@@ -58,7 +59,11 @@ function HandoverTaskContent({ token }: { token: string }) {
           setError(data.message || 'Invalid or expired link');
         } else {
           setTask(data);
-          setStep('SCAN');
+          if (data.isUsed) {
+            setStep('SUCCESS');
+          } else {
+            setStep('SCAN');
+          }
         }
       })
       .catch(err => setError('Failed to load task'))

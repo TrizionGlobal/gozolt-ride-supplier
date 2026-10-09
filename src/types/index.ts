@@ -609,6 +609,7 @@ export interface CompanyProfile {
   longitude?: number | null;
   defaultDriverCommission: number;
   logoUrl?: string;
+  quickServicesOffered?: any;
 }
 
 export interface NotificationPreferences {

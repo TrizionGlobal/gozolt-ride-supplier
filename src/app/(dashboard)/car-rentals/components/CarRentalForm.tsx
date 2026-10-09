@@ -61,7 +61,12 @@ export function CarRentalForm({ initialData }: Props) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const capitalizeWords = (s: string) => s.split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '').join(' ');
+  const formatPlate = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const formatDigits = (s: string) => s.replace(/[^0-9]/g, '');
+
   // Basic Details
+  const [brand, setBrand] = useState(initialData?.brand || '');
   const [name, setName] = useState(initialData?.name || '');
   const [category, setCategory] = useState(initialData?.category || '');
   const [registrationNo, setRegistrationNo] = useState(initialData?.registrationNo || '');
@@ -160,6 +165,7 @@ export function CarRentalForm({ initialData }: Props) {
     setIsSubmitting(true);
     try {
       const data = {
+        brand,
         name,
         category,
         registrationNo,
@@ -264,8 +270,12 @@ export function CarRentalForm({ initialData }: Props) {
         <h2 className="text-lg font-bold text-white mb-6">Basic Information</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
+            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Brand<span className="text-red-500">*</span></label>
+            <input required type="text" value={brand} onChange={e => setBrand(capitalizeWords(e.target.value))} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. Toyota" />
+          </div>
+          <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Vehicle Name<span className="text-red-500">*</span></label>
-            <input required type="text" value={name} onChange={e => setName(e.target.value)} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. Toyota Corolla" />
+            <input required type="text" value={name} onChange={e => setName(capitalizeWords(e.target.value))} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. Corolla" />
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Category<span className="text-red-500">*</span></label>
@@ -280,11 +290,11 @@ export function CarRentalForm({ initialData }: Props) {
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Number Plate / Registration<span className="text-red-500">*</span></label>
-            <input required type="text" value={registrationNo} onChange={e => setRegistrationNo(e.target.value)} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. ABC 123" />
+            <input required type="text" value={registrationNo} onChange={e => setRegistrationNo(formatPlate(e.target.value))} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. ABC123" />
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Make Year<span className="text-red-500">*</span></label>
-            <input required type="text" value={year} onChange={e => setYear(e.target.value)} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. 2024" />
+            <input required type="text" value={year} onChange={e => setYear(formatDigits(e.target.value))} maxLength={4} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. 2024" />
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Transmission<span className="text-red-500">*</span></label>

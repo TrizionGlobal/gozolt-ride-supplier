@@ -152,7 +152,7 @@ export function BikeRentalBookingsTable({
       className: 'text-center',
       render: (row) => {
         const hasOptions = ['PENDING_APPROVAL', 'CONFIRMED', 'ACTIVE'].includes(row.status);
-        
+
         if (!hasOptions) {
           return (
             <div className="flex justify-center">
@@ -181,35 +181,35 @@ export function BikeRentalBookingsTable({
                     <DropdownMenuSeparator className="bg-[#27272A]" />
                   </>
                 )}
-                
+
                 {row.status === 'CONFIRMED' && (
                   <>
                     <DropdownMenuItem asChild className="text-[#FACC15] focus:text-[#FACC15] focus:bg-[#FACC15]/10 cursor-pointer">
-                      <Link href={`/bike-rentals/${row.id}/handover?source=bookings`}>Do Handover</Link>
+                      <Link href={`/bike-rentals/${row.id}/handover?source=bookings`}>Supplier Handover</Link>
                     </DropdownMenuItem>
                     {onAssignWorker && (
                       <DropdownMenuItem onClick={() => onAssignWorker(row.id, 'HANDOVER')} className="text-white focus:text-white focus:bg-[#27272A] cursor-pointer">
-                        Assign Handover
+                        Assign Worker/Staff to Handover
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator className="bg-[#27272A]" />
                   </>
                 )}
-                
+
                 {row.status === 'ACTIVE' && (
                   <>
                     <DropdownMenuItem asChild className="text-green-500 focus:text-green-400 focus:bg-green-500/10 cursor-pointer">
-                      <Link href={`/bike-rentals/${row.id}/return?source=bookings`}>Do Return</Link>
+                      <Link href={`/bike-rentals/${row.id}/return?source=bookings`}>Supplier Return</Link>
                     </DropdownMenuItem>
                     {onAssignWorker && (
                       <DropdownMenuItem onClick={() => onAssignWorker(row.id, 'RETURN')} className="text-white focus:text-white focus:bg-[#27272A] cursor-pointer">
-                        Assign Return
+                        Assign Worker/Staff to Return
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator className="bg-[#27272A]" />
                   </>
                 )}
-                
+
                 <DropdownMenuItem asChild className="cursor-pointer focus:bg-[#27272A] focus:text-white">
                   <Link href={`/bike-rentals/${row.id}/details?source=bookings`}>View Details</Link>
                 </DropdownMenuItem>

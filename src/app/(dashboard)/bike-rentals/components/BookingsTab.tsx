@@ -10,7 +10,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { AssignWorkerModal } from '@/components/bike-rentals/assign-worker-modal';
 import Swal from 'sweetalert2';
 import { ExtensionRequestsTable } from './ExtensionRequestsTable';
-
+import { useFleetTracking } from '@/hooks/use-fleet-tracking';
 const TABS = [
   { id: 'today', label: 'Today\'s Scheduled', statuses: ['CONFIRMED'], dateFilter: 'TODAY' },
   { id: 'pending', label: 'Pending Requests', statuses: ['PENDING_APPROVAL'], dateFilter: undefined },
@@ -106,6 +106,16 @@ export function BookingsTab() {
       fetchBookings(false);
     }
   }, [fetchBookings, fetchExtensions, managementTab]);
+
+  useFleetTracking({ 
+    onRefresh: () => {
+      if (managementTab === 'extensions') {
+        fetchExtensions();
+      } else {
+        fetchBookings(true);
+      }
+    }
+  });
 
   const handleApproveExtension = async (id: string) => {
     const result = await Swal.fire({

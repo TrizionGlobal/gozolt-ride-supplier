@@ -147,17 +147,15 @@ export function ExtensionRequestsTable({
             <>
               <button 
                 onClick={() => onApprove(row.id)}
-                className="p-1.5 text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 rounded border border-emerald-400/20"
-                title="Approve"
+                className="px-3 py-1.5 text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 rounded-lg border border-emerald-400/20 text-xs font-medium transition-colors"
               >
-                <CheckCircle2 className="h-4 w-4" />
+                Approve
               </button>
               <button 
                 onClick={() => onReject(row.id)}
-                className="p-1.5 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded border border-red-500/20"
-                title="Reject"
+                className="px-3 py-1.5 text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-lg border border-red-500/20 text-xs font-medium transition-colors"
               >
-                <XCircle className="h-4 w-4" />
+                Reject
               </button>
             </>
           )}

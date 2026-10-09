@@ -125,6 +125,8 @@ export default function RentalDashboardPage() {
     { name: 'On Rent', value: metrics?.activeRentals || 0, color: '#f97316' }, // orange-500
     { name: 'Upcoming', value: metrics?.upcomingBookings || 0, color: '#a855f7' }, // purple-500
     { name: 'Completed', value: metrics?.completedBookings || 0, color: '#10b981' }, // emerald-500
+    { name: 'Cancelled', value: metrics?.cancelledBookings || 0, color: '#ef4444' }, // red-500
+    { name: 'Overdue', value: metrics?.overdueVehicles || 0, color: '#f43f5e' }, // rose-500
   ].filter(d => d.value > 0);
 
   if (bookingData.length === 0) {
@@ -369,7 +371,7 @@ export default function RentalDashboardPage() {
                 </Pie>
                 <Tooltip 
                   contentStyle={{ backgroundColor: 'rgba(17, 17, 17, 0.8)', backdropFilter: 'blur(12px)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', padding: '6px 12px' }}
-                  itemStyle={{ fontWeight: 'bold', fontSize: '0.9rem' }}
+                  itemStyle={{ color: '#fff', fontWeight: 'bold', fontSize: '0.9rem' }}
                   cursor={{ fill: 'transparent' }}
                 />
               </PieChart>
@@ -377,7 +379,7 @@ export default function RentalDashboardPage() {
             {/* Center Label */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
               <span className="text-3xl font-black text-white drop-shadow-lg">
-                {(metrics?.activeRentals || 0) + (metrics?.upcomingBookings || 0) + (metrics?.completedBookings || 0)}
+                {(metrics?.activeRentals || 0) + (metrics?.upcomingBookings || 0) + (metrics?.completedBookings || 0) + (metrics?.cancelledBookings || 0) + (metrics?.overdueVehicles || 0)}
               </span>
               <span className="text-[10px] text-[#A1A1AA] font-bold uppercase tracking-widest mt-0.5">Total</span>
             </div>

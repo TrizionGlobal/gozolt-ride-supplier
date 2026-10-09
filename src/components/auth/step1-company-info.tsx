@@ -101,13 +101,21 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
   const inputClassName =
     'h-10 rounded-lg border-[#27272A] bg-[#0A0A0A] text-white placeholder:text-[#71717A] placeholder:normal-case focus-visible:border-[#FACC15] focus-visible:ring-[#FACC15]/20 text-sm';
 
+  const handleNext = (data: Step1FormData) => {
+    if ((selectedService === 'CAR_RENTAL' || selectedService === 'BIKE_RENTAL') && (!data.latitude || !data.longitude)) {
+      toast.error('Please pinpoint your Company Map Location before proceeding.');
+      return;
+    }
+    onNext(data);
+  };
+
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#0F0F0F] p-6">
       <div className="mb-6 border-b border-[#27272A] pb-4">
         <h2 className="text-lg font-bold text-white">Step 1 : Company Information</h2>
       </div>
 
-      <form onSubmit={handleSubmit(onNext)} className="space-y-4">
+      <form onSubmit={handleSubmit(handleNext)} className="space-y-4">
         <div className="flex flex-col items-center mb-6">
           <Upload
             listType="picture-circle"

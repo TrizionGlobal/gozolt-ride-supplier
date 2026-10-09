@@ -33,6 +33,7 @@ export interface MileagePackage {
 export interface BikeRentalBike {
   id?: string;
   name: string;
+  brand?: string;
   category: string;
   registrationNo?: string;
   year?: string;

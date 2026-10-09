@@ -102,6 +102,12 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
       return;
     }
 
+    if (photos.length === 0) {
+      alert("Please upload at least one vehicle photo");
+      setLoading(false);
+      return;
+    }
+
     // In a real app we would upload photos to S3 here.
     const payload = {
       fuelLevel: formData.fuelLevel,
@@ -304,7 +310,7 @@ export default function HandoverTaskPage({ params }: { params: Promise<{ token: 
             )}
 
             <div className="pt-2">
-              <label className="block text-sm text-gray-400 mb-2">Photos (Optional)</label>
+              <label className="block text-sm text-gray-400 mb-2">Photos</label>
               <div className="border-2 border-dashed border-gray-800 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-gray-600 transition-colors bg-gray-900/50" onClick={() => document.getElementById('photo-upload')?.click()}>
                 <Camera className="h-8 w-8 text-gray-500 mb-2" />
                 <p className="text-sm font-medium text-gray-300">Click to upload photos</p>

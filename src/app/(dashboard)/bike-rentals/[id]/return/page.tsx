@@ -76,6 +76,11 @@ export default function BikeReturnPage() {
       return;
     }
 
+    if (photos.length === 0) {
+      toast.error("Please upload at least one vehicle photo before return");
+      return;
+    }
+
     setSubmitting(true);
     const refundAmt = parseFloat(formData.refundAmount);
     const payload = {
@@ -172,14 +177,14 @@ export default function BikeReturnPage() {
                 <div>
                   <p className="text-xs text-gray-500 mb-0.5">Pickup Date & Time</p>
                   <p className="text-sm text-gray-300 font-medium">
-                    {new Date(booking.startDate).toLocaleDateString()} {new Date(booking.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {format(new Date(booking.startDate), 'MMM d, yyyy - h:mm a')}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5 break-words">{booking.pickupLocation}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-0.5">Return Date & Time</p>
                   <p className="text-sm text-gray-300 font-medium">
-                    {new Date(booking.endDate).toLocaleDateString()} {new Date(booking.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {format(new Date(booking.endDate), 'MMM d, yyyy - h:mm a')}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5 break-words">{booking.dropoffLocation}</p>
                 </div>
@@ -243,7 +248,7 @@ export default function BikeReturnPage() {
             )}
             
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-400 mb-1.5">Return Photos (Optional)</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1.5">Return Photos</label>
               <div className="border-2 border-dashed border-[#27272A] rounded-lg p-8 flex flex-col items-center justify-center text-gray-400 hover:border-[#FACC15] hover:text-[#FACC15] transition-colors cursor-pointer" onClick={() => document.getElementById('photo-upload')?.click()}>
                 <Camera className="h-8 w-8 mb-2" />
                 <span className="text-sm font-medium">Click to upload photos</span>

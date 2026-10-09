@@ -3,6 +3,7 @@ import { Camera, CheckCircle2, AlertCircle } from 'lucide-react';
 import dynamic from 'next/dynamic';
 const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), { ssr: false });
 import { getExpertVisitName, getQuickServiceHourlyRate } from '@/lib/quick-services-pricing';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 export function QuickServiceTask({ token }: { token: string }) {
   const [task, setTask] = useState<any>(null);
@@ -346,10 +347,13 @@ export function QuickServiceTask({ token }: { token: string }) {
           
           <div className="w-64 h-64 bg-gray-900 rounded-2xl overflow-hidden border-2 border-[#FACC15] relative flex items-center justify-center">
             {scanStatus === 'IDLE' && !manualMode && (
-              <Scanner 
-                constraints={{ facingMode: 'environment' }} 
-                onScan={(result) => handleScan(result[0].rawValue)} 
-              />
+              <ErrorBoundary fallback={<div className="flex flex-col items-center justify-center text-center p-4"><AlertCircle className="w-12 h-12 text-red-500 mb-2" /><p className="text-sm text-red-500">Camera access denied.</p><p className="text-xs text-gray-400 mt-2">Please use the Manual PIN Entry below.</p></div>}>
+                <Scanner 
+                  constraints={{ facingMode: 'environment' }} 
+                  onScan={(result) => handleScan(result[0].rawValue)} 
+                  onError={(err) => console.error("Scanner error:", err)}
+                />
+              </ErrorBoundary>
             )}
             
             {scanStatus === 'IDLE' && manualMode && (

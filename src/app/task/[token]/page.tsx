@@ -20,6 +20,10 @@ function HandoverTaskContent({ token }: { token: string }) {
   const [step, setStep] = useState<'VERIFY' | 'SCAN' | 'FORM' | 'SUCCESS'>('VERIFY');
   const [rentalType, setRentalType] = useState(typeParam);
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
+  const [hasCameraSupport, setHasCameraSupport] = useState<boolean>(false);
+  useEffect(() => {
+    setHasCameraSupport(typeof navigator !== 'undefined' && !!navigator.mediaDevices && !!navigator.mediaDevices.getUserMedia);
+  }, []);
   const [formData, setFormData] = useState({ fuelLevel: 'FULL', odometerReading: '', vehicleCondition: 'Good', damageNotes: '', refundAmount: '', refundAccountNumber: '', supplierSignature: '' });
   const [photos, setPhotos] = useState<string[]>([]);
   const [maxRefund, setMaxRefund] = useState(0);
@@ -236,11 +240,11 @@ function HandoverTaskContent({ token }: { token: string }) {
           <div className="w-64 h-64 bg-gray-900 rounded-2xl overflow-hidden border-2 border-[#FACC15] relative flex items-center justify-center">
             {scanStatus === 'IDLE' && (
               <ErrorBoundary fallback={<div className="flex flex-col items-center justify-center text-center p-4"><AlertCircle className="w-12 h-12 text-red-500 mb-2" /><p className="text-sm text-red-500">Camera access denied or unsupported.</p><p className="text-xs text-gray-400 mt-2">Try opening this link in Safari/Chrome directly, not inside another app (like Gmail or Instagram).</p></div>}>
-                <Scanner 
+                {hasCameraSupport ? <Scanner 
                   constraints={{ facingMode: 'environment' }} 
                   onScan={(result) => handleScan(result[0].rawValue)} 
                   onError={(err) => console.error("Scanner error:", err)}
-                />
+                /> : <div className="p-4 text-center text-red-500"><AlertCircle className="w-12 h-12 mx-auto mb-2"/><p>Camera not supported on this browser.</p></div>}
               </ErrorBoundary>
             )}
             

@@ -11,6 +11,10 @@ export function QuickServiceTask({ token }: { token: string }) {
   const [error, setError] = useState('');
   const [step, setStep] = useState<'VERIFY' | 'SCAN' | 'ACTIONS' | 'SUCCESS'>('VERIFY');
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
+  const [hasCameraSupport, setHasCameraSupport] = useState<boolean>(false);
+  useEffect(() => {
+    setHasCameraSupport(typeof navigator !== 'undefined' && !!navigator.mediaDevices && !!navigator.mediaDevices.getUserMedia);
+  }, []);
   const [actionLoading, setActionLoading] = useState(false);
   const [finalInvoice, setFinalInvoice] = useState<{ hours: number; hourlyRate: number; finalAmount: number; remainingToPay?: number; alreadyPaid?: number } | null>(null);
   const [manualMode, setManualMode] = useState(false);
@@ -348,11 +352,11 @@ export function QuickServiceTask({ token }: { token: string }) {
           <div className="w-64 h-64 bg-gray-900 rounded-2xl overflow-hidden border-2 border-[#FACC15] relative flex items-center justify-center">
             {scanStatus === 'IDLE' && !manualMode && (
               <ErrorBoundary fallback={<div className="flex flex-col items-center justify-center text-center p-4"><AlertCircle className="w-12 h-12 text-red-500 mb-2" /><p className="text-sm text-red-500">Camera access denied.</p><p className="text-xs text-gray-400 mt-2">Please use the Manual PIN Entry below.</p></div>}>
-                <Scanner 
+                {hasCameraSupport ? <Scanner 
                   constraints={{ facingMode: 'environment' }} 
                   onScan={(result) => handleScan(result[0].rawValue)} 
                   onError={(err) => console.error("Scanner error:", err)}
-                />
+                /> : <div className="p-4 text-center text-red-500"><AlertCircle className="w-12 h-12 mx-auto mb-2"/><p>Camera not supported on this browser.</p></div>}
               </ErrorBoundary>
             )}
             

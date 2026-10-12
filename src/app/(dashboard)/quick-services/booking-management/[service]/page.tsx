@@ -43,6 +43,8 @@ import {
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
 import { QUICK_SERVICES_CATALOG } from '@/lib/quick-services-catalog';
 import { useAuthStore } from '@/stores/auth.store';
+import { useEffect } from 'react';
+import { io } from 'socket.io-client';
 
 export default function ServiceBookingManagementPage() {
   const params = useParams<{ service: string }>();
@@ -130,6 +132,21 @@ export default function ServiceBookingManagementPage() {
     refresh,
   } = useSupplierQuickServiceBookings(filters);
 
+  useEffect(() => {
+    const socket = io((process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000') + '/supplier', {
+      path: '/socket.io/',
+      transports: ['websocket'],
+      auth: { token: (useAuthStore.getState().user as any)?.token || '' }
+    });
+
+    socket.on('supplier:refresh', () => {
+      refresh();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [refresh]);
   const totalPages = Math.max(
     1,
     Math.ceil(total / limit)
@@ -160,7 +177,8 @@ export default function ServiceBookingManagementPage() {
       });
       if (res.data?.magicLink) {
         toast.success('Assigned to self. Starting work...');
-        router.push(res.data.magicLink);
+        window.open(res.data.magicLink, '_blank');
+        router.refresh();
       } else {
         toast.error('Failed to start work');
       }
@@ -201,7 +219,7 @@ export default function ServiceBookingManagementPage() {
       title: 'Service',
       render: (row) => (
         <div>
-          <p className="text-white text-sm">{'Quick Service'}</p>
+          <p className="text-white text-sm">{row.categoryName || 'Quick Service'}</p>
           <p className="text-xs text-[#FCD223]">{row.childService || 'General'}</p>
         </div>
       ),
@@ -239,7 +257,12 @@ export default function ServiceBookingManagementPage() {
       key: 'serviceStatus',
       title: 'Service Status',
       render: (row) => {
-        let displayStatus = row.serviceStatus || 'PENDING';
+        let displayStatus: string = row.serviceStatus || 'PENDING';
+        if ((row.status as any) === 'AWAITING_PAYMENT') {
+          displayStatus = 'AWAITING_PAYMENT';
+        } else if ((row.status as any) !== 'COMPLETED' && displayStatus === 'COMPLETED') {
+          displayStatus = 'IN_PROGRESS';
+        }
         return <StatusBadge status={displayStatus} />;
       }
     },
@@ -248,6 +271,20 @@ export default function ServiceBookingManagementPage() {
       title: 'Actions',
       className: 'text-center',
       render: (row) => {
+        const isFinishedOrAwaiting = (row.status as any) === 'COMPLETED' || (row.status as any) === 'AWAITING_PAYMENT' || (row.status as any) === 'IN_PROGRESS' || row.serviceStatus === 'IN_PROGRESS';
+        if (isFinishedOrAwaiting) {
+          return (
+            <div className="flex justify-center">
+              <button
+                onClick={() => router.push(`/quick-services/booking-management/${params.service}/${row.id || (row as any)._id}`)}
+                className="rounded bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 transition-colors outline-none"
+              >
+                View Details
+              </button>
+            </div>
+          );
+        }
+
         return (
           <div className="flex justify-center">
             <DropdownMenu>
@@ -505,6 +542,8 @@ function StatusBadge({
       'border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-400',
     IN_PROGRESS:
       'border-cyan-500/30 bg-cyan-500/10 text-cyan-400',
+    AWAITING_PAYMENT:
+      'border-amber-500/30 bg-amber-500/10 text-amber-400',
     COMPLETED:
       'border-green-500/30 bg-green-500/10 text-green-400',
     CANCELLED:

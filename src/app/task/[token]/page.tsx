@@ -5,21 +5,22 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Camera, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), { ssr: false });
-
 import { QuickServiceTask } from '@/components/quick-services/quick-service-task';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+
 
 function HandoverTaskContent({ token }: { token: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const typeParam = searchParams.get('type') || 'car';
-  
+
   const [task, setTask] = useState<any>(null);
   const [loading, setLoading] = useState(typeParam !== 'quick-service');
   const [error, setError] = useState('');
   const [step, setStep] = useState<'VERIFY' | 'SCAN' | 'FORM' | 'SUCCESS'>('VERIFY');
   const [rentalType, setRentalType] = useState(typeParam);
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [hasCameraSupport, setHasCameraSupport] = useState<boolean>(false);
   useEffect(() => {
     setHasCameraSupport(typeof navigator !== 'undefined' && !!navigator.mediaDevices && !!navigator.mediaDevices.getUserMedia);
@@ -35,15 +36,15 @@ function HandoverTaskContent({ token }: { token: string }) {
       const start = new Date(task.booking.startDate);
       const end = new Date(task.booking.endDate);
       const now = new Date();
-      
+
       const tDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
       // Ensure at least 1 day used
       const uDays = Math.max(1, Math.ceil((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
       const rDays = Math.max(0, tDays - uDays);
-      
+
       setTotalDays(tDays);
       setRemainingDays(rDays);
-      
+
       const totalAmount = task.booking.vehicleTotal || task.booking.bikeTotal || 0;
       const dailyRate = Number(totalAmount) / tDays;
       const calcRefund = Math.round(rDays * dailyRate * 100) / 100;
@@ -134,7 +135,7 @@ function HandoverTaskContent({ token }: { token: string }) {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      
+
       if (res.ok) {
         setStep('SUCCESS');
       } else {
@@ -190,7 +191,7 @@ function HandoverTaskContent({ token }: { token: string }) {
                 <p className="text-xs text-[#FACC15] mt-1 font-medium">Plate: {task.booking.vehicle?.registrationNo || 'N/A'}</p>
               </div>
             </div>
-            
+
             <div className="bg-gray-900 rounded-xl p-4 border border-gray-800 flex flex-col justify-center">
               <p className="text-xs text-gray-500 mb-1">Total Amount Paid</p>
               <p className="text-2xl font-bold text-emerald-500">
@@ -198,7 +199,7 @@ function HandoverTaskContent({ token }: { token: string }) {
               </p>
             </div>
           </div>
-          
+
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
             <h3 className="text-sm font-semibold text-white mb-2 uppercase tracking-wider text-xs">Booking Details</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -236,18 +237,30 @@ function HandoverTaskContent({ token }: { token: string }) {
             <h2 className="text-lg font-semibold mb-2">Scan Customer QR</h2>
             <p className="text-gray-400 text-sm">Ask the customer to show their booking QR code.</p>
           </div>
-          
+
           <div className="w-64 h-64 bg-gray-900 rounded-2xl overflow-hidden border-2 border-[#FACC15] relative flex items-center justify-center">
             {scanStatus === 'IDLE' && (
-              <ErrorBoundary fallback={<div className="flex flex-col items-center justify-center text-center p-4"><AlertCircle className="w-12 h-12 text-red-500 mb-2" /><p className="text-sm text-red-500">Camera access denied or unsupported.</p><p className="text-xs text-gray-400 mt-2">Try opening this link in Safari/Chrome directly, not inside another app (like Gmail or Instagram).</p></div>}>
-                {hasCameraSupport ? <Scanner 
-                  constraints={{ facingMode: 'environment' }} 
-                  onScan={(result) => handleScan(result[0].rawValue)} 
-                  onError={(err) => console.error("Scanner error:", err)}
-                /> : <div className="p-4 text-center text-red-500"><AlertCircle className="w-12 h-12 mx-auto mb-2"/><p>Camera not supported on this browser.</p></div>}
-              </ErrorBoundary>
+              !isCameraOpen ? (
+                <button 
+                  onClick={() => setIsCameraOpen(true)}
+                  className="flex flex-col items-center justify-center text-[#FACC15] hover:text-yellow-400 p-4 w-full h-full bg-gray-900 rounded-2xl"
+                >
+                  <Camera className="w-12 h-12 mb-4" />
+                  <span className="font-semibold text-lg">Tap to Open Camera</span>
+                </button>
+              ) : (
+                <ErrorBoundary fallback={<div className="flex flex-col items-center justify-center text-center p-4"><AlertCircle className="w-12 h-12 text-red-500 mb-2" /><p className="text-sm text-red-500">Camera access denied.</p><p className="text-xs text-gray-400 mt-2">Try opening this link in Safari/Chrome directly.</p></div>}>
+                  {hasCameraSupport ? <Scanner
+                    onScan={(result) => handleScan(result[0].rawValue)}
+                    onError={(err) => {
+                      console.error("Scanner error:", err);
+                      setHasCameraSupport(false);
+                    }}
+                  /> : <div className="p-4 text-center text-red-500"><AlertCircle className="w-12 h-12 mx-auto mb-2" /><p>Camera not supported or access denied.</p></div>}
+                </ErrorBoundary>
+              )
             )}
-            
+
             {scanStatus === 'SUCCESS' && (
               <div className="flex flex-col items-center justify-center text-green-500 animate-in fade-in zoom-in">
                 <CheckCircle2 className="w-20 h-20 mb-4" />
@@ -271,20 +284,20 @@ function HandoverTaskContent({ token }: { token: string }) {
           <div className="space-y-4">
             <div>
               <label className="block text-sm text-gray-400 mb-1">Odometer Reading (km)</label>
-              <input 
-                type="number" 
-                required 
+              <input
+                type="number"
+                required
                 value={formData.odometerReading}
-                onChange={e => setFormData({...formData, odometerReading: e.target.value})}
+                onChange={e => setFormData({ ...formData, odometerReading: e.target.value })}
                 className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#FACC15] outline-none"
               />
             </div>
 
             <div>
               <label className="block text-sm text-gray-400 mb-1">Fuel Level</label>
-              <select 
+              <select
                 value={formData.fuelLevel}
-                onChange={e => setFormData({...formData, fuelLevel: e.target.value})}
+                onChange={e => setFormData({ ...formData, fuelLevel: e.target.value })}
                 className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#FACC15] outline-none"
               >
                 <option value="FULL">Full (8/8)</option>
@@ -296,9 +309,9 @@ function HandoverTaskContent({ token }: { token: string }) {
 
             <div>
               <label className="block text-sm text-gray-400 mb-1">{rentalType === 'bike' ? 'Bike' : 'Vehicle'} Condition</label>
-              <select 
+              <select
                 value={formData.vehicleCondition}
-                onChange={e => setFormData({...formData, vehicleCondition: e.target.value})}
+                onChange={e => setFormData({ ...formData, vehicleCondition: e.target.value })}
                 className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#FACC15] outline-none"
               >
                 <option value="Good">Good</option>
@@ -306,13 +319,13 @@ function HandoverTaskContent({ token }: { token: string }) {
                 <option value="Damaged">Damaged</option>
               </select>
             </div>
-            
+
             {formData.vehicleCondition !== 'Good' && (
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Damage Notes</label>
-                <textarea 
+                <textarea
                   value={formData.damageNotes}
-                  onChange={e => setFormData({...formData, damageNotes: e.target.value})}
+                  onChange={e => setFormData({ ...formData, damageNotes: e.target.value })}
                   className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#FACC15] outline-none h-24"
                   placeholder="Describe the damage..."
                 />
@@ -327,7 +340,7 @@ function HandoverTaskContent({ token }: { token: string }) {
                 <p className="text-xs text-gray-500 mt-1">Upload exterior and interior photos (especially if damaged)</p>
                 <input id="photo-upload" type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} />
               </div>
-              
+
               {photos.length > 0 && (
                 <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
                   {photos.map((photo, i) => (
@@ -361,13 +374,13 @@ function HandoverTaskContent({ token }: { token: string }) {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm text-yellow-500/80 mb-1">Enter Final Refund Amount (EUR)</label>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       step="0.01"
-                      required 
+                      required
                       max={maxRefund}
                       value={formData.refundAmount}
-                      onChange={e => setFormData({...formData, refundAmount: e.target.value})}
+                      onChange={e => setFormData({ ...formData, refundAmount: e.target.value })}
                       className="w-full bg-gray-900 border border-yellow-500/30 rounded-lg p-3 text-white focus:border-yellow-500 outline-none"
                     />
                   </div>
@@ -384,11 +397,11 @@ function HandoverTaskContent({ token }: { token: string }) {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">Staff Signature (Type Name)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     required
                     value={formData.supplierSignature}
-                    onChange={e => setFormData({...formData, supplierSignature: e.target.value})}
+                    onChange={e => setFormData({ ...formData, supplierSignature: e.target.value })}
                     className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#FACC15] outline-none"
                     placeholder="Staff agent name"
                   />
@@ -397,7 +410,7 @@ function HandoverTaskContent({ token }: { token: string }) {
             </div>
           </div>
 
-          <button 
+          <button
             type="submit"
             disabled={loading}
             className="w-full bg-[#FACC15] text-black font-bold py-4 rounded-xl hover:bg-yellow-500 transition-colors disabled:opacity-50"

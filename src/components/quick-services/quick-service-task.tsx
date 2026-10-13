@@ -193,7 +193,7 @@ export function QuickServiceTask({ token }: { token: string }) {
           if (data.booking?.paymentMethodType) {
             setSelectedPayment({ 
               method: data.booking.paymentMethodType, 
-              url: data.booking.paymentMethodId 
+              url: data.booking.paymentMethodType === 'qrcode' ? data.booking.paymentMethodId : undefined 
             });
           }
           if (data.booking?.status === 'COMPLETED' && data.booking?.paymentStatus === 'PAID') {
@@ -891,14 +891,52 @@ export function QuickServiceTask({ token }: { token: string }) {
 
               {/* Payment Method Flow */}
               {paymentConfirmed ? (
-                <div className="bg-emerald-950/60 border border-emerald-500/50 rounded-2xl p-6 text-center space-y-3">
-                  <CheckCircle2 className="w-14 h-14 text-emerald-400 mx-auto" />
-                  <h3 className="text-emerald-300 font-bold text-lg">Payment Completed!</h3>
-                  <p className="text-gray-300 text-xs leading-relaxed">
-                    The payment of €{(finalInvoice?.remainingToPay || finalInvoice?.serviceAmount || 0).toFixed(2)} has been successfully confirmed and booked service is marked as completed.
-                  </p>
-                  <p className="text-emerald-400 text-xs font-medium pt-3 border-t border-emerald-500/20">
-                    You can now safely close this app/window. This link is no longer valid.
+                <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-2xl p-5 text-center space-y-4">
+                  <div className="w-14 h-14 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto text-emerald-400">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-emerald-300 font-bold text-lg">Payment Verified & Completed!</h3>
+                    <p className="text-gray-300 text-xs mt-1">
+                      Payment has been confirmed. The booking is officially closed.
+                    </p>
+                  </div>
+
+                  <div className="bg-black/60 rounded-xl p-3.5 space-y-2 border border-white/5 text-xs text-left">
+                    <div className="flex justify-between items-center text-gray-400">
+                      <span>Service:</span>
+                      <span className="text-white font-medium">{booking?.serviceTitle || 'Quick Service'}</span>
+                    </div>
+                    {booking?.userName && (
+                      <div className="flex justify-between items-center text-gray-400">
+                        <span>Customer:</span>
+                        <span className="text-white font-medium">{booking.userName}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center text-gray-400">
+                      <span>Payment Method:</span>
+                      <span className="text-emerald-400 font-medium">
+                        {selectedPayment?.method === 'cash' ? 'Cash Collected' : 
+                         selectedPayment?.method === 'qrcode' ? 'Stripe QR Code' : 
+                         selectedPayment?.method === 'iban' ? 'Online Payment (Stripe)' : 'Online Card'}
+                      </span>
+                    </div>
+                    <div className="border-t border-white/10 pt-2 flex justify-between items-center">
+                      <span className="text-gray-300 font-semibold">Service Fee Collected:</span>
+                      <span className="text-emerald-400 font-bold text-sm">
+                        €{(finalInvoice?.remainingToPay || finalInvoice?.serviceAmount || 0).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px] text-gray-400">
+                      <span>Total Booking Amount:</span>
+                      <span className="text-white font-medium">
+                        €{(finalInvoice?.finalAmount || ((finalInvoice?.alreadyPaid || 0) + (finalInvoice?.serviceAmount || 0))).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-gray-400 text-[11px] pt-1">
+                    Thank you! You can now safely close this window.
                   </p>
                 </div>
               ) : selectedPayment ? (
@@ -906,7 +944,7 @@ export function QuickServiceTask({ token }: { token: string }) {
                   <h3 className="text-[#FACC15] font-bold text-sm uppercase tracking-wider">
                     {selectedPayment.method === 'cash' ? 'Cash Payment Requested' : 
                      selectedPayment.method === 'qrcode' ? 'Stripe QR Code Payment' : 
-                     selectedPayment.method === 'iban' ? 'Bank Transfer (IBAN)' : 'Customer Payment Processing...'}
+                     selectedPayment.method === 'iban' ? 'Online Payment (Stripe)' : 'Customer Payment Processing...'}
                   </h3>
 
                   {selectedPayment.method === 'cash' && (
@@ -944,15 +982,14 @@ export function QuickServiceTask({ token }: { token: string }) {
                   )}
 
                   {selectedPayment.method === 'iban' && (
-                    <div className="space-y-2">
-                      <p className="text-xs text-gray-300">
-                        The customer has requested to pay via Bank Transfer. They will complete the SEPA transfer on their device.
+                    <div className="flex flex-col items-center space-y-3 py-2">
+                      <div className="w-8 h-8 border-4 border-[#FACC15] border-t-transparent rounded-full animate-spin" />
+                      <p className="text-sm font-semibold text-white">
+                        Customer Completing Payment
                       </p>
-                      {selectedPayment.url && (
-                        <p className="text-[10px] text-gray-400">
-                          Checkout Session: <a href={selectedPayment.url} target="_blank" rel="noreferrer" className="text-blue-400 underline">Open Link</a>
-                        </p>
-                      )}
+                      <p className="text-xs text-gray-400 max-w-xs">
+                        The customer has chosen Online Payment (Card / SEPA / Bank) and is completing the transaction on their device. This page will update automatically once confirmed.
+                      </p>
                     </div>
                   )}
                 </div>

@@ -44,8 +44,9 @@ export function useSupplierQuickServiceBookings(
   const fetchBookings = useCallback(async (force = false) => {
     const cacheKey = JSON.stringify({ search, categoryId, childService, status, assignment, page, limit });
 
-    // If not forcing and cache exists and is less than 5 minutes old
-    if (!force && bookingsCache[cacheKey] && (Date.now() - bookingsCache[cacheKey].timestamp < 5 * 60 * 1000)) {
+    if (force) {
+      for (const k in bookingsCache) delete bookingsCache[k];
+    } else if (bookingsCache[cacheKey] && (Date.now() - bookingsCache[cacheKey].timestamp < 30 * 1000)) {
       setBookings(bookingsCache[cacheKey].bookings);
       setTotal(bookingsCache[cacheKey].total);
       setIsLoading(false);

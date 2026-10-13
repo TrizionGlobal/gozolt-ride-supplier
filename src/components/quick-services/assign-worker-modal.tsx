@@ -20,7 +20,11 @@ export function AssignWorkerModal({ bookingId, onClose, onAssigned }: Props) {
       .then(res => {
         const workersArray = res.data.data || [];
         setWorkers(workersArray);
-        if (workersArray.length > 0) setSelectedWorkerId(workersArray[0].id);
+        if (workersArray.length > 0) {
+          setSelectedWorkerId(workersArray[0].id);
+        } else {
+          setSelectedWorkerId('');
+        }
       })
       .catch((err) => {
         console.error(err);
@@ -31,13 +35,17 @@ export function AssignWorkerModal({ bookingId, onClose, onAssigned }: Props) {
 
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedWorkerId) {
+      toast.error('Please select a worker');
+      return;
+    }
     setAssigning(true);
     try {
       await apiClient.post(`/quick-services/supplier/bookings/${bookingId}/assign-task`, { 
         workerId: selectedWorkerId,
         magicLinkBaseUrl: window.location.origin
       });
-      toast.success('Worker assigned successfully and magic link sent!');
+      toast.success('Worker assigned successfully and magic link sent to their email!');
       onAssigned();
     } catch (err) {
       console.error(err);
@@ -50,9 +58,9 @@ export function AssignWorkerModal({ bookingId, onClose, onAssigned }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="w-full max-w-md rounded-xl border border-[#27272A] bg-[#111111] p-6 shadow-2xl">
-        <h3 className="mb-4 text-xl font-bold text-white">Assign to Worker</h3>
+        <h3 className="mb-4 text-xl font-bold text-white">Assign Service Task</h3>
         <p className="text-sm text-gray-400 mb-6">
-          Select a worker to handle this service booking. An email with a Magic Link will be sent to them.
+          Select a worker to handle this service booking. An email with the Magic Link will be sent with all service details.
         </p>
 
         {loading ? (
@@ -97,7 +105,7 @@ export function AssignWorkerModal({ bookingId, onClose, onAssigned }: Props) {
               </button>
               <button
                 type="submit"
-                disabled={assigning}
+                disabled={assigning || !selectedWorkerId}
                 className="flex items-center gap-2 rounded-lg bg-[#FACC15] px-4 py-2 font-medium text-black hover:bg-[#EAB308] disabled:opacity-50"
               >
                 <Mail className="h-4 w-4" />

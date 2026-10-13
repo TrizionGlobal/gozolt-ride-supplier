@@ -176,9 +176,9 @@ export default function ServiceBookingManagementPage() {
         magicLinkBaseUrl: window.location.origin
       });
       if (res.data?.magicLink) {
-        toast.success('Assigned to self. Starting work...');
+        toast.success('Assigned to self and magic link sent to your email!');
         window.open(res.data.magicLink, '_blank');
-        router.refresh();
+        refresh();
       } else {
         toast.error('Failed to start work');
       }
@@ -271,8 +271,9 @@ export default function ServiceBookingManagementPage() {
       title: 'Actions',
       className: 'text-center',
       render: (row) => {
+        const isAssigned = !!row.assignedToSelf || !!row.worker || !!(row as any).workerId || row.serviceStatus === 'SELF_ASSIGNED' || row.serviceStatus === 'WORKER_ASSIGNED';
         const isFinishedOrAwaiting = (row.status as any) === 'COMPLETED' || (row.status as any) === 'AWAITING_PAYMENT' || (row.status as any) === 'IN_PROGRESS' || row.serviceStatus === 'IN_PROGRESS';
-        if (isFinishedOrAwaiting) {
+        if (isAssigned || isFinishedOrAwaiting) {
           return (
             <div className="flex justify-center">
               <button

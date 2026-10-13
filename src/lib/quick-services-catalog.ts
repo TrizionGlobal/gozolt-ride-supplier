@@ -12,6 +12,7 @@ export const QUICK_SERVICES_CATALOG: QuickService[] = [
       { id: 'GARDENING', name: 'Gardening' },
       { id: 'PLUMBING', name: 'Plumbing' },
       { id: 'CARPENTER', name: 'Carpenter' },
+      { id: 'PAINTER', name: 'Painter' },
     ],
   },
   {
@@ -109,7 +110,6 @@ export const QUICK_SERVICES_CATALOG: QuickService[] = [
     description: 'Additional professional and event-related services.',
     icon: '/other-services-icon.png',
     children: [
-      { id: 'PAINTER', name: 'Painter' },
       { id: 'EVENT_ORGANISERS', name: 'Event Organisers' },
       { id: 'SUPPLIERS', name: 'Suppliers' },
     ],

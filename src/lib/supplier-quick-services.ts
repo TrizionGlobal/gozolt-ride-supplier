@@ -17,6 +17,9 @@ export const SUPPLIER_QUICK_SERVICE_CATEGORIES:
       'Home Cleaning',
       'Pest Control',
       'Gardening',
+      'Plumbing',
+      'Carpenter',
+      'Painter',
     ],
   },
   {
@@ -99,7 +102,6 @@ export const SUPPLIER_QUICK_SERVICE_CATEGORIES:
     name: 'Other Services',
     icon: '/other-services-icon.png',
     childServices: [
-      'Painter',
       'Event Organizer',
       'Suppliers',
     ],

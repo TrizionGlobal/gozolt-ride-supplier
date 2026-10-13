@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Clock, CheckCircle2, XCircle, UserRound } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle2, XCircle, UserRound, Mail } from 'lucide-react';
 import { supplierQuickServiceBookingService } from '@/services/quick-services/supplier-quick-service-booking.service';
 import { getExpertVisitName, getQuickServiceHourlyRate } from '@/lib/quick-services-pricing';
+import { AssignWorkerModal } from '@/components/quick-services/assign-worker-modal';
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-US', {
@@ -44,6 +45,7 @@ export default function SupplierQuickServiceBookingDetailsPage() {
   const bookingId = params.id as string;
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
   const fetchBooking = () => {
     setLoading(true);
@@ -293,34 +295,53 @@ export default function SupplierQuickServiceBookingDetailsPage() {
               <StatusBadge status={booking.status === 'AWAITING_PAYMENT' ? 'AWAITING_PAYMENT' : (booking.status === 'COMPLETED' ? 'COMPLETED' : (booking.serviceStatus === 'COMPLETED' ? 'IN_PROGRESS' : (booking.serviceStatus || booking.status || 'PENDING')))} />
             </div>
 
-            {(booking.assignedToSelf || booking.worker) && (
-              <div className="mt-4 pt-4 border-t border-[#27272A]">
-                <h4 className="text-[#A1A1AA] text-sm font-medium mb-3">Assignment</h4>
-                {booking.assignedToSelf ? (
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
-                      <UserRound className="h-5 w-5 text-indigo-400" />
-                    </div>
-                    <div>
-                      <p className="text-white text-sm font-medium">Assigned to Me</p>
-                      <p className="text-[#71717A] text-xs">Self-Assigned</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-fuchsia-500/10 flex items-center justify-center border border-fuchsia-500/20">
-                      <UserRound className="h-5 w-5 text-fuchsia-400" />
-                    </div>
-                    <div>
-                      <p className="text-white text-sm font-medium">{booking.worker?.name || 'Worker'}</p>
-                      {booking.worker?.phone && (
-                        <p className="text-[#71717A] text-xs">{booking.worker.phone}</p>
-                      )}
-                    </div>
-                  </div>
+            <div className="mt-4 pt-4 border-t border-[#27272A]">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-[#A1A1AA] text-sm font-medium">Assignment</h4>
+                {!booking.assignedToSelf && !booking.worker && !booking.workerId && booking.serviceStatus !== 'SELF_ASSIGNED' && booking.serviceStatus !== 'WORKER_ASSIGNED' && booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && (
+                  <button
+                    onClick={() => setIsAssignModalOpen(true)}
+                    className="text-xs text-[#FCD223] hover:underline flex items-center gap-1 font-medium"
+                  >
+                    <Mail className="h-3 w-3" />
+                    Assign
+                  </button>
                 )}
               </div>
-            )}
+
+              {booking.assignedToSelf ? (
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
+                    <UserRound className="h-5 w-5 text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">Assigned to Me</p>
+                    <p className="text-[#71717A] text-xs">Self-Assigned (Magic link emailed)</p>
+                  </div>
+                </div>
+              ) : booking.worker ? (
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-fuchsia-500/10 flex items-center justify-center border border-fuchsia-500/20">
+                    <UserRound className="h-5 w-5 text-fuchsia-400" />
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-medium">{booking.worker?.name || 'Worker'}</p>
+                    <p className="text-[#71717A] text-xs">{booking.worker?.email || booking.worker?.phone || 'Magic link emailed'}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-lg bg-white/5 p-3 text-center border border-[#27272A]">
+                  <p className="text-xs text-[#71717A] mb-2">No worker currently assigned</p>
+                  <button
+                    onClick={() => setIsAssignModalOpen(true)}
+                    className="w-full rounded-md bg-[#FCD223] px-3 py-1.5 text-xs font-semibold text-black hover:bg-[#EAB308] transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Mail className="h-3.5 w-3.5" />
+                    Assign Task & Send Link
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="bg-[#111111] rounded-xl border border-[#27272A] p-5">
@@ -480,6 +501,17 @@ export default function SupplierQuickServiceBookingDetailsPage() {
           </div>
         </div>
       </div>
+
+      {isAssignModalOpen && (
+        <AssignWorkerModal
+          bookingId={booking.id || (booking as any)._id}
+          onClose={() => setIsAssignModalOpen(false)}
+          onAssigned={() => {
+            setIsAssignModalOpen(false);
+            fetchBooking();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -3,23 +3,17 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   TrendingUp, TrendingDown, Landmark, Banknote, CreditCard,
-  AlertCircle, Car, Bike, CheckCircle2, Clock, ArrowUpRight, ArrowDownRight, Wrench
+  AlertCircle, Car, Bike, CheckCircle2, Clock, ArrowUpRight, ArrowDownRight, Wrench,
+  Receipt, Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PayoutHistoryTable } from '@/components/financials/payout-history-table';
-import type { PayoutRecord } from '@/types';
+import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
+import { financialService } from '@/services/financials/financial.service';
 import { supplierQuickServiceBookingService } from '@/services/quick-services/supplier-quick-service-booking.service';
 import type { QuickServiceBooking } from '@/services/quick-services/quick-service-booking.types';
+import type { PayoutRecord } from '@/types';
 import { useAuthStore } from '@/stores/auth.store';
-
-const normalizeServiceName = (str: string) => {
-  if (!str) return 'Standard Service';
-  return str.replace(/_/g, ' ')
-    .split(' ')
-    .filter(Boolean)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-};
 
 const Shimmer = ({ className = '' }: { className?: string }) => (
   <div className={`animate-pulse rounded-md bg-[#1F1F1F] ${className}`} />
@@ -47,101 +41,101 @@ function PageSkeleton() {
 export default function PayoutsPage() {
   const { user } = useAuthStore();
   const [bookings, setBookings] = useState<QuickServiceBooking[]>([]);
+  const [adminPayouts, setAdminPayouts] = useState<PayoutRecord[]>([]);
+  const [totalAdminPayouts, setTotalAdminPayouts] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Payouts pagination
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+
+  // Bookings settlements pagination
+  const [bookingPage, setBookingPage] = useState(1);
+  const [bookingLimit, setBookingLimit] = useState(10);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await supplierQuickServiceBookingService.getBookings({ limit: 1000 });
-      setBookings(res.bookings || []);
+      const [bookingsRes, payoutsRes] = await Promise.allSettled([
+        supplierQuickServiceBookingService.getBookings({ limit: 1000 }),
+        financialService.getPayoutHistory('QUICK_SERVICES', page, limit),
+      ]);
+
+      if (bookingsRes.status === 'fulfilled') {
+        setBookings(bookingsRes.value.bookings || []);
+      }
+      if (payoutsRes.status === 'fulfilled') {
+        setAdminPayouts(payoutsRes.value.data || []);
+        setTotalAdminPayouts(payoutsRes.value.meta?.total || 0);
+      }
     } catch {
       toast.error('Failed to load financial data');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [page, limit]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const validBookings = useMemo(() => {
-    const registered = new Set<string>();
-    try {
-      const parsed = typeof user?.quickServicesOffered === 'string' 
-        ? JSON.parse(user.quickServicesOffered) 
-        : user?.quickServicesOffered;
-        
-      if (Array.isArray(parsed)) {
-        parsed.forEach((s: any) => {
-          if (Array.isArray(s.services)) {
-            s.services.forEach((childService: string) => {
-              registered.add(normalizeServiceName(childService));
-            });
-          }
-        });
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    
-    return bookings.filter(b => {
-      const name = normalizeServiceName(b.childService || 'Standard Service');
-      return registered.has(name);
-    });
-  }, [bookings, user?.quickServicesOffered]);
+  // All bookings assigned by admin to this supplier
+  const completedBookings = useMemo(() => {
+    return bookings.filter(
+      (b) => b.paymentStatus === 'PAID' && (b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED')
+    );
+  }, [bookings]);
 
   const stats = useMemo(() => {
-    let grossUpfront = 0;
     let pendingAdminPayout = 0;
-    let settledAdminPayout = 0;
     let estimatedCashCollected = 0;
     let refunds = 0;
     let cancellations = 0;
     let supplierNetEarned = 0;
 
-    validBookings.forEach((b) => {
+    bookings.forEach((b) => {
       if (b.status === 'CANCELLED') {
         cancellations += 1;
-        return; // Supplier earns nothing on cancelled jobs
+        return;
       }
 
+      const isCompleted = (b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED') && b.paymentStatus === 'PAID';
       const totalAmount = parseFloat((b as any).totalAmount?.toString() || '0');
       const upfrontFee = parseFloat((b as any).upfrontFee?.toString() || '0');
       const collected = parseFloat((b as any).collectedAmount?.toString() || '0');
-      const method = (b as any).paymentMethodType;
-      
+      const method = ((b as any).paymentMethodType || '').toUpperCase();
+      const isCash = method === 'CASH';
+
       const supplierShare = Math.max(0, totalAmount - upfrontFee);
-      supplierNetEarned += supplierShare;
 
-      let adminOwesThisJob = supplierShare;
+      if (isCompleted) {
+        supplierNetEarned += supplierShare;
 
-      if (method === 'CASH') {
-         estimatedCashCollected += collected;
-         adminOwesThisJob -= collected;
-      }
-      
-      adminOwesThisJob = Math.max(0, adminOwesThisJob);
+        let adminOwesThisJob = supplierShare;
 
-      // In a real app we'd check against actual Payout records to see what is settled.
-      // For this UI, if it's PAID and COMPLETED, we'll mark it as pending admin payout
-      // (as it waits for the 9-day settlement cycle).
-      if (b.paymentStatus === 'PAID') {
-        if (b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED') {
-          pendingAdminPayout += adminOwesThisJob;
+        if (isCash) {
+          estimatedCashCollected += collected;
+          adminOwesThisJob -= collected;
         }
+
+        adminOwesThisJob = Math.max(0, adminOwesThisJob);
+        pendingAdminPayout += adminOwesThisJob;
       }
     });
 
+    const settledAdminPayout = adminPayouts
+      .filter((p) => p.status === 'COMPLETED')
+      .reduce((sum, p) => sum + (parseFloat(p.amount?.toString() || '0') || 0), 0);
+
+    const adjustedPending = Math.max(0, pendingAdminPayout - settledAdminPayout);
+
     return {
       supplierNetEarned,
-      settledAdminPayout, // Would come from Payout API in production
-      pendingAdminPayout,
+      settledAdminPayout,
+      pendingAdminPayout: adjustedPending,
       estimatedCashCollected,
       refunds,
-      cancellations
+      cancellations,
     };
-  }, [validBookings]);
+  }, [bookings, adminPayouts]);
 
   const fmt = (val: number | undefined) => `€${(val || 0).toFixed(2)}`;
 
@@ -165,34 +159,103 @@ export default function PayoutsPage() {
     </div>
   );
 
-  // Generate fake payouts history from validBookings for demo purposes
-  // ONLY show PAID items in this table per user request
-  const generatedPayouts: PayoutRecord[] = useMemo(() => {
-    return validBookings
-      .filter(b => b.paymentStatus === 'PAID' && (b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED'))
-      .map(b => {
-        const totalAmount = parseFloat((b as any).totalAmount?.toString() || '0');
-        const upfrontFee = parseFloat((b as any).upfrontFee?.toString() || '0');
-        const materialCost = parseFloat((b as any).materialCost?.toString() || '0');
-        const finalServiceCharge = Math.max(0, totalAmount - upfrontFee - materialCost);
-        const supplierNetEarned = Math.max(0, totalAmount - upfrontFee);
+  const bookingColumns: ColumnDef<any>[] = [
+    {
+      key: 'ref',
+      title: 'BOOKING REF',
+      render: (row) => (
+        <span className="font-mono text-xs font-semibold text-[#FACC15]">
+          {row.bookingReference || row.id.slice(0, 8).toUpperCase()}
+        </span>
+      ),
+    },
+    {
+      key: 'date',
+      title: 'DATE',
+      render: (row) => (
+        <span className="text-[#D4D4D8]">
+          {new Date(row.scheduledAt || row.bookingDate || row.createdAt).toLocaleDateString('en-CA')}
+        </span>
+      ),
+    },
+    {
+      key: 'service',
+      title: 'SERVICE',
+      render: (row) => (
+        <div>
+          <p className="font-medium text-white">{row.serviceTitle || row.childService || 'Quick Service'}</p>
+          <p className="text-xs text-[#71717A]">{row.categoryName || row.serviceCategory || ''}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'materialCost',
+      title: 'MATERIAL COST',
+      render: (row) => (
+        <span className="text-[#D4D4D8]">€{parseFloat(row.materialCost?.toString() || '0').toFixed(2)}</span>
+      ),
+    },
+    {
+      key: 'serviceCharge',
+      title: 'SERVICE CHARGE',
+      render: (row) => {
+        const total = parseFloat(row.totalAmount?.toString() || '0');
+        const upfront = parseFloat(row.upfrontFee?.toString() || '0');
+        const mat = parseFloat(row.materialCost?.toString() || '0');
+        const charge = Math.max(0, total - upfront - mat);
+        return <span className="text-[#D4D4D8]">€{charge.toFixed(2)}</span>;
+      },
+    },
+    {
+      key: 'cashCollected',
+      title: 'CASH COLLECTED',
+      render: (row) => {
+        const method = (row.paymentMethodType || '').toUpperCase();
+        const collected = parseFloat(row.collectedAmount?.toString() || '0');
+        return method === 'CASH' && collected > 0 ? (
+          <span className="text-purple-400 font-medium">€{collected.toFixed(2)}</span>
+        ) : (
+          <span className="text-[#71717A]">€0.00</span>
+        );
+      },
+    },
+    {
+      key: 'totalNet',
+      title: 'TOTAL (NET)',
+      render: (row) => {
+        const total = parseFloat(row.totalAmount?.toString() || '0');
+        const upfront = parseFloat(row.upfrontFee?.toString() || '0');
+        const net = Math.max(0, total - upfront);
+        return <span className="font-semibold text-[#22C55E]">€{net.toFixed(2)}</span>;
+      },
+    },
+    {
+      key: 'paymentMethod',
+      title: 'METHOD',
+      render: (row) => {
+        const method = (row.paymentMethodType || 'Card').toUpperCase();
+        const isCash = method === 'CASH';
+        return (
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${isCash ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'}`}>
+            {method}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'status',
+      title: 'STATUS',
+      render: () => (
+        <span className="rounded-full px-2.5 py-1 text-xs font-medium bg-green-500/20 text-green-400">
+          Completed
+        </span>
+      ),
+    },
+  ];
 
-        return {
-          id: b.id,
-          amount: supplierNetEarned,
-          status: 'COMPLETED' as const,
-          periodStart: b.scheduledAt,
-          periodEnd: b.scheduledAt,
-          processedAt: b.updatedAt || b.scheduledAt,
-          createdAt: b.scheduledAt,
-          details: { 
-            service: b.childService || 'Quick Service',
-            materialCost,
-            finalServiceCharge
-          }
-        };
-      }).slice((page - 1) * limit, page * limit);
-  }, [validBookings, page, limit]);
+  const paginatedBookings = useMemo(() => {
+    return completedBookings.slice((bookingPage - 1) * bookingLimit, bookingPage * bookingLimit);
+  }, [completedBookings, bookingPage, bookingLimit]);
 
   return (
     <div className="space-y-8">
@@ -226,17 +289,43 @@ export default function PayoutsPage() {
           </div>
         )}
 
-        {/* History Table */}
+        {/* Platform Payout History (Actual Admin Payouts) */}
         <PayoutHistoryTable 
-          data={generatedPayouts} 
+          data={adminPayouts} 
           isLoading={isLoading} 
           page={page}
           limit={limit}
-          total={validBookings.filter(b => b.paymentStatus === 'PAID' && (b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED')).length}
+          total={totalAdminPayouts}
           serviceName="Quick Services"
           onPageChange={setPage}
           onLimitChange={setLimit}
         />
+
+        {/* Completed Bookings Settlement Breakdown */}
+        <div className="relative overflow-hidden rounded-xl border border-[#27272A] bg-[#111111]/80 p-6 backdrop-blur-xl">
+          <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-transparent via-[#FACC15] to-transparent opacity-20" />
+          <div className="mb-6 flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-[#FACC15]" />
+              <h3 className="text-lg font-semibold text-white">Admin-Assigned Job Settlements</h3>
+            </div>
+            <p className="text-xs text-[#71717A]">
+              Breakdown of customer bookings assigned by admin and completed by your workers.
+            </p>
+          </div>
+
+          <ServerSideTable
+            columns={bookingColumns}
+            data={paginatedBookings}
+            isLoading={isLoading}
+            page={bookingPage}
+            limit={bookingLimit}
+            total={completedBookings.length}
+            onPageChange={setBookingPage}
+            onLimitChange={setBookingLimit}
+            emptyText="No completed job settlements recorded yet."
+          />
+        </div>
       </div>
     </div>
   );

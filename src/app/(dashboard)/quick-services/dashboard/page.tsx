@@ -43,30 +43,8 @@ export default function QuickServicesDashboardPage() {
   }, []);
 
   const validBookings = useMemo(() => {
-    const registered = new Set<string>();
-    try {
-      const parsed = typeof user?.quickServicesOffered === 'string' 
-        ? JSON.parse(user.quickServicesOffered) 
-        : user?.quickServicesOffered;
-        
-      if (Array.isArray(parsed)) {
-        parsed.forEach((s: any) => {
-          if (Array.isArray(s.services)) {
-            s.services.forEach((childService: string) => {
-              registered.add(normalizeServiceName(childService));
-            });
-          }
-        });
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    
-    return bookings.filter(b => {
-      const name = normalizeServiceName((b as any).childService || (b as any).serviceTitle || 'Standard Service');
-      return registered.has(name);
-    });
-  }, [bookings, user?.quickServicesOffered]);
+    return bookings;
+  }, [bookings]);
 
   const activeBookings = validBookings.filter(b => b.serviceStatus === 'IN_PROGRESS' || b.status === 'IN_PROGRESS');
   const completedBookings = validBookings.filter(b => b.serviceStatus === 'COMPLETED' || b.status === 'COMPLETED');

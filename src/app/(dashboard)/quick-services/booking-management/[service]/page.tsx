@@ -230,7 +230,7 @@ export default function ServiceBookingManagementPage() {
       render: (row) => (
         <span className="flex items-start gap-2 text-sm text-[#D4D4D8]">
           <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#FCD223]" />
-          {formatDateTime(row.scheduledAt)}
+          {formatDateTime(row.scheduledAt || (row as any).bookingDate)}
         </span>
       ),
     },

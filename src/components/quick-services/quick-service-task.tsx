@@ -504,7 +504,7 @@ export function QuickServiceTask({ token }: { token: string }) {
                 <div>
                   <p className="text-gray-500 text-[11px]">Scheduled Time</p>
                   <p className="text-white font-medium">
-                    {formatDate(booking.bookingDate)}, {formatTime(booking.bookingDate)}
+                    {formatDate(booking.bookingDate || booking.scheduledAt)}, {formatTime(booking.bookingDate || booking.scheduledAt)}
                   </p>
                 </div>
               </div>

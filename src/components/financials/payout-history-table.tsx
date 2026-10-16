@@ -62,8 +62,8 @@ function PrintRowButton({ row, supplier, serviceName }: { row: PayoutRecord; sup
   );
 }
 
-export function PayoutHistoryTable({ 
-  data, isLoading, page, limit, total, onPageChange, onLimitChange, serviceName 
+export function PayoutHistoryTable({
+  data, isLoading, page, limit, total, onPageChange, onLimitChange, serviceName
 }: PayoutHistoryTableProps) {
   const { user } = useAuth();
 

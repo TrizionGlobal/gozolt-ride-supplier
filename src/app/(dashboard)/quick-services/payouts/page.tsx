@@ -161,19 +161,11 @@ export default function PayoutsPage() {
 
   const bookingColumns: ColumnDef<any>[] = [
     {
-      key: 'ref',
-      title: 'BOOKING REF',
-      render: (row) => (
-        <span className="font-mono text-xs font-semibold text-[#FACC15]">
-          {row.bookingReference || row.id.slice(0, 8).toUpperCase()}
-        </span>
-      ),
-    },
-    {
       key: 'date',
       title: 'DATE',
+      className: 'whitespace-nowrap',
       render: (row) => (
-        <span className="text-[#D4D4D8]">
+        <span className="text-[#D4D4D8] whitespace-nowrap">
           {new Date(row.scheduledAt || row.bookingDate || row.createdAt).toLocaleDateString('en-CA')}
         </span>
       ),

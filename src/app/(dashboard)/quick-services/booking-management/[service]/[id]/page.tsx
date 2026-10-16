@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Clock, CheckCircle2, XCircle, UserRound, Mail } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle2, XCircle, UserRound, Mail, UserCheck, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { apiClient } from '@/lib/api-client';
 import { supplierQuickServiceBookingService } from '@/services/quick-services/supplier-quick-service-booking.service';
 import { getExpertVisitName, getQuickServiceHourlyRate } from '@/lib/quick-services-pricing';
 import { AssignWorkerModal } from '@/components/quick-services/assign-worker-modal';
@@ -46,6 +48,7 @@ export default function SupplierQuickServiceBookingDetailsPage() {
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [assigningSelf, setAssigningSelf] = useState(false);
 
   const fetchBooking = () => {
     setLoading(true);
@@ -58,6 +61,29 @@ export default function SupplierQuickServiceBookingDetailsPage() {
         console.error(err);
         setLoading(false);
       });
+  };
+
+  const handleStartWorkSelf = async () => {
+    const id = booking?.id || (booking as any)?._id || bookingId;
+    if (!id) return;
+    setAssigningSelf(true);
+    try {
+      const res = await apiClient.post(`/quick-services/supplier/bookings/${id}/assign-task`, {
+        workerId: 'self',
+        magicLinkBaseUrl: window.location.origin
+      });
+      if (res.data?.magicLink || res.data?.success) {
+        toast.success('Assigned to self and magic link sent to your email!');
+        fetchBooking();
+      } else {
+        toast.error('Failed to assign to self');
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || 'Failed to assign to self');
+    } finally {
+      setAssigningSelf(false);
+    }
   };
 
   useEffect(() => {
@@ -298,18 +324,9 @@ export default function SupplierQuickServiceBookingDetailsPage() {
             <div className="mt-4 pt-4 border-t border-[#27272A]">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-[#A1A1AA] text-sm font-medium">Assignment</h4>
-                {!booking.assignedToSelf && !booking.worker && !booking.workerId && booking.serviceStatus !== 'SELF_ASSIGNED' && booking.serviceStatus !== 'WORKER_ASSIGNED' && booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && (
-                  <button
-                    onClick={() => setIsAssignModalOpen(true)}
-                    className="text-xs text-[#FCD223] hover:underline flex items-center gap-1 font-medium"
-                  >
-                    <Mail className="h-3 w-3" />
-                    Assign
-                  </button>
-                )}
               </div>
 
-              {booking.assignedToSelf ? (
+              {booking.assignedToSelf || booking.serviceStatus === 'SELF_ASSIGNED' ? (
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20">
                     <UserRound className="h-5 w-5 text-indigo-400" />
@@ -319,7 +336,7 @@ export default function SupplierQuickServiceBookingDetailsPage() {
                     <p className="text-[#71717A] text-xs">Self-Assigned (Magic link emailed)</p>
                   </div>
                 </div>
-              ) : booking.worker ? (
+              ) : (booking.worker || booking.workerId || booking.serviceStatus === 'WORKER_ASSIGNED') ? (
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-fuchsia-500/10 flex items-center justify-center border border-fuchsia-500/20">
                     <UserRound className="h-5 w-5 text-fuchsia-400" />
@@ -330,15 +347,33 @@ export default function SupplierQuickServiceBookingDetailsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-lg bg-white/5 p-3 text-center border border-[#27272A]">
-                  <p className="text-xs text-[#71717A] mb-2">No worker currently assigned</p>
-                  <button
-                    onClick={() => setIsAssignModalOpen(true)}
-                    className="w-full rounded-md bg-[#FCD223] px-3 py-1.5 text-xs font-semibold text-black hover:bg-[#EAB308] transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <Mail className="h-3.5 w-3.5" />
-                    Assign Task & Send Link
-                  </button>
+                <div className="rounded-lg bg-white/5 p-3.5 text-center border border-[#27272A] space-y-3">
+                  <p className="text-xs text-[#71717A]">No worker currently assigned</p>
+                  {booking.status !== 'COMPLETED' && booking.status !== 'CANCELLED' && booking.status !== 'REJECTED' && (
+                    <div className="space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsAssignModalOpen(true)}
+                        className="w-full rounded-md bg-[#FCD223] px-3 py-2 text-xs font-semibold text-black hover:bg-[#EAB308] transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                      >
+                        <UserCheck className="h-3.5 w-3.5" />
+                        Assign to Worker
+                      </button>
+                      <button
+                        type="button"
+                        disabled={assigningSelf}
+                        onClick={handleStartWorkSelf}
+                        className="w-full rounded-md border border-[#FCD223]/30 bg-[#FCD223]/10 px-3 py-2 text-xs font-semibold text-[#FCD223] hover:bg-[#FCD223]/20 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      >
+                        {assigningSelf ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <UserRound className="h-3.5 w-3.5" />
+                        )}
+                        Assign to self
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

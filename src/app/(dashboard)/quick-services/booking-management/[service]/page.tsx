@@ -175,9 +175,8 @@ export default function ServiceBookingManagementPage() {
         workerId: 'self',
         magicLinkBaseUrl: window.location.origin
       });
-      if (res.data?.magicLink) {
+      if (res.data?.magicLink || res.data?.success) {
         toast.success('Assigned to self and magic link sent to your email!');
-        window.open(res.data.magicLink, '_blank');
         refresh();
       } else {
         toast.error('Failed to start work');

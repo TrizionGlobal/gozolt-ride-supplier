@@ -135,14 +135,14 @@ export default function VehicleHandoverPage() {
                 <div>
                   <p className="text-xs text-gray-500 mb-0.5">Pickup Date & Time</p>
                   <p className="text-sm text-gray-300 font-medium">
-                    {format(new Date(booking.startDate), 'MMM d, yyyy - h:mm a')}
+                    {booking.startDate ? format(new Date(booking.startDate.replace('Z', '')), 'MMM d, yyyy - h:mm a') : 'N/A'}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5 break-words">{booking.pickupLocation}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-0.5">Return Date & Time</p>
                   <p className="text-sm text-gray-300 font-medium">
-                    {format(new Date(booking.endDate), 'MMM d, yyyy - h:mm a')}
+                    {booking.endDate ? format(new Date(booking.endDate.replace('Z', '')), 'MMM d, yyyy - h:mm a') : 'N/A'}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5 break-words">{booking.dropoffLocation}</p>
                 </div>

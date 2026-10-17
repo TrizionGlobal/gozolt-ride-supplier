@@ -94,11 +94,11 @@ export function BikeRentalBookingsTable({
         <div>
           <div className="text-xs">
             <span className="text-[#71717A]">Pickup: </span>
-            <span className="text-white">{format(new Date(row.startDate), 'dd-MMM-yyyy hh:mm a')}</span>
+            <span className="text-white">{row.startDate ? format(new Date(row.startDate.replace('Z', '')), 'dd-MMM-yyyy hh:mm a') : 'N/A'}</span>
           </div>
           <div className="text-xs mt-1">
             <span className="text-[#71717A]">Return: </span>
-            <span className="text-white">{format(new Date(row.endDate), 'dd-MMM-yyyy hh:mm a')}</span>
+            <span className="text-white">{row.endDate ? format(new Date(row.endDate.replace('Z', '')), 'dd-MMM-yyyy hh:mm a') : 'N/A'}</span>
           </div>
         </div>
       ),

@@ -566,13 +566,15 @@ function StatusBadge({
 }
 
 function formatDateTime(value: string) {
-  const date = new Date(value);
+  if (!value) return 'Not scheduled';
+  const clean = typeof value === 'string' ? value.replace('Z', '') : value;
+  const date = new Date(clean);
 
   if (Number.isNaN(date.getTime())) {
     return 'Not scheduled';
   }
 
-  return date.toLocaleString(undefined, {
+  return date.toLocaleString('en-US', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',

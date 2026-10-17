@@ -103,7 +103,8 @@ const formatFeatureVal = (val: any): string => {
 const formatTime = (dateStr?: string | Date) => {
   if (!dateStr) return 'N/A';
   try {
-    return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const clean = typeof dateStr === 'string' ? dateStr.replace('Z', '') : dateStr;
+    return new Date(clean).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   } catch {
     return 'N/A';
   }
@@ -112,7 +113,8 @@ const formatTime = (dateStr?: string | Date) => {
 const formatDate = (dateStr?: string | Date) => {
   if (!dateStr) return 'N/A';
   try {
-    return new Date(dateStr).toLocaleDateString(undefined, { 
+    const clean = typeof dateStr === 'string' ? dateStr.replace('Z', '') : dateStr;
+    return new Date(clean).toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric', 
       year: 'numeric' 

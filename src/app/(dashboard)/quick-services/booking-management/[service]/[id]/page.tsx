@@ -10,7 +10,11 @@ import { getExpertVisitName, getQuickServiceHourlyRate } from '@/lib/quick-servi
 import { AssignWorkerModal } from '@/components/quick-services/assign-worker-modal';
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  if (!dateString) return 'N/A';
+  const clean = typeof dateString === 'string' ? dateString.replace('Z', '') : dateString;
+  const d = new Date(clean);
+  if (isNaN(d.getTime())) return 'N/A';
+  return d.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

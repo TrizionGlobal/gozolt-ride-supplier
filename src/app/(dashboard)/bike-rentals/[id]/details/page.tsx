@@ -156,9 +156,9 @@ export default function BookingDetailsPage() {
           <div className="space-y-4">
             <h4 className="font-semibold text-white text-lg">Rental Details</h4>
             <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm space-y-3">
-              <div className="flex justify-between"><span className="text-gray-400">Pickup Date & Time:</span> <span className="font-medium">{format(new Date(booking.startDate), 'MMM dd, yyyy HH:mm')}</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Pickup Date & Time:</span> <span className="font-medium">{booking.startDate ? format(new Date(booking.startDate.replace('Z', '')), 'MMM dd, yyyy hh:mm a') : 'N/A'}</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Pickup Location:</span> <span className="font-medium truncate max-w-[200px]" title={booking.pickupLocation}>{booking.pickupLocation}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Return Date & Time:</span> <span className="font-medium">{format(new Date(booking.endDate), 'MMM dd, yyyy HH:mm')}</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Return Date & Time:</span> <span className="font-medium">{booking.endDate ? format(new Date(booking.endDate.replace('Z', '')), 'MMM dd, yyyy hh:mm a') : 'N/A'}</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Return Location:</span> <span className="font-medium truncate max-w-[200px]" title={booking.dropoffLocation}>{booking.dropoffLocation}</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Delivery Option:</span> <span className="font-medium">{booking.deliveryType?.replace('_', ' ')}</span></div>
             </div>

@@ -64,9 +64,9 @@ export const supplierQuickServiceBookingService = {
       bookingReference: booking.bookingReference || booking.id.split('-')[0].toUpperCase(),
       customer: booking.customer || {
         id: booking.user?.id || booking.userId || '',
-        name: booking.userName || (booking.user ? `${booking.user.firstName} ${booking.user.lastName}`.trim() : 'Unknown'),
-        mobile: booking.userPhone || booking.user?.phone || 'Unknown',
-        email: booking.userEmail || booking.user?.email,
+        name: booking.userName || (booking.user ? `${booking.user.firstName || ''} ${booking.user.lastName || ''}`.trim() : '') || 'Customer',
+        mobile: booking.userPhone || booking.user?.phone || 'N/A',
+        email: booking.userEmail || booking.user?.email || 'N/A',
       },
       categoryName: booking.categoryName || booking.serviceCategory || 'Unknown Category',
       childService: booking.childService || booking.serviceTitle || null,

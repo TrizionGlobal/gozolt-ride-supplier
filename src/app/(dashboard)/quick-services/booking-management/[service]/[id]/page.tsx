@@ -122,9 +122,9 @@ export default function SupplierQuickServiceBookingDetailsPage() {
     else if (booking.options && typeof booking.options === 'object') features = booking.options;
   } catch (e) {}
 
-  const customerName = booking.userName || booking.customer?.name || (booking.user ? `${booking.user.firstName} ${booking.user.lastName}` : 'Unknown');
-  const customerEmail = booking.userEmail || booking.customer?.email || booking.user?.email || 'N/A';
-  const customerPhone = booking.userPhone || booking.customer?.mobile || booking.user?.phone || 'N/A';
+  const customerName = booking.userName || (booking.user ? `${booking.user.firstName || ''} ${booking.user.lastName || ''}`.trim() : '') || booking.customer?.name || 'Customer';
+  const customerEmail = booking.userEmail || booking.user?.email || booking.customer?.email || 'N/A';
+  const customerPhone = booking.userPhone || booking.user?.phone || booking.customer?.mobile || 'N/A';
   const serviceCategory = booking.serviceCategory || booking.categoryName || 'Unknown Category';
   const childService = booking.serviceTitle || booking.childService || 'General';
   const location = booking.location || booking.serviceAddress || 'N/A';

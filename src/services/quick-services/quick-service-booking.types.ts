@@ -62,6 +62,10 @@ export interface QuickServiceBooking {
   bookingReference: string;
 
   customer: QuickServiceCustomer;
+  userName?: string;
+  userEmail?: string;
+  userPhone?: string;
+  user?: any;
 
   categoryId: string;
   categoryName: string;

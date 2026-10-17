@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Camera, Upload } from 'lucide-react';
+import { ArrowLeft, Camera, Upload, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { fleetService } from '@/services/fleet/fleet.service';
 import { documentService } from '@/services/documents/document.service';
@@ -67,8 +67,18 @@ export default function AddVehiclePage() {
 
   const handlePhotoChange = (index: number, file: File | null) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File must be under 5MB');
+
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const fileName = file.name.toLowerCase();
+    const hasAllowedExt = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png');
+
+    if (!allowedMimeTypes.includes(file.type) || !hasAllowedExt) {
+      toast.error('Only JPG, JPEG, and PNG images are allowed');
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('File must be under 15MB');
       return;
     }
     const updated = [...photos];
@@ -195,30 +205,30 @@ export default function AddVehiclePage() {
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">License Plate<span className="text-red-500">*</span></label>
             <input
               type="text"
-              placeholder="Enter License Plate"
+              placeholder="e.g. ABC 123"
               value={form.plateNumber}
-              onChange={(e) => updateForm('plateNumber', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              onChange={(e) => updateForm('plateNumber', e.target.value.toUpperCase())}
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none uppercase"
             />
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Make<span className="text-red-500">*</span></label>
             <input
               type="text"
-              placeholder="Enter Make"
+              placeholder="e.g. TOYOTA"
               value={form.make}
-              onChange={(e) => updateForm('make', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              onChange={(e) => updateForm('make', e.target.value.toUpperCase())}
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none uppercase"
             />
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Model<span className="text-red-500">*</span></label>
             <input
               type="text"
-              placeholder="Enter Model"
+              placeholder="e.g. COROLLA"
               value={form.model}
-              onChange={(e) => updateForm('model', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none"
+              onChange={(e) => updateForm('model', e.target.value.toUpperCase())}
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none uppercase"
             />
           </div>
           <div>
@@ -243,29 +253,35 @@ export default function AddVehiclePage() {
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Type<span className="text-red-500">*</span></label>
-            <select
-              value={form.type}
-              onChange={(e) => updateForm('type', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white focus:border-[#FACC15] focus:outline-none appearance-none"
-            >
-              <option value="" className="text-[#52525B]">Select...</option>
-              {vehicleTypes.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={form.type}
+                onChange={(e) => updateForm('type', e.target.value)}
+                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 pr-9 text-xs text-white focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer"
+              >
+                <option value="" className="bg-[#18181B] text-[#71717A]">Select...</option>
+                {vehicleTypes.map((t) => (
+                  <option key={t} value={t} className="bg-[#18181B] text-white">{t}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
+            </div>
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Fuel Type<span className="text-red-500">*</span></label>
-            <select
-              value={form.fuelType}
-              onChange={(e) => updateForm('fuelType', e.target.value)}
-              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white focus:border-[#FACC15] focus:outline-none appearance-none"
-            >
-              <option value="" className="text-[#52525B]">Select...</option>
-              {fuelTypes.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={form.fuelType}
+                onChange={(e) => updateForm('fuelType', e.target.value)}
+                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 pr-9 text-xs text-white focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer"
+              >
+                <option value="" className="bg-[#18181B] text-[#71717A]">Select...</option>
+                {fuelTypes.map((t) => (
+                  <option key={t} value={t} className="bg-[#18181B] text-white">{t}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
+            </div>
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Seats<span className="text-red-500">*</span></label>
@@ -353,11 +369,11 @@ export default function AddVehiclePage() {
                   <Camera className="h-8 w-8 text-[#52525B]" />
                 )}
                 <span className="text-xs font-medium text-[#D4D4D8]">{photo.label}</span>
-                <span className="text-[10px] text-[#52525B]">JPG, PNG — max 5MB</span>
+                <span className="text-[10px] text-[#52525B]">JPG, JPEG, PNG — max 15MB</span>
                 <input
                   ref={(el) => { photoRefs.current[i] = el; }}
                   type="file"
-                  accept="image/*"
+                  accept=".jpg, .jpeg, .png, image/jpeg, image/png"
                   className="hidden"
                   onChange={(e) => handlePhotoChange(i, e.target.files?.[0] ?? null)}
                 />

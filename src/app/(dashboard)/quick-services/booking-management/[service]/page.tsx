@@ -199,19 +199,23 @@ export default function ServiceBookingManagementPage() {
     {
       key: 'customer',
       title: 'Customer',
-      render: (row) => (
-        <div className="flex items-start gap-2">
-          <UserRound className="mt-0.5 h-4 w-4 text-[#71717A]" />
-          <div>
-            <p className="text-white">
-              {row.customer?.name || 'Unknown'}
-            </p>
-            <p className="text-xs text-[#71717A]">
-              {row.customer?.mobile || 'N/A'}
-            </p>
+      render: (row) => {
+        const name = row.customer?.name || row.userName || (row.user ? `${row.user.firstName || ''} ${row.user.lastName || ''}`.trim() : '') || 'Customer';
+        const mobile = row.customer?.mobile || row.userPhone || row.user?.phone || 'N/A';
+        return (
+          <div className="flex items-start gap-2">
+            <UserRound className="mt-0.5 h-4 w-4 text-[#71717A]" />
+            <div>
+              <p className="text-white">
+                {name}
+              </p>
+              <p className="text-xs text-[#71717A]">
+                {mobile}
+              </p>
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'service',

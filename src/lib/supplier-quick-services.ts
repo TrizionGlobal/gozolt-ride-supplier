@@ -115,3 +115,135 @@ export function getSupplierQuickServiceBySlug(
     (service) => service.slug === slug
   );
 }
+
+export function getQuickServiceIcon(
+  category?: string,
+  serviceTitle?: string
+): string {
+  const normCat = (category || '').toLowerCase().trim();
+  const normTitle = (serviceTitle || '').toLowerCase().trim();
+
+  // 1. Direct matching with SUPPLIER_QUICK_SERVICE_CATEGORIES by category ID/slug/name or child services
+  for (const cat of SUPPLIER_QUICK_SERVICE_CATEGORIES) {
+    if (
+      cat.id.toLowerCase() === normCat ||
+      cat.slug.toLowerCase() === normCat ||
+      cat.name.toLowerCase() === normCat ||
+      normCat.includes(cat.slug) ||
+      normCat.includes(cat.name.toLowerCase())
+    ) {
+      return cat.icon;
+    }
+
+    if (
+      cat.childServices.some(
+        (child) =>
+          child.toLowerCase() === normTitle ||
+          normTitle.includes(child.toLowerCase()) ||
+          child.toLowerCase().includes(normTitle)
+      )
+    ) {
+      return cat.icon;
+    }
+  }
+
+  // 2. Keyword fallback matching
+  if (
+    normCat.includes('home') ||
+    normTitle.includes('clean') ||
+    normTitle.includes('pest') ||
+    normTitle.includes('garden') ||
+    normTitle.includes('paint')
+  ) {
+    return '/home-service-icon.png';
+  }
+  if (
+    normCat.includes('plumb') ||
+    normTitle.includes('plumb') ||
+    normCat.includes('carpenter') ||
+    normTitle.includes('carpenter') ||
+    normTitle.includes('carpentry')
+  ) {
+    return '/home-service-icon.png';
+  }
+  if (
+    normCat.includes('pc') ||
+    normCat.includes('mobile') ||
+    normTitle.includes('mobile') ||
+    normTitle.includes('phone') ||
+    normTitle.includes('computer') ||
+    normTitle.includes('laptop') ||
+    normTitle.includes('printer') ||
+    normTitle.includes('scanner')
+  ) {
+    return '/pc-mobile-repair-icon.png';
+  }
+  if (
+    normCat.includes('mechanic') ||
+    normTitle.includes('mechanic')
+  ) {
+    return '/vehicle-mechanic-icon.png';
+  }
+  if (
+    normCat.includes('wash') ||
+    normTitle.includes('wash')
+  ) {
+    return '/vehicle-wash-icon.png';
+  }
+  if (
+    normCat.includes('electric') ||
+    normTitle.includes('electric') ||
+    normTitle.includes('lift') ||
+    normTitle.includes('elevator')
+  ) {
+    return '/electrical-mechanic-icon.png';
+  }
+  if (
+    normCat.includes('appliance') ||
+    normTitle.includes('appliance')
+  ) {
+    return '/appliance-repair-icon.png';
+  }
+  if (
+    normCat.includes('beauty') ||
+    normCat.includes('wellness') ||
+    normTitle.includes('beauty') ||
+    normTitle.includes('wellness') ||
+    normTitle.includes('massage') ||
+    normTitle.includes('salon')
+  ) {
+    return '/beauty-wellness-icon.png';
+  }
+  if (
+    normCat.includes('hire') ||
+    normTitle.includes('hire') ||
+    normTitle.includes('helper')
+  ) {
+    return '/hire-a-person-icon.png';
+  }
+  if (
+    normCat.includes('laundry') ||
+    normTitle.includes('laundry') ||
+    normTitle.includes('iron')
+  ) {
+    return '/laundry-worker-icon.png';
+  }
+  if (
+    normCat.includes('security') ||
+    normCat.includes('bouncer') ||
+    normTitle.includes('security') ||
+    normTitle.includes('bouncer')
+  ) {
+    return '/security-bouncer-icon.png';
+  }
+  if (
+    normCat.includes('other') ||
+    normTitle.includes('event') ||
+    normTitle.includes('organis') ||
+    normTitle.includes('supplier')
+  ) {
+    return '/other-services-icon.png';
+  }
+
+  return '/quick-services-icon.png';
+}

@@ -60,7 +60,7 @@ export default function VehicleDetailsPage() {
           </div>
         </div>
         <Link
-          href={`/car-rentals/fleet/${vehicle.id}/edit`}
+          href={`/car-rentals/${vehicle.id}/edit`}
           className="flex items-center gap-2 rounded-lg bg-[#FACC15] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[#EAB308]"
         >
           <Pencil className="h-4 w-4" />

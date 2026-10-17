@@ -20,8 +20,10 @@ import {
   Loader2
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), { ssr: false });
 import { getExpertVisitName, getQuickServiceHourlyRate } from '@/lib/quick-services-pricing';
+import { getQuickServiceIcon } from '@/lib/supplier-quick-services';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { io } from 'socket.io-client';
 
@@ -452,8 +454,15 @@ export function QuickServiceTask({ token }: { token: string }) {
       {booking && (
         <div className="space-y-4">
           <div className="bg-[#141414] rounded-2xl p-4 border border-white/10 flex gap-3.5 items-center">
-            <div className="w-14 h-14 bg-black rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-white/5">
-              <Camera className="h-6 w-6 text-[#FACC15]" />
+            <div className="w-14 h-14 bg-[#04213C] rounded-xl overflow-hidden flex items-center justify-center shrink-0 border border-white/10 shadow-sm">
+              <Image
+                src={getQuickServiceIcon(booking.serviceCategory, booking.serviceTitle)}
+                alt={booking.serviceTitle || 'Quick Service'}
+                width={56}
+                height={56}
+                className="h-full w-full object-cover"
+                unoptimized
+              />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-base text-white truncate">{booking.serviceTitle}</h3>

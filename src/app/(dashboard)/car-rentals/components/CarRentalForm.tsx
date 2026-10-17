@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Trash2, Save, X, Check, Loader2, UploadCloud } from 'lucide-react';
+import { Plus, Trash2, Save, X, Check, Loader2, UploadCloud, ChevronDown, Star, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { carRentalsService, CarRentalVehicle, ProtectionPackage, Addon, MileagePackage } from '@/services/car-rentals/car-rentals.service';
 import { useCarRentalsStore } from '@/stores/car-rentals.store';
@@ -62,12 +62,75 @@ export function CarRentalForm({ initialData }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const capitalizeWords = (s: string) => s.split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : '').join(' ');
-  const formatPlate = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const formatDigits = (s: string) => s.replace(/[^0-9]/g, '');
+  const formatPlate = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+  const formatDigits = (s: string) => s.replace(/[^0-9]/g, '').slice(0, 4);
+
+  // Sanitizing numeric handlers to prevent absurd inputs
+  const handlePricePerDayChange = (val: string) => {
+    let cleaned = val.replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    if (parts[0] && parts[0].length > 4) {
+      cleaned = parts[0].slice(0, 4) + (parts[1] !== undefined ? '.' + parts[1].slice(0, 2) : '');
+    } else if (parts[1] && parts[1].length > 2) {
+      cleaned = parts[0] + '.' + parts[1].slice(0, 2);
+    }
+    if (!cleaned || cleaned === '.') {
+      setPricePerDay('');
+      return;
+    }
+    const num = parseFloat(cleaned);
+    if (num > 5000) {
+      setPricePerDay(5000);
+    } else {
+      setPricePerDay(cleaned as any);
+    }
+  };
+
+  const handleSeatsChange = (val: string) => {
+    const digits = val.replace(/[^0-9]/g, '').slice(0, 2);
+    if (!digits) {
+      setSeats('');
+      return;
+    }
+    const num = parseInt(digits, 10);
+    if (num > 12) setSeats(12);
+    else if (num < 1) setSeats(1);
+    else setSeats(num);
+  };
+
+  const handleLuggageChange = (val: string) => {
+    const digits = val.replace(/[^0-9]/g, '').slice(0, 2);
+    if (!digits) {
+      setLuggageCapacity('');
+      return;
+    }
+    const num = parseInt(digits, 10);
+    if (num > 15) setLuggageCapacity(15);
+    else setLuggageCapacity(num);
+  };
+
+  const handleYearChange = (val: string) => {
+    const digits = val.replace(/[^0-9]/g, '').slice(0, 4);
+    setYear(digits);
+  };
+
+  const handleYearBlur = () => {
+    if (year) {
+      const currentYear = new Date().getFullYear();
+      const num = parseInt(String(year), 10);
+      if (num > currentYear + 1) {
+        setYear(String(currentYear + 1));
+        toast.info(`Year adjusted to maximum allowed (${currentYear + 1})`);
+      }
+    }
+  };
 
   // Basic Details
-  const [brand, setBrand] = useState(initialData?.brand || '');
-  const [name, setName] = useState(initialData?.name || '');
+  const [brand, setBrand] = useState(initialData?.brand?.toUpperCase() || '');
+  const [name, setName] = useState(initialData?.name?.toUpperCase() || '');
   const [category, setCategory] = useState(initialData?.category || '');
   const [registrationNo, setRegistrationNo] = useState(initialData?.registrationNo || '');
   const [year, setYear] = useState(initialData?.year || '');
@@ -77,16 +140,24 @@ export function CarRentalForm({ initialData }: Props) {
   const [luggageCapacity, setLuggageCapacity] = useState<number | ''>(initialData?.luggageCapacity || '');
   const [pricePerDay, setPricePerDay] = useState<number | ''>(initialData?.pricePerDay || '');
   const [imageUrls, setImageUrls] = useState<string[]>(initialData?.images || []);
-  const [localImages, setLocalImages] = useState<{file: File, preview: string}[]>([]);
+  const [localImages, setLocalImages] = useState<{ file: File, preview: string }[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error('Only PNG and JPG images are allowed');
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const fileName = file.name.toLowerCase();
+    const hasAllowedExt = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png');
+
+    if (!allowedMimeTypes.includes(file.type) || !hasAllowedExt) {
+      toast.error('Only JPG, JPEG, and PNG images are allowed');
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Image size must be less than 15MB');
       return;
     }
 
@@ -97,6 +168,7 @@ export function CarRentalForm({ initialData }: Props) {
 
     const preview = URL.createObjectURL(file);
     setLocalImages(prev => [...prev, { file, preview }]);
+    e.target.value = '';
   };
 
   const removeImageUrl = (indexToRemove: number) => {
@@ -110,58 +182,154 @@ export function CarRentalForm({ initialData }: Props) {
       return prev.filter((_, idx) => idx !== indexToRemove);
     });
   };
+
   // Features & Delivery Options
   const [hasAirConditioning, setHasAirConditioning] = useState(initialData?.hasAirConditioning ?? true);
   const [isSelfPickupAllowed, setIsSelfPickupAllowed] = useState(initialData?.isSelfPickupAllowed ?? true);
   const [isSupplierDeliveryAllowed, setIsSupplierDeliveryAllowed] = useState(initialData?.isSupplierDeliveryAllowed ?? false);
   const [isDoorstepDeliveryAllowed, setIsDoorstepDeliveryAllowed] = useState(initialData?.isDoorstepDeliveryAllowed ?? false);
 
-
   // Protection Packages
-  const [packages, setPackages] = useState<ProtectionPackage[]>(
-    initialData?.protectionPackages?.length ? initialData.protectionPackages : DEFAULT_PACKAGES
-  );
+  const getInitialPackages = (): ProtectionPackage[] => {
+    if (!initialData?.protectionPackages?.length) return DEFAULT_PACKAGES;
+    return DEFAULT_PACKAGES.map(defPkg => {
+      const existing = initialData.protectionPackages?.find(
+        p => p.title?.toLowerCase() === defPkg.title?.toLowerCase() || p.valueIdentifier === defPkg.valueIdentifier
+      );
+      if (!existing) return defPkg;
+      const origNum = Number(existing.originalPricePerDay);
+      return {
+        ...defPkg,
+        ...existing,
+        originalPricePerDay: !isNaN(origNum) && origNum > 0 ? origNum : undefined,
+      };
+    });
+  };
 
+  const [packages, setPackages] = useState<ProtectionPackage[]>(getInitialPackages);
 
+  interface PackageInputState {
+    originalPrice: string;
+    discountPercentage: string;
+  }
+
+  const [packageInputs, setPackageInputs] = useState<PackageInputState[]>(() => {
+    const list = getInitialPackages();
+    return list.map(pkg => {
+      let disc = '';
+      if (pkg.discountText) {
+        const match = pkg.discountText.match(/- (\d+(?:\.\d+)?)% online discount/);
+        if (match) disc = match[1];
+      }
+      return {
+        originalPrice: pkg.originalPricePerDay !== undefined && pkg.originalPricePerDay !== null ? String(pkg.originalPricePerDay) : '',
+        discountPercentage: disc,
+      };
+    });
+  });
+
+  const calculateFinalPrice = (origStr: string, discStr: string): string => {
+    if (!origStr || origStr.trim() === '') return '';
+    const origNum = parseFloat(origStr);
+    if (isNaN(origNum) || origNum < 0 || origNum > 100) return '';
+
+    const discNum = parseFloat(discStr);
+    const validDisc = !isNaN(discNum) && discNum >= 0 && discNum <= 100 ? discNum : 0;
+
+    if (validDisc === 100) return '0';
+
+    const finalVal = Number((origNum * (1 - validDisc / 100)).toFixed(2));
+    return String(finalVal);
+  };
+
+  const getPackagePriceError = (val: string) => {
+    if (!val || val.trim() === '') return null;
+    const num = parseFloat(val);
+    if (isNaN(num)) return 'Please enter a valid price';
+    if (num < 0) return 'Price cannot be less than €0.00';
+    if (num > 100) return 'Price cannot exceed €100.00';
+    return null;
+  };
+
+  const getPackageDiscountError = (val: string) => {
+    if (!val || val.trim() === '') return null;
+    const num = parseFloat(val);
+    if (isNaN(num)) return 'Please enter a valid percentage';
+    if (num < 0) return 'Discount cannot be less than 0%';
+    if (num > 100) return 'Discount cannot exceed 100%';
+    return null;
+  };
+
+  const getAddonPriceError = (val: string | number) => {
+    if (val === '' || val === undefined || val === null) return null;
+    const num = Number(val);
+    if (isNaN(num)) return 'Please enter a valid price';
+    if (num < 0) return 'Price cannot be less than €0.00';
+    if (num > 100) return 'Price cannot exceed €100.00';
+    return null;
+  };
+
+  const handlePackageInputChange = (idx: number, field: 'originalPrice' | 'discountPercentage', rawValue: string) => {
+    const updatedInputs = [...packageInputs];
+    updatedInputs[idx] = {
+      ...updatedInputs[idx],
+      [field]: rawValue,
+    };
+    setPackageInputs(updatedInputs);
+
+    const origStr = updatedInputs[idx].originalPrice.trim();
+    const discStr = updatedInputs[idx].discountPercentage.trim();
+
+    const origNum = parseFloat(origStr);
+    const discNum = parseFloat(discStr);
+
+    const finalStr = calculateFinalPrice(origStr, discStr);
+    const finalPrice = finalStr !== '' ? Number(finalStr) : undefined;
+
+    const updatedPackages = [...packages];
+    updatedPackages[idx] = {
+      ...updatedPackages[idx],
+      originalPricePerDay: origStr !== '' && !isNaN(origNum) ? origNum : undefined,
+      pricePerDay: finalPrice !== undefined ? finalPrice : ('' as any),
+      discountText: discStr !== '' && !isNaN(discNum) && discNum > 0 && discNum <= 100 ? `- ${discNum}% online discount` : undefined,
+    };
+    setPackages(updatedPackages);
+  };
 
   // Add-ons
   const [addons, setAddons] = useState<Addon[]>(initialData?.addons || []);
 
-  const handlePriceChange = (idx: number, field: 'original' | 'percentage', val: string) => {
-    const newPkgs = [...packages];
-    const pkg = newPkgs[idx];
-
-    let currentPercentage = 0;
-    if (pkg.discountText) {
-      const match = pkg.discountText.match(/- (\d+)% online discount/);
-      if (match) currentPercentage = parseInt(match[1]);
-    }
-
-    let newOriginal = pkg.originalPricePerDay || 0;
-    let newPercentage = currentPercentage;
-
-    if (field === 'original') {
-      newOriginal = val === '' ? 0 : Number(val);
-    } else if (field === 'percentage') {
-      newPercentage = val === '' ? 0 : Number(val);
-    }
-
-    pkg.originalPricePerDay = newOriginal || undefined;
-
-    const finalPrice = newOriginal * (1 - newPercentage / 100);
-    pkg.pricePerDay = Number(finalPrice.toFixed(2));
-
-    if (newPercentage > 0) {
-      pkg.discountText = `- ${newPercentage}% online discount`;
-    } else {
-      pkg.discountText = undefined;
-    }
-
-    setPackages(newPkgs);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (imageUrls.length === 0 && localImages.length === 0) {
+      toast.error('Please upload at least one vehicle image');
+      return;
+    }
+
+    for (let i = 0; i < packageInputs.length; i++) {
+      const origErr = getPackagePriceError(packageInputs[i].originalPrice);
+      if (origErr) {
+        toast.error(`${packages[i].title}: ${origErr}`);
+        return;
+      }
+      const discErr = getPackageDiscountError(packageInputs[i].discountPercentage);
+      if (discErr) {
+        toast.error(`${packages[i].title}: ${discErr}`);
+        return;
+      }
+    }
+
+    for (let i = 0; i < addons.length; i++) {
+      if (addons[i].name) {
+        const addonErr = getAddonPriceError(addons[i].pricePerDay);
+        if (addonErr) {
+          toast.error(`Add-on "${addons[i].name}": ${addonErr}`);
+          return;
+        }
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const data = {
@@ -181,12 +349,21 @@ export function CarRentalForm({ initialData }: Props) {
         isDoorstepDeliveryAllowed,
         images: imageUrls,
         protectionPackages: packages
-          .filter(pkg => pkg.originalPricePerDay && Number(pkg.originalPricePerDay) > 0)
-          .map(pkg => ({
-            ...pkg,
-            pricePerDay: Number(pkg.pricePerDay) || 0,
-            originalPricePerDay: pkg.originalPricePerDay ? Number(pkg.originalPricePerDay) : undefined,
-          })),
+          .filter((_, idx) => {
+            const orig = parseFloat(packageInputs[idx]?.originalPrice ?? '');
+            return !isNaN(orig) && orig > 0 && orig <= 100;
+          })
+          .map((pkg, idx) => {
+            const finalStr = calculateFinalPrice(packageInputs[idx].originalPrice, packageInputs[idx].discountPercentage);
+            const origNum = parseFloat(packageInputs[idx].originalPrice);
+            const discNum = parseFloat(packageInputs[idx].discountPercentage);
+            return {
+              ...pkg,
+              originalPricePerDay: origNum,
+              pricePerDay: finalStr !== '' ? Number(finalStr) : 0,
+              discountText: !isNaN(discNum) && discNum > 0 && discNum <= 100 ? `- ${discNum}% online discount` : undefined,
+            };
+          }),
         mileagePackages: [],
         addons: addons
           .filter(a => a.name)
@@ -264,119 +441,246 @@ export function CarRentalForm({ initialData }: Props) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full space-y-4">
+    <form onSubmit={handleSubmit} className="w-full space-y-6">
       {/* Basic Info */}
       <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
         <h2 className="text-lg font-bold text-white mb-6">Basic Information</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Row 1 */}
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Brand<span className="text-red-500">*</span></label>
-            <input required type="text" value={brand} onChange={e => setBrand(capitalizeWords(e.target.value))} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. Toyota" />
+            <input
+              required
+              type="text"
+              maxLength={50}
+              value={brand}
+              onChange={e => setBrand(e.target.value.toUpperCase())}
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none uppercase transition-colors"
+              placeholder="e.g. TOYOTA"
+            />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Vehicle Name<span className="text-red-500">*</span></label>
-            <input required type="text" value={name} onChange={e => setName(capitalizeWords(e.target.value))} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. Corolla" />
+            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Car Name<span className="text-red-500">*</span></label>
+            <input
+              required
+              type="text"
+              maxLength={50}
+              value={name}
+              onChange={e => setName(e.target.value.toUpperCase())}
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none uppercase transition-colors"
+              placeholder="e.g. TOYOTA COROLLA"
+            />
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Category<span className="text-red-500">*</span></label>
-            <select required value={category} onChange={e => setCategory(e.target.value)} className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs focus:border-[#FACC15] focus:outline-none appearance-none ${!category ? 'text-[#52525B]' : 'text-white'}`}>
-              <option value="" disabled>Select Category</option>
-              <option value="GO_5P">Go - 5P</option>
-              <option value="PREMIUM_5P">Premium - 5P</option>
-              <option value="SUV_7P">SUV - 7P</option>
-              <option value="VAN_8P">Van - 8P & Above</option>
-              <option value="ELECTRIC_5P">Electric - 5P</option>
-            </select>
+            <div className="relative">
+              <select
+                required
+                value={category}
+                onChange={e => setCategory(e.target.value)}
+                className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 pr-9 text-xs focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer transition-colors ${!category ? 'text-[#71717A]' : 'text-white'}`}
+              >
+                <option value="" disabled className="bg-[#18181B] text-[#71717A]">Select Category</option>
+                <option value="GO_5P" className="bg-[#18181B] text-white">Go - 5P</option>
+                <option value="PREMIUM_5P" className="bg-[#18181B] text-white">Premium - 5P</option>
+                <option value="SUV_7P" className="bg-[#18181B] text-white">SUV - 7P</option>
+                <option value="VAN_8P" className="bg-[#18181B] text-white">Van - 8P & Above</option>
+                <option value="ELECTRIC_5P" className="bg-[#18181B] text-white">Electric - 5P</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
+            </div>
           </div>
+
+          {/* Row 2 */}
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Number Plate / Registration<span className="text-red-500">*</span></label>
-            <input required type="text" value={registrationNo} onChange={e => setRegistrationNo(formatPlate(e.target.value))} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. ABC123" />
+            <input
+              required
+              type="text"
+              maxLength={12}
+              value={registrationNo}
+              onChange={e => setRegistrationNo(formatPlate(e.target.value))}
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none uppercase font-mono tracking-wider transition-colors"
+              placeholder="Enter Number Plate"
+            />
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Make Year<span className="text-red-500">*</span></label>
-            <input required type="text" value={year} onChange={e => setYear(formatDigits(e.target.value))} maxLength={4} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. 2024" />
+            <input
+              required
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              value={year}
+              onChange={e => handleYearChange(e.target.value)}
+              onBlur={handleYearBlur}
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none transition-colors"
+              placeholder="e.g. 2024"
+            />
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-[#D4D4D8]">Transmission<span className="text-red-500">*</span></label>
-            <select required value={transmission} onChange={e => setTransmission(e.target.value)} className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs focus:border-[#FACC15] focus:outline-none appearance-none ${!transmission ? 'text-[#52525B]' : 'text-white'}`}>
-              <option value="" disabled>Select Transmission</option>
-              <option value="AUTOMATIC">Automatic</option>
-              <option value="MANUAL">Manual</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Fuel Type<span className="text-red-500">*</span></label>
-            <select required value={fuelType} onChange={e => setFuelType(e.target.value)} className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs focus:border-[#FACC15] focus:outline-none appearance-none ${!fuelType ? 'text-[#52525B]' : 'text-white'}`}>
-              <option value="" disabled>Select Fuel Type</option>
-              <option value="PETROL">Petrol</option>
-              <option value="DIESEL">Diesel</option>
-              <option value="ELECTRIC">Electric</option>
-              <option value="HYBRID">Hybrid</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Seats<span className="text-red-500">*</span></label>
-            <input required type="number" min="0" value={seats} onChange={e => setSeats(e.target.value === '' ? '' : Number(e.target.value))} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. 5" />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Luggage Capacity<span className="text-red-500">*</span></label>
-            <input required type="number" min="0" value={luggageCapacity} onChange={e => setLuggageCapacity(e.target.value === '' ? '' : Number(e.target.value))} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. 2" />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Base Price Per Day (€)<span className="text-red-500">*</span></label>
-            <input required type="number" min="0" step="0.01" value={pricePerDay} onChange={e => setPricePerDay(e.target.value === '' ? '' : Number(e.target.value))} className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. 45.00" />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Car Image<span className="text-red-500">*</span></label>
-            <div className="space-y-3">
-              {(imageUrls.length + localImages.length) < 5 && (
-                <label className="flex flex-col items-center justify-center gap-1 w-full h-14 rounded-lg bg-[#111111] border border-[#3F3F46] text-[#D4D4D8] text-sm hover:bg-[#27272A] cursor-pointer">
-                  {isUploadingImage ? (
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Uploading images...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-2">
-                        <UploadCloud className="h-4 w-4" />
-                        <span>Upload Image ({imageUrls.length + localImages.length}/5)</span>
-                      </div>
-                      <span className="text-[10px] text-[#71717A]">PNG, JPG only</span>
-                    </>
-                  )}
-                  <input type="file" accept=".png, .jpg, .jpeg, image/png, image/jpeg, image/jpg" className="hidden" onChange={handleImageUpload} disabled={isUploadingImage || isSubmitting} />
-                </label>
-              )}
-              {(imageUrls.length > 0 || localImages.length > 0) && (
-                <div className="flex flex-wrap gap-2">
-                  {imageUrls.map((url, idx) => (
-                    <div key={`remote-${idx}`} className="relative h-20 w-32 rounded-lg border border-[#27272A] overflow-hidden bg-black flex items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url} alt={`Car Preview ${idx + 1}`} className="h-full w-full object-cover" />
-                      <button type="button" onClick={() => removeImageUrl(idx)} className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:text-red-400 disabled:opacity-50" disabled={isUploadingImage || isSubmitting}>
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {localImages.map((local, idx) => (
-                    <div key={`local-${idx}`} className="relative h-20 w-32 rounded-lg border border-[#27272A] overflow-hidden bg-black flex items-center justify-center opacity-90">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={local.preview} alt={`Car Local Preview ${idx + 1}`} className="h-full w-full object-cover" />
-                      {isUploadingImage && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                          <Loader2 className="h-5 w-5 animate-spin text-[#FACC15]" />
-                        </div>
-                      )}
-                      <button type="button" onClick={() => removeLocalImage(idx)} className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:text-red-400 disabled:opacity-50" disabled={isUploadingImage || isSubmitting}>
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="relative">
+              <select
+                required
+                value={transmission}
+                onChange={e => setTransmission(e.target.value)}
+                className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 pr-9 text-xs focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer transition-colors ${!transmission ? 'text-[#71717A]' : 'text-white'}`}
+              >
+                <option value="" disabled className="bg-[#18181B] text-[#71717A]">Select Transmission</option>
+                <option value="AUTOMATIC" className="bg-[#18181B] text-white">Automatic</option>
+                <option value="MANUAL" className="bg-[#18181B] text-white">Manual</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
             </div>
           </div>
+
+          {/* Row 3 */}
+          <div>
+            <label className="mb-1.5 block text-xs text-[#D4D4D8]">Fuel Type<span className="text-red-500">*</span></label>
+            <div className="relative">
+              <select
+                required
+                value={fuelType}
+                onChange={e => setFuelType(e.target.value)}
+                className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 pr-9 text-xs focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer transition-colors ${!fuelType ? 'text-[#71717A]' : 'text-white'}`}
+              >
+                <option value="" disabled className="bg-[#18181B] text-[#71717A]">Select Fuel Type</option>
+                <option value="PETROL" className="bg-[#18181B] text-white">Petrol</option>
+                <option value="DIESEL" className="bg-[#18181B] text-white">Diesel</option>
+                <option value="ELECTRIC" className="bg-[#18181B] text-white">Electric</option>
+                <option value="HYBRID" className="bg-[#18181B] text-white">Hybrid</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs text-[#D4D4D8]">Seats<span className="text-red-500">*</span></label>
+              <span className="text-[10px] text-[#71717A]">1 - 12 seats</span>
+            </div>
+            <input
+              required
+              type="text"
+              inputMode="numeric"
+              maxLength={2}
+              value={seats}
+              onChange={e => handleSeatsChange(e.target.value)}
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none transition-colors"
+              placeholder="e.g. 5"
+            />
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs text-[#D4D4D8]">Luggage Capacity (Bags)<span className="text-red-500">*</span></label>
+              <span className="text-[10px] text-[#71717A]">Max 15 bags</span>
+            </div>
+            <input
+              required
+              type="text"
+              inputMode="numeric"
+              maxLength={2}
+              value={luggageCapacity}
+              onChange={e => handleLuggageChange(e.target.value)}
+              className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none transition-colors"
+              placeholder="e.g. 2"
+            />
+          </div>
+
+          {/* Row 4: Base Daily Rate (spans all 3 columns for balanced symmetry) */}
+          <div className="md:col-span-3">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs text-[#D4D4D8]">Base Price Per Day (€)<span className="text-red-500">*</span></label>
+              <span className="text-[10px] text-[#71717A]">Standard daily rental rate (Max €5,000.00)</span>
+            </div>
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#FACC15] font-semibold">€</span>
+              <input
+                required
+                type="text"
+                inputMode="decimal"
+                maxLength={7}
+                value={pricePerDay}
+                onChange={e => handlePricePerDayChange(e.target.value)}
+                className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] pl-8 pr-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none transition-colors"
+                placeholder="45.00"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Vehicle Images - Dedicated Gallery */}
+      <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+          <div>
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              Vehicle Images
+              <span className="text-red-500">*</span>
+            </h2>
+            <p className="text-xs text-[#A1A1AA] mt-1">
+              Upload up to 5 clear photos of your car (JPG, JPEG, PNG up to 15MB each).
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-full bg-[#18181B] border border-[#27272A] px-3 py-1 text-xs font-medium text-[#D4D4D8]">
+            <span className="text-[#FACC15] font-semibold">{imageUrls.length + localImages.length}</span> / 5 images
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5">
+          {/* Existing Remote Images */}
+          {imageUrls.map((url, idx) => (
+            <div key={`remote-${idx}`} className="group relative aspect-[4/3] rounded-lg border border-[#27272A] overflow-hidden bg-black/60 flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt={`Car image ${idx + 1}`} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              <button
+                type="button"
+                onClick={() => removeImageUrl(idx)}
+                className="absolute top-1.5 right-1.5 rounded-full bg-black/75 p-1 text-[#A1A1AA] hover:text-red-400 hover:bg-black transition-colors"
+                disabled={isSubmitting}
+                title="Remove image"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+
+          {/* Local Newly Selected Images */}
+          {localImages.map((local, idx) => (
+            <div key={`local-${idx}`} className="group relative aspect-[4/3] rounded-lg border border-[#27272A] overflow-hidden bg-black/60 flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={local.preview} alt={`New image ${idx + 1}`} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+              <button
+                type="button"
+                onClick={() => removeLocalImage(idx)}
+                className="absolute top-1.5 right-1.5 rounded-full bg-black/75 p-1 text-[#A1A1AA] hover:text-red-400 hover:bg-black transition-colors"
+                disabled={isSubmitting}
+                title="Remove image"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+
+          {/* Upload Button Box if < 5 */}
+          {imageUrls.length + localImages.length < 5 && (
+            <label className="flex flex-col items-center justify-center aspect-[4/3] rounded-lg border-2 border-dashed border-[#3F3F46] bg-[#0A0A0A] hover:bg-[#18181B] hover:border-[#FACC15] cursor-pointer transition-all p-3 text-center group">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#18181B] group-hover:bg-[#FACC15]/10 mb-2 transition-colors">
+                <UploadCloud className="h-4 w-4 text-[#A1A1AA] group-hover:text-[#FACC15] transition-colors" />
+              </div>
+              <span className="text-xs font-medium text-white group-hover:text-[#FACC15] transition-colors">
+                Upload Image
+              </span>
+              <span className="text-[10px] text-[#71717A] mt-0.5">JPG, JPEG, PNG up to 15MB</span>
+              <input
+                type="file"
+                accept=".jpg, .jpeg, .png, image/jpeg, image/png"
+                className="hidden"
+                onChange={handleImageUpload}
+                disabled={isUploadingImage || isSubmitting}
+              />
+            </label>
+          )}
         </div>
       </div>
 
@@ -442,23 +746,63 @@ export function CarRentalForm({ initialData }: Props) {
                 <div className="flex-1">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="mb-1.5 block text-xs text-[#D4D4D8]">Original Price / Day (€)</label>
-                      <input type="number" min="0" step="0.01" value={pkg.originalPricePerDay === undefined ? '' : pkg.originalPricePerDay} onChange={e => handlePriceChange(idx, 'original', e.target.value)} className="w-full rounded-lg border border-[#3F3F46] bg-[#111111] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. 24.00" />
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs text-[#D4D4D8]">Original Price / Day (€)</label>
+                        <span className="text-[10px] text-[#71717A]">Min €0 - Max €100</span>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={packageInputs[idx]?.originalPrice ?? ''}
+                        onChange={e => handlePackageInputChange(idx, 'originalPrice', e.target.value)}
+                        className={`w-full rounded-lg border ${getPackagePriceError(packageInputs[idx]?.originalPrice ?? '')
+                          ? 'border-red-500/80 focus:border-red-500 ring-1 ring-red-500/20'
+                          : 'border-[#3F3F46] focus:border-[#FACC15]'
+                          } bg-[#111111] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:outline-none transition-colors`}
+                        placeholder="e.g. 24.00"
+                      />
+                      {getPackagePriceError(packageInputs[idx]?.originalPrice ?? '') && (
+                        <p className="mt-1.5 text-[11px] text-red-400 flex items-center gap-1 font-medium">
+                          <AlertCircle className="h-3.5 w-3.5 inline flex-shrink-0" />
+                          {getPackagePriceError(packageInputs[idx]?.originalPrice ?? '')}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-xs text-[#D4D4D8]">Discount Percentage (%)</label>
-                      <input type="number" min="0" max="100" value={(() => {
-                        let currentPercentage = '';
-                        if (pkg.discountText) {
-                          const match = pkg.discountText.match(/- (\d+)% online discount/);
-                          if (match) currentPercentage = match[1];
-                        }
-                        return currentPercentage;
-                      })()} onChange={e => handlePriceChange(idx, 'percentage', e.target.value)} className="w-full rounded-lg border border-[#3F3F46] bg-[#111111] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. 25" />
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs text-[#D4D4D8]">Discount Percentage (%)</label>
+                        <span className="text-[10px] text-[#71717A]">0% - 100%</span>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={packageInputs[idx]?.discountPercentage ?? ''}
+                        onChange={e => handlePackageInputChange(idx, 'discountPercentage', e.target.value)}
+                        className={`w-full rounded-lg border ${getPackageDiscountError(packageInputs[idx]?.discountPercentage ?? '')
+                          ? 'border-red-500/80 focus:border-red-500 ring-1 ring-red-500/20'
+                          : 'border-[#3F3F46] focus:border-[#FACC15]'
+                          } bg-[#111111] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:outline-none transition-colors`}
+                        placeholder="e.g. 25"
+                      />
+                      {getPackageDiscountError(packageInputs[idx]?.discountPercentage ?? '') && (
+                        <p className="mt-1.5 text-[11px] text-red-400 flex items-center gap-1 font-medium">
+                          <AlertCircle className="h-3.5 w-3.5 inline flex-shrink-0" />
+                          {getPackageDiscountError(packageInputs[idx]?.discountPercentage ?? '')}
+                        </p>
+                      )}
                     </div>
                     <div className="md:col-span-2">
                       <label className="mb-1.5 block text-xs text-[#D4D4D8]">Final Price Per Day (€) (Auto-calculated)</label>
-                      <input type="number" step="0.01" value={pkg.pricePerDay || ''} disabled className="w-full rounded-lg border border-[#27272A] bg-[#18181B] px-3 py-2 text-xs text-[#A1A1AA] cursor-not-allowed focus:outline-none" />
+                      <input
+                        type="text"
+                        value={calculateFinalPrice(packageInputs[idx]?.originalPrice ?? '', packageInputs[idx]?.discountPercentage ?? '')}
+                        disabled
+                        className="w-full rounded-lg border border-[#27272A] bg-[#18181B] px-3 py-2 text-xs text-[#A1A1AA] cursor-not-allowed focus:outline-none font-medium"
+                        placeholder="Auto-calculated"
+                      />
                     </div>
                   </div>
                 </div>
@@ -500,16 +844,49 @@ export function CarRentalForm({ initialData }: Props) {
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-1.5 block text-xs text-[#D4D4D8]">Add-on<span className="text-red-500">*</span></label>
-                  <select required value={addon.name} onChange={e => handleAddonSelect(idx, e.target.value)} className={`w-full rounded-lg border border-[#3F3F46] bg-[#111111] px-3 py-2 text-xs focus:border-[#FACC15] focus:outline-none appearance-none ${!addon.name ? 'text-[#52525B]' : 'text-white'}`}>
-                    <option value="" disabled>Select Add-on</option>
-                    {ADDON_OPTIONS.map(opt => (
-                      <option key={opt.name} value={opt.name}>{opt.emoji} {opt.name}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      required
+                      value={addon.name}
+                      onChange={e => handleAddonSelect(idx, e.target.value)}
+                      className={`w-full rounded-lg border border-[#3F3F46] bg-[#111111] px-3 py-2 pr-9 text-xs focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer transition-colors ${!addon.name ? 'text-[#71717A]' : 'text-white'}`}
+                    >
+                      <option value="" disabled className="bg-[#18181B] text-[#71717A]">Select Add-on</option>
+                      {ADDON_OPTIONS.map(opt => (
+                        <option key={opt.name} value={opt.name} className="bg-[#18181B] text-white">{opt.emoji} {opt.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
+                  </div>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs text-[#D4D4D8]">Price Per Day (€)<span className="text-red-500">*</span></label>
-                  <input required type="number" min="0" step="0.01" value={addon.pricePerDay} onChange={e => updateAddon(idx, 'pricePerDay', e.target.value === '' ? '' : Number(e.target.value))} className="w-full rounded-lg border border-[#3F3F46] bg-[#111111] px-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none" placeholder="e.g. 10.00" />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs text-[#D4D4D8]">Price Per Day (€)<span className="text-red-500">*</span></label>
+                    <span className="text-[10px] text-[#71717A]">Min €0 - Max €100</span>
+                  </div>
+                  <div className="relative">
+                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[#71717A] font-medium">€</span>
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={addon.pricePerDay}
+                      onChange={e => updateAddon(idx, 'pricePerDay', e.target.value === '' ? '' : Number(e.target.value))}
+                      className={`w-full rounded-lg border ${getAddonPriceError(addon.pricePerDay)
+                        ? 'border-red-500/80 focus:border-red-500 ring-1 ring-red-500/20'
+                        : 'border-[#3F3F46] focus:border-[#FACC15]'
+                        } bg-[#111111] pl-7 pr-3 py-2 text-xs text-white placeholder-[#52525B] focus:outline-none transition-colors`}
+                      placeholder="10.00"
+                    />
+                  </div>
+                  {getAddonPriceError(addon.pricePerDay) && (
+                    <p className="mt-1.5 text-[11px] text-red-400 flex items-center gap-1 font-medium">
+                      <AlertCircle className="h-3.5 w-3.5 inline flex-shrink-0" />
+                      {getAddonPriceError(addon.pricePerDay)}
+                    </p>
+                  )}
                 </div>
               </div>
               <button type="button" onClick={() => removeAddon(idx)} className="text-[#A1A1AA] hover:text-red-500 transition-colors mt-5">

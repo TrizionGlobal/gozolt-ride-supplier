@@ -60,7 +60,7 @@ export default function BikeDetailsPage() {
           </div>
         </div>
         <Link
-          href={`/bike-rentals/fleet/${bike.id}/edit`}
+          href={`/bike-rentals/${bike.id}/edit`}
           className="flex items-center gap-2 rounded-lg bg-[#FACC15] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[#EAB308]"
         >
           <Pencil className="h-4 w-4" />

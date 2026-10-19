@@ -34,6 +34,12 @@ export const notificationsService = {
     }
 
     const { data } = await api.get(`/users/me/notifications?${params.toString()}`);
+    if (data && Array.isArray(data.data)) {
+      data.data = data.data.map((item: any) => ({
+        ...item,
+        isRead: item.read !== undefined ? item.read : (item.isRead ?? false),
+      }));
+    }
     return data;
   },
 
@@ -42,7 +48,8 @@ export const notificationsService = {
    */
   async getUnreadCount(): Promise<{ unreadCount: number }> {
     const { data } = await api.get('/users/me/notifications/unread-count');
-    return data;
+    const count = data?.unreadCount ?? data?.count ?? 0;
+    return { unreadCount: Number(count) };
   },
 
   /**

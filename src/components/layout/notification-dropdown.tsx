@@ -19,6 +19,12 @@ export function NotificationDropdown() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isOpenRef = useRef(isOpen);
+  const seenNotificationKeys = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
 
   // Initial fetch
   useEffect(() => {
@@ -29,7 +35,8 @@ export function NotificationDropdown() {
   const fetchUnreadCount = async () => {
     try {
       const data = await notificationsService.getUnreadCount();
-      setUnreadCount(data.unreadCount);
+      const count = data.unreadCount ?? (data as any).count ?? 0;
+      setUnreadCount(Number(count));
     } catch (error) {
       console.error('Failed to fetch unread count:', error);
     }
@@ -39,7 +46,7 @@ export function NotificationDropdown() {
   const fetchNotifications = async () => {
     setIsLoading(true);
     try {
-      const res = await notificationsService.getNotifications(1, 10); // Fetch top 10
+      const res = await notificationsService.getNotifications(1, 15);
       setNotifications(res.data);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
@@ -68,37 +75,122 @@ export function NotificationDropdown() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Listen to FCM messages while app is open
-  useEffect(() => {
-    const setupMessaging = async () => {
-      const supported = await isSupported();
-      if (supported && app) {
-        const messaging = getMessaging(app);
-        const unsubscribe = onMessage(messaging, (payload) => {
-          if (payload.notification) {
-            toast(payload.notification.title || 'New Notification', {
-              description: payload.notification.body || '',
-              icon: <Bell className="h-4 w-4 text-[#FFD700]" />,
-              style: {
-                background: '#1A1A1A',
-                border: '1px solid #333',
-                color: '#fff',
-              },
-            });
+  const getActionFromData = (data?: Record<string, any>) => {
+    if (!data || !data.module) return null;
+    return {
+      label: 'View',
+      onClick: () => {
+        setIsOpen(false);
+        if (data.payoutId || data.module === 'payouts') {
+          if (data.module === 'quick-services') {
+            router.push(`/quick-services/payouts`);
+          } else {
+            router.push(`/payouts`);
           }
-
-          // Increment unread count or refetch
-          fetchUnreadCount();
-          // If dropdown is open, refresh the list
-          if (isOpen) {
-            fetchNotifications();
+        } else if (data.module === 'quick-services') {
+          if (data.bookingId && data.serviceSlug) {
+            router.push(`/quick-services/booking-management/${data.serviceSlug}/${data.bookingId}`);
+          } else if (data.serviceSlug) {
+            router.push(`/quick-services/booking-management/${data.serviceSlug}`);
+          } else {
+            router.push(`/quick-services/booking-management`);
           }
-        });
-        return unsubscribe;
+        } else if (data.bookingId) {
+          router.push(`/${data.module}/${data.bookingId}/details`);
+        } else {
+          router.push(`/${data.module}`);
+        }
       }
     };
-    
+  };
+
+  // Centralized deduplicated incoming notification handler
+  const handleIncomingNotification = (notification: any) => {
+    if (!notification) return;
+
+    const title = notification.title || notification.notification?.title || 'Notification';
+    const body = notification.body || notification.notification?.body || '';
+    const id = notification.id || notification.data?.notificationId || `${title}:${body}`;
+    const dedupeKey = `${id}:${title}:${body}`;
+
+    // Suppress duplicate toasts and duplicate processing within 8 seconds
+    if (seenNotificationKeys.current.has(dedupeKey)) {
+      return;
+    }
+    seenNotificationKeys.current.add(dedupeKey);
+    setTimeout(() => {
+      seenNotificationKeys.current.delete(dedupeKey);
+    }, 8000);
+
+    const newNotif: NotificationItem = {
+      id: notification.id || `notif_${Date.now()}`,
+      title,
+      body,
+      type: notification.type || 'SYSTEM',
+      isRead: false,
+      createdAt: notification.createdAt || new Date().toISOString(),
+      data: notification.data,
+    };
+
+    const action = getActionFromData(notification.data);
+
+    // Show toast with deterministic id to guarantee Sonner never stacks duplicates
+    toast(title, {
+      id: `toast-${id}`,
+      description: body,
+      icon: <Bell className="h-4 w-4 text-[#FFD700]" />,
+      action: action ? {
+        label: action.label,
+        onClick: action.onClick,
+      } : undefined,
+      style: {
+        background: '#1A1A1A',
+        border: '1px solid #333',
+        color: '#fff',
+      },
+    });
+
+    // Increment unread count locally and sync with backend
+    setUnreadCount((prev) => (typeof prev === 'number' && !isNaN(prev) ? prev + 1 : 1));
+    fetchUnreadCount();
+
+    // Deduplicate in state
+    setNotifications((prev) => {
+      if (prev.some((n) => n.id === newNotif.id || (n.title === newNotif.title && n.body === newNotif.body && Math.abs(new Date(n.createdAt).getTime() - new Date(newNotif.createdAt).getTime()) < 5000))) {
+        return prev;
+      }
+      return [newNotif, ...prev];
+    });
+
+    if (isOpenRef.current) {
+      fetchNotifications();
+    }
+  };
+
+  // Listen to FCM messages while app is open (mount once)
+  useEffect(() => {
     let unsubFn: any;
+
+    const setupMessaging = async () => {
+      try {
+        const supported = await isSupported();
+        if (supported && app) {
+          const messaging = getMessaging(app);
+          const unsubscribe = onMessage(messaging, (payload) => {
+            handleIncomingNotification({
+              id: payload.messageId || (payload.data as any)?.notificationId,
+              title: payload.notification?.title || (payload.data as any)?.title,
+              body: payload.notification?.body || (payload.data as any)?.body,
+              data: payload.data,
+            });
+          });
+          return unsubscribe;
+        }
+      } catch (err) {
+        console.warn('Firebase Messaging not supported or failed to initialize:', err);
+      }
+    };
+
     setupMessaging().then((fn) => {
       unsubFn = fn;
     });
@@ -108,24 +200,7 @@ export function NotificationDropdown() {
         unsubFn();
       }
     };
-  }, [isOpen]);
-
-  const getActionFromData = (data?: Record<string, any>) => {
-    if (!data || !data.module) return null;
-    return {
-      label: 'View',
-      onClick: () => {
-        setIsOpen(false);
-        if (data.payoutId) {
-          router.push(`/payouts`);
-        } else if (data.bookingId) {
-          router.push(`/${data.module}/${data.bookingId}/details`);
-        } else {
-          router.push(`/${data.module}`);
-        }
-      }
-    };
-  };
+  }, []);
 
   // Listen to Socket.IO for real-time notifications
   useEffect(() => {
@@ -140,44 +215,11 @@ export function NotificationDropdown() {
     });
 
     socket.on('notification:in_app', (notification: any) => {
-      const newNotif: NotificationItem = {
-        id: notification.id || Math.random().toString(36).substr(2, 9),
-        title: notification.title,
-        body: notification.body,
-        type: notification.type || 'SYSTEM',
-        isRead: false,
-        createdAt: notification.createdAt || new Date().toISOString(),
-        data: notification.data,
-      };
-
-      const action = getActionFromData(notification.data);
-
-      // Play a sound or show a toast if needed
-      toast(notification.title, {
-        description: notification.body,
-        icon: <Bell className="h-4 w-4 text-[#FFD700]" />,
-        action: action ? {
-          label: action.label,
-          onClick: action.onClick,
-        } : undefined,
-        style: {
-          background: '#1A1A1A',
-          border: '1px solid #333',
-          color: '#fff',
-        },
-      });
-
-      setUnreadCount((prev) => prev + 1);
-      
-      // Update list if already fetched
-      setNotifications((prev) => {
-        // Prevent duplicates
-        if (prev.some((n) => n.id === newNotif.id)) return prev;
-        return [newNotif, ...prev];
-      });
+      handleIncomingNotification(notification);
     });
 
     return () => {
+      socket.off('notification:in_app');
       socket.disconnect();
     };
   }, []);
@@ -266,7 +308,14 @@ export function NotificationDropdown() {
                           {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className="text-xs text-[#71717A] line-clamp-2">
+                      {(notification.data?.payoutId || notification.type === 'PAYMENT') && (
+                        <div className="flex items-center gap-1.5 flex-wrap my-1">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            Payout
+                          </span>
+                        </div>
+                      )}
+                      <p className="text-xs text-[#A1A1AA] line-clamp-2">
                         {notification.body}
                       </p>
                       {notification.data?.module && (
@@ -278,7 +327,7 @@ export function NotificationDropdown() {
                               if (action) action.onClick();
                               handleMarkRead(notification.id, notification.isRead);
                             }}
-                            className="text-xs px-2 py-1 bg-[#1F1F22] hover:bg-[#27272A] text-[#FACC15] rounded border border-[#27272A] transition-colors"
+                            className="text-xs px-2.5 py-1 bg-[#1F1F22] hover:bg-[#27272A] text-[#FACC15] font-medium rounded border border-[#27272A] transition-colors"
                           >
                             View Details
                           </button>

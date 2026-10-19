@@ -15,7 +15,6 @@ import {
   MapPin,
   RefreshCw,
   Search,
-  UserRound,
   Filter,
   MoreVertical,
 } from 'lucide-react';
@@ -203,16 +202,13 @@ export default function ServiceBookingManagementPage() {
         const name = row.customer?.name || row.userName || (row.user ? `${row.user.firstName || ''} ${row.user.lastName || ''}`.trim() : '') || 'Customer';
         const mobile = row.customer?.mobile || row.userPhone || row.user?.phone || 'N/A';
         return (
-          <div className="flex items-start gap-2">
-            <UserRound className="mt-0.5 h-4 w-4 text-[#71717A]" />
-            <div>
-              <p className="text-white">
-                {name}
-              </p>
-              <p className="text-xs text-[#71717A]">
-                {mobile}
-              </p>
-            </div>
+          <div>
+            <p className="text-white">
+              {name}
+            </p>
+            <p className="text-xs text-[#71717A]">
+              {mobile}
+            </p>
           </div>
         );
       },
@@ -228,23 +224,19 @@ export default function ServiceBookingManagementPage() {
       ),
     },
     {
-      key: 'schedule',
-      title: 'Schedule',
+      key: 'schedule_location',
+      title: 'Schedule & Location',
       render: (row) => (
-        <span className="flex items-start gap-2 text-sm text-[#D4D4D8]">
-          <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#FCD223]" />
-          {formatDateTime(row.scheduledAt || (row as any).bookingDate)}
-        </span>
-      ),
-    },
-    {
-      key: 'location',
-      title: 'Location',
-      render: (row) => (
-        <span className="flex max-w-[220px] items-start gap-2 text-sm text-[#D4D4D8]">
-          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#FCD223]" />
-          {row.serviceAddress}
-        </span>
+        <div className="space-y-1">
+          <div className="flex items-center gap-1.5 text-sm text-[#D4D4D8]">
+            <CalendarDays className="h-4 w-4 shrink-0 text-[#FCD223]" />
+            <span>{formatDateTime(row.scheduledAt || (row as any).bookingDate)}</span>
+          </div>
+          <div className="flex items-start gap-1.5 text-xs text-[#A1A1AA] max-w-[260px]">
+            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#FCD223]" />
+            <span className="line-clamp-2">{row.serviceAddress || 'N/A'}</span>
+          </div>
+        </div>
       ),
     },
     {

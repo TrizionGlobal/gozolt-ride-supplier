@@ -43,6 +43,7 @@ export default function BikeHandoverPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     if (!formData.odometerReading || !formData.supplierSignature) {
       toast.error("Please fill in all required fields (Odometer and Signatures)");
       return;

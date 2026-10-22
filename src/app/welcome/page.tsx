@@ -16,7 +16,8 @@ type SupplierService =
   | 'CAB'
   | 'CAR_RENTAL'
   | 'BIKE_RENTAL'
-  | 'QUICK_SERVICES';
+  | 'QUICK_SERVICES'
+  | 'AIRPORT_TRANSFER';
 
 const services = [
   {
@@ -47,6 +48,13 @@ const services = [
       'Manage local professionals, customer requests and service bookings.',
     image: '/quick-services-icon.png',
   },
+  {
+    type: 'AIRPORT_TRANSFER' as SupplierService,
+    title: 'Airport Transport',
+    description:
+      'Manage airport transfers, chauffeurs, flight schedules and bookings.',
+    image: '/airport-transfers-icon.png',
+  },
 ];
 
 export default function HomePage() {
@@ -69,6 +77,7 @@ export default function HomePage() {
       else if (service === 'CAR_RENTAL' || service === 'RENTAL') router.push('/car-rentals/dashboard');
       else if (service === 'BIKE_RENTAL') router.push('/bike-rentals/dashboard');
       else if (service === 'QUICK_SERVICES') router.push('/quick-services/dashboard');
+      else if (service === 'AIRPORT_TRANSFER') router.push('/airport-transfers/dashboard');
     }
   }, [isAuthenticated, isLoading, user, router]);
 
@@ -91,7 +100,7 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-black px-6 py-12">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-7xl">
         <div className="mb-12 text-center">
           <Image
             src="/logo.png"
@@ -117,7 +126,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {services.map((service) => (
             <button
               key={service.type}

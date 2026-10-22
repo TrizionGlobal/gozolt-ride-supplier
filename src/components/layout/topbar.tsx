@@ -28,22 +28,53 @@ export function Topbar() {
     ? user.companyName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
     : 'MT';
 
-  const isExpired = user?.subscription?.currentPeriodEnd && new Date(user.subscription.currentPeriodEnd) < new Date();
-  const isSubscriptionSetup = pathname === '/subscription' && (!user?.subscription || isExpired);
+  const isExpired = Boolean(
+    user?.subscription?.currentPeriodEnd &&
+      new Date(user.subscription.currentPeriodEnd) < new Date()
+  );
+  const isSubscriptionSetup =
+    (pathname === '/subscription' ||
+      pathname.startsWith('/airport-transfers/subscription') ||
+      pathname.startsWith('/quick-services/subscription')) &&
+    (!user?.subscription || isExpired);
+
+  const isSubscriptionPage = pathname.includes('/subscription');
 
   return (
     <header className="flex h-[60px] items-center justify-between border-b border-[#27272A] bg-[#0A0A0A] px-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 text-sm">
-        <span className="text-[#71717A]">Home</span>
-        <span className="text-[#71717A]">&gt;</span>
-        <span className="text-white font-medium">{pageTitle}</span>
+      {/* Brand & Breadcrumb */}
+      <div className="flex items-center gap-3">
+        {isSubscriptionSetup && (
+          <div className="flex items-center gap-2 mr-2">
+            <img
+              src="/logo-icon.png"
+              alt="Gozolt"
+              width={28}
+              height={28}
+              className="shrink-0 object-contain"
+            />
+            <div className="flex flex-col">
+              <span className="text-sm font-black tracking-wide leading-none">
+                <span className="text-white">GO</span>
+                <span className="text-[#FACC15]">ZOLT</span>
+              </span>
+              <span className="text-[7px] font-bold tracking-[0.15em] text-[#FACC15] uppercase">
+                Supplier Portal
+              </span>
+            </div>
+          </div>
+        )}
+        <div className="flex items-center gap-1.5 text-sm">
+          <span className="text-[#71717A]">Home</span>
+          <span className="text-[#71717A]">&gt;</span>
+          <span className="text-white font-medium">{pageTitle}</span>
+        </div>
       </div>
 
       {/* Right section */}
       <div className="flex items-center gap-4">
-        {/* Notification dropdown */}
-        <NotificationDropdown />
+        {/* Notification dropdown (hidden on any supplier service subscription page) */}
+        {!isSubscriptionPage && <NotificationDropdown />}
 
         {/* Profile Dropdown */}
         <ProfileDropdown />

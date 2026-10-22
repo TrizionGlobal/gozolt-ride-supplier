@@ -27,7 +27,7 @@ export default function AnalyticsPage() {
       
       const formatDay = (dateStr: string) => {
         const d = new Date(dateStr);
-        return d.toLocaleDateString('en-US', { weekday: 'short' });
+        return d.toLocaleDateString('en-GB', { weekday: 'short' });
       };
 
       if (data.ridesTrend) {

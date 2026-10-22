@@ -23,6 +23,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), { ssr: false });
 import { getExpertVisitName, getQuickServiceHourlyRate } from '@/lib/quick-services-pricing';
+import { formatDate, formatTime } from '@/lib/utils';
 import { getQuickServiceIcon } from '@/lib/supplier-quick-services';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { io } from 'socket.io-client';
@@ -98,30 +99,6 @@ const formatFeatureVal = (val: any): string => {
     return Number.isInteger(n) ? n.toString() : n.toFixed(2);
   }
   return String(val);
-};
-
-const formatTime = (dateStr?: string | Date) => {
-  if (!dateStr) return 'N/A';
-  try {
-    const clean = typeof dateStr === 'string' ? dateStr.replace('Z', '') : dateStr;
-    return new Date(clean).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  } catch {
-    return 'N/A';
-  }
-};
-
-const formatDate = (dateStr?: string | Date) => {
-  if (!dateStr) return 'N/A';
-  try {
-    const clean = typeof dateStr === 'string' ? dateStr.replace('Z', '') : dateStr;
-    return new Date(clean).toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
-  } catch {
-    return 'N/A';
-  }
 };
 
 export function QuickServiceTask({ token }: { token: string }) {

@@ -33,7 +33,7 @@ export function InvoiceTable({
 
   const formatPeriod = (start: string, end: string) => {
     const s = new Date(start);
-    return s.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    return s.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
   };
 
   const columns: ColumnDef<SupplierStatement>[] = [

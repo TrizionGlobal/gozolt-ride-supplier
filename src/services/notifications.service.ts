@@ -24,13 +24,16 @@ export const notificationsService = {
   /**
    * Fetch paginated notifications
    */
-  async getNotifications(page = 1, limit = 20, isRead?: boolean): Promise<PaginatedNotifications> {
+  async getNotifications(page = 1, limit = 20, isRead?: boolean, service?: string): Promise<PaginatedNotifications> {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
     });
     if (isRead !== undefined) {
       params.append('isRead', isRead.toString());
+    }
+    if (service) {
+      params.append('service', service);
     }
 
     const { data } = await api.get(`/users/me/notifications?${params.toString()}`);
@@ -46,8 +49,9 @@ export const notificationsService = {
   /**
    * Get unread notification count
    */
-  async getUnreadCount(): Promise<{ unreadCount: number }> {
-    const { data } = await api.get('/users/me/notifications/unread-count');
+  async getUnreadCount(service?: string): Promise<{ unreadCount: number }> {
+    const params = service ? `?service=${encodeURIComponent(service)}` : '';
+    const { data } = await api.get(`/users/me/notifications/unread-count${params}`);
     const count = data?.unreadCount ?? data?.count ?? 0;
     return { unreadCount: Number(count) };
   },

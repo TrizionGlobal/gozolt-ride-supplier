@@ -530,6 +530,9 @@ export interface SubscriptionInfo {
   maxDrivers: number;
   maxRides: number;
   currentPeriodEnd: string | null;
+  createdAt?: string | null;
+  status?: string;
+  cancelledAt?: string | null;
 }
 
 export interface PlanDetails {

@@ -27,9 +27,9 @@ export function CurrentPlanBanner({ subscription, usage, plans, isLoading }: Cur
 
   const currentPlan = plans.find((p) => p.tier === subscription.tier);
   const nextBilling = subscription.currentPeriodEnd
-    ? new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', {
-        month: 'long',
+    ? new Date(subscription.currentPeriodEnd).toLocaleDateString('en-GB', {
         day: 'numeric',
+        month: 'long',
         year: 'numeric',
       })
     : 'N/A';

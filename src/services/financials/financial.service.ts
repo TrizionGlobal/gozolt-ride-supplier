@@ -108,7 +108,7 @@ export const financialService = {
 
       const res = await apiClient.get('/suppliers/analytics/revenue-trend', { params });
       return res.data.map((d: any) => ({
-        month: new Date(d.periodStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        month: new Date(d.periodStart).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
         revenue: d.revenue
       }));
     } catch {

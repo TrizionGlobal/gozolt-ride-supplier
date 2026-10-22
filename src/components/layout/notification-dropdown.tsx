@@ -12,8 +12,138 @@ import { io, Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
+import { useAuthStore } from '@/stores/auth.store';
+
+function isNotificationMatchingService(
+  data?: Record<string, any>,
+  title?: string,
+  body?: string,
+  service?: string | null
+): boolean {
+  if (!service) return true;
+
+  const current = service.toUpperCase();
+  const module = String(data?.module || '').toLowerCase();
+  const notifService = String(data?.service || '').toUpperCase();
+  const text = `${title || ''} ${body || ''}`.toLowerCase();
+
+  // If general payout or system notification without conflicting module
+  if (module === 'payouts' || module === 'system') {
+    return true;
+  }
+
+  if (current === 'AIRPORT_TRANSFER') {
+    if (
+      module.includes('car-rental') ||
+      module.includes('bike-rental') ||
+      module.includes('quick-service') ||
+      notifService === 'CAR_RENTAL' ||
+      notifService === 'BIKE_RENTAL' ||
+      notifService === 'QUICK_SERVICES' ||
+      notifService === 'CAB'
+    ) {
+      return false;
+    }
+    if (
+      text.includes('car rental') ||
+      text.includes('bike rental') ||
+      text.includes('quick service')
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  if (current === 'CAR_RENTAL' || current === 'RENTAL') {
+    if (
+      module.includes('airport') ||
+      module.includes('bike-rental') ||
+      module.includes('quick-service') ||
+      notifService === 'AIRPORT_TRANSFER' ||
+      notifService === 'BIKE_RENTAL' ||
+      notifService === 'QUICK_SERVICES' ||
+      notifService === 'CAB'
+    ) {
+      return false;
+    }
+    if (
+      text.includes('airport transfer') ||
+      text.includes('bike rental') ||
+      text.includes('quick service')
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  if (current === 'BIKE_RENTAL') {
+    if (
+      module.includes('airport') ||
+      module.includes('car-rental') ||
+      module.includes('quick-service') ||
+      notifService === 'AIRPORT_TRANSFER' ||
+      notifService === 'CAR_RENTAL' ||
+      notifService === 'QUICK_SERVICES' ||
+      notifService === 'CAB'
+    ) {
+      return false;
+    }
+    if (
+      text.includes('airport transfer') ||
+      text.includes('car rental') ||
+      text.includes('quick service')
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  if (current === 'QUICK_SERVICES') {
+    if (
+      module.includes('airport') ||
+      module.includes('car-rental') ||
+      module.includes('bike-rental') ||
+      notifService === 'AIRPORT_TRANSFER' ||
+      notifService === 'CAR_RENTAL' ||
+      notifService === 'BIKE_RENTAL' ||
+      notifService === 'CAB'
+    ) {
+      return false;
+    }
+    if (
+      text.includes('airport transfer') ||
+      text.includes('car rental') ||
+      text.includes('bike rental')
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  if (current === 'CAB') {
+    if (
+      module.includes('airport') ||
+      module.includes('car-rental') ||
+      module.includes('bike-rental') ||
+      module.includes('quick-service') ||
+      notifService === 'AIRPORT_TRANSFER' ||
+      notifService === 'CAR_RENTAL' ||
+      notifService === 'BIKE_RENTAL' ||
+      notifService === 'QUICK_SERVICES'
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  return true;
+}
+
 export function NotificationDropdown() {
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
+  const registeredService = user?.registeredService || (typeof window !== 'undefined' ? localStorage.getItem('gozolt-selected-service') : null);
+
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -29,12 +159,12 @@ export function NotificationDropdown() {
   // Initial fetch
   useEffect(() => {
     fetchUnreadCount();
-  }, []);
+  }, [registeredService]);
 
   // Fetch count
   const fetchUnreadCount = async () => {
     try {
-      const data = await notificationsService.getUnreadCount();
+      const data = await notificationsService.getUnreadCount(registeredService || undefined);
       const count = data.unreadCount ?? (data as any).count ?? 0;
       setUnreadCount(Number(count));
     } catch (error) {
@@ -46,8 +176,11 @@ export function NotificationDropdown() {
   const fetchNotifications = async () => {
     setIsLoading(true);
     try {
-      const res = await notificationsService.getNotifications(1, 15);
-      setNotifications(res.data);
+      const res = await notificationsService.getNotifications(1, 25, undefined, registeredService || undefined);
+      const filtered = (res.data || []).filter((n) =>
+        isNotificationMatchingService(n.data, n.title, n.body, registeredService)
+      );
+      setNotifications(filtered);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     } finally {
@@ -76,18 +209,42 @@ export function NotificationDropdown() {
   }, []);
 
   const getActionFromData = (data?: Record<string, any>) => {
-    if (!data || !data.module) return null;
+    if (!data) return null;
+    const module = String(data.module || '').toLowerCase();
+
     return {
       label: 'View',
       onClick: () => {
         setIsOpen(false);
-        if (data.payoutId || data.module === 'payouts') {
-          if (data.module === 'quick-services') {
-            router.push(`/quick-services/payouts`);
+
+        // 1. Payout notifications
+        if (data.payoutId || module === 'payouts') {
+          if (registeredService === 'AIRPORT_TRANSFER' || module.includes('airport')) {
+            router.push('/airport-transfers/payouts');
+          } else if (registeredService === 'QUICK_SERVICES' || module.includes('quick')) {
+            router.push('/quick-services/payouts');
+          } else if (registeredService === 'BIKE_RENTAL' || module.includes('bike')) {
+            router.push('/bike-rentals/payouts');
+          } else if (registeredService === 'CAR_RENTAL' || module.includes('car')) {
+            router.push('/car-rentals/payouts');
           } else {
-            router.push(`/payouts`);
+            router.push('/payouts');
           }
-        } else if (data.module === 'quick-services') {
+          return;
+        }
+
+        // 2. Airport Transfers
+        if (registeredService === 'AIRPORT_TRANSFER' || module.includes('airport')) {
+          if (data.bookingId) {
+            router.push('/airport-transfers/bookings');
+          } else {
+            router.push('/airport-transfers/dashboard');
+          }
+          return;
+        }
+
+        // 3. Quick Services
+        if (registeredService === 'QUICK_SERVICES' || module.includes('quick')) {
           if (data.bookingId && data.serviceSlug) {
             router.push(`/quick-services/booking-management/${data.serviceSlug}/${data.bookingId}`);
           } else if (data.serviceSlug) {
@@ -95,12 +252,38 @@ export function NotificationDropdown() {
           } else {
             router.push(`/quick-services/booking-management`);
           }
-        } else if (data.bookingId) {
-          router.push(`/${data.module}/${data.bookingId}/details`);
-        } else {
-          router.push(`/${data.module}`);
+          return;
         }
-      }
+
+        // 4. Car Rentals
+        if (registeredService === 'CAR_RENTAL' || module.includes('car')) {
+          if (data.bookingId) {
+            router.push(`/car-rentals/${data.bookingId}/details`);
+          } else {
+            router.push('/car-rentals/dashboard');
+          }
+          return;
+        }
+
+        // 5. Bike Rentals
+        if (registeredService === 'BIKE_RENTAL' || module.includes('bike')) {
+          if (data.bookingId) {
+            router.push(`/bike-rentals/${data.bookingId}/details`);
+          } else {
+            router.push('/bike-rentals/dashboard');
+          }
+          return;
+        }
+
+        // 6. Generic or fallback module
+        if (data.bookingId && data.module) {
+          router.push(`/${data.module}/${data.bookingId}/details`);
+        } else if (data.module) {
+          router.push(`/${data.module}`);
+        } else {
+          router.push('/dashboard');
+        }
+      },
     };
   };
 
@@ -110,6 +293,12 @@ export function NotificationDropdown() {
 
     const title = notification.title || notification.notification?.title || 'Notification';
     const body = notification.body || notification.notification?.body || '';
+
+    // Filter out notifications that don't match this supplier's registered service
+    if (!isNotificationMatchingService(notification.data, title, body, registeredService)) {
+      return;
+    }
+
     const id = notification.id || notification.data?.notificationId || `${title}:${body}`;
     const dedupeKey = `${id}:${title}:${body}`;
 
@@ -318,7 +507,7 @@ export function NotificationDropdown() {
                       <p className="text-xs text-[#A1A1AA] line-clamp-2">
                         {notification.body}
                       </p>
-                      {notification.data?.module && (
+                      {(notification.data?.module || notification.data?.bookingId || notification.data?.payoutId) && (
                         <div className="mt-2 text-right">
                           <button
                             onClick={(e) => {

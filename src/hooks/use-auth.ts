@@ -110,6 +110,11 @@ export function useAuth() {
             dashboardPath = '/quick-services/dashboard';
             break;
 
+          case 'AIRPORT_TRANSFER':
+            sidebarStore.setActiveModule('AIRPORT_TRANSFER');
+            dashboardPath = '/airport-transfers/dashboard';
+            break;
+
           default:
             sidebarStore.setActiveModule(null);
             router.push('/welcome');
@@ -136,6 +141,9 @@ export function useAuth() {
               router.push('/quick-services/subscription');
               return;
             }
+          } else if (selectedService === 'AIRPORT_TRANSFER') {
+            router.push('/airport-transfers/subscription');
+            return;
           } else {
             router.push(
               `/subscription?service=${encodeURIComponent(selectedService)}`

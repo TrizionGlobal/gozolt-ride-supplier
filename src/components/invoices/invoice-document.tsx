@@ -13,10 +13,10 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
   ({ payout, statement, supplier, serviceName }, ref) => {
     const formatDate = (dateString?: string | null) => {
       if (!dateString) return 'N/A';
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
+      return new Date(dateString).toLocaleDateString('en-GB', {
         day: 'numeric',
+        month: 'long',
+        year: 'numeric',
       });
     };
 

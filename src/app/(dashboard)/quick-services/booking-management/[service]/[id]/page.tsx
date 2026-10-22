@@ -8,20 +8,7 @@ import { apiClient } from '@/lib/api-client';
 import { supplierQuickServiceBookingService } from '@/services/quick-services/supplier-quick-service-booking.service';
 import { getExpertVisitName, getQuickServiceHourlyRate } from '@/lib/quick-services-pricing';
 import { AssignWorkerModal } from '@/components/quick-services/assign-worker-modal';
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return 'N/A';
-  const clean = typeof dateString === 'string' ? dateString.replace('Z', '') : dateString;
-  const d = new Date(clean);
-  if (isNaN(d.getTime())) return 'N/A';
-  return d.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
+import { formatDateTime as formatDate } from '@/lib/utils';
 
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {

@@ -4,10 +4,10 @@ import { create } from 'zustand';
 
 interface SidebarState {
   isCollapsed: boolean;
-  activeModule: 'CAB' | 'RENTAL' | 'BIKE_RENTAL' | 'QUICK_SERVICES' | null;
+  activeModule: 'CAB' | 'RENTAL' | 'BIKE_RENTAL' | 'QUICK_SERVICES' | 'AIRPORT_TRANSFER' | null;
   toggle: () => void;
   setCollapsed: (collapsed: boolean) => void;
-  setActiveModule: (module: 'CAB' | 'RENTAL' | 'BIKE_RENTAL' | 'QUICK_SERVICES' | null) => void;
+  setActiveModule: (module: 'CAB' | 'RENTAL' | 'BIKE_RENTAL' | 'QUICK_SERVICES' | 'AIRPORT_TRANSFER' | null) => void;
 }
 
 export const useSidebarStore = create<SidebarState>((set) => ({
@@ -17,7 +17,7 @@ export const useSidebarStore = create<SidebarState>((set) => ({
       : false,
   activeModule: 
     typeof window !== 'undefined'
-      ? (localStorage.getItem('gozolt-supplier-active-module') as 'CAB' | 'RENTAL' | 'BIKE_RENTAL' | 'QUICK_SERVICES' | null)
+      ? (localStorage.getItem('gozolt-supplier-active-module') as 'CAB' | 'RENTAL' | 'BIKE_RENTAL' | 'QUICK_SERVICES' | 'AIRPORT_TRANSFER' | null)
       : null,
 
   toggle: () =>

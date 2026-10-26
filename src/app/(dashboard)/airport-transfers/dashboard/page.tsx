@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Plane, Truck, CalendarCheck, Clock, CheckCircle2, DollarSign, Plus, ArrowRight } from 'lucide-react';
+import { io, Socket } from 'socket.io-client';
 import { apiClient } from '@/lib/api-client';
 
 interface DashboardMetrics {
@@ -18,19 +19,56 @@ export default function AirportTransfersDashboardPage() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchMetrics() {
-      try {
-        const res = await apiClient.get('/airport-transfers/supplier/dashboard');
-        setMetrics(res.data);
-      } catch (err) {
-        console.error('Failed to fetch airport transfer metrics:', err);
-      } finally {
-        setLoading(false);
-      }
+  const fetchMetrics = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/airport-transfers/supplier/dashboard');
+      setMetrics(res.data);
+    } catch (err) {
+      console.error('Failed to fetch airport transfer metrics:', err);
+    } finally {
+      setLoading(false);
     }
-    fetchMetrics();
   }, []);
+
+  useEffect(() => {
+    fetchMetrics();
+  }, [fetchMetrics]);
+
+  // Real-time WebSocket listener for live KPI metrics updates
+  useEffect(() => {
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('supplier_token') || sessionStorage.getItem('supplier_token')
+        : null;
+    if (!token) return;
+
+    const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+    const baseUrl = API_URL.replace(/\/v1$/, '');
+    const socket: Socket = io(`${baseUrl}/supplier`, {
+      path: '/socket.io/',
+      transports: ['websocket'],
+      auth: { token },
+    });
+
+    socket.on('supplier:refresh', () => {
+      fetchMetrics();
+    });
+
+    socket.on('airport_transfer:status:changed', () => {
+      fetchMetrics();
+    });
+
+    socket.on('airport_transfer:cancelled', () => {
+      fetchMetrics();
+    });
+
+    return () => {
+      socket.off('supplier:refresh');
+      socket.off('airport_transfer:status:changed');
+      socket.off('airport_transfer:cancelled');
+      socket.disconnect();
+    };
+  }, [fetchMetrics]);
 
   return (
     <div className="space-y-8 p-6">
@@ -42,7 +80,7 @@ export default function AirportTransfersDashboardPage() {
             Airport Transport Dashboard
           </h1>
           <p className="text-gray-400 mt-1">
-            Manage your airport transfer fleet, incoming flight schedules, and chauffeur operations.
+            Manage your airport transfer fleet, incoming flight schedules, and driver operations.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -144,7 +182,7 @@ export default function AirportTransfersDashboardPage() {
           <div>
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <CalendarCheck className="h-5 w-5 text-[#FACC15]" />
-              Transfer Bookings & Chauffeur Dispatch
+              Transfer Bookings & Driver Dispatch
             </h2>
             <p className="text-sm text-gray-400 mt-2">
               Review customer flight numbers, scheduled pickup dates, meet & greet requirements, and assign dedicated drivers.

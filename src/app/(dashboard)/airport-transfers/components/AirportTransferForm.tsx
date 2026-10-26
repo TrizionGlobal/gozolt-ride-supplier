@@ -66,6 +66,11 @@ export function AirportTransferForm({ initialData }: Props) {
       ? Number(initialData.fixedPrice)
       : 20.00
   );
+  const [roundTripDiscount, setRoundTripDiscount] = useState<number | ''>(
+    initialData?.roundTripDiscount !== undefined
+      ? Number(initialData.roundTripDiscount)
+      : 5
+  );
 
   // Images state
   const [imageUrls, setImageUrls] = useState<string[]>(initialData?.images || []);
@@ -160,6 +165,27 @@ export function AirportTransferForm({ initialData }: Props) {
       setMinPrice(500);
     } else {
       setMinPrice(cleaned as any);
+    }
+  };
+
+  const handleRoundTripDiscountChange = (val: string) => {
+    let cleaned = val.replace(/[^0-9.]/g, '');
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    if (parts[0] && parts[0].length > 2) {
+      cleaned = parts[0].slice(0, 2);
+    }
+    if (!cleaned) {
+      setRoundTripDiscount('');
+      return;
+    }
+    const num = parseFloat(cleaned);
+    if (num > 50) {
+      setRoundTripDiscount(50);
+    } else {
+      setRoundTripDiscount(num);
     }
   };
 
@@ -261,6 +287,7 @@ export function AirportTransferForm({ initialData }: Props) {
         pricePerKm: Number(pricePerKm),
         minPrice: Number(minPrice),
         fixedPrice: Number(minPrice),
+        roundTripDiscount: roundTripDiscount !== '' ? Number(roundTripDiscount) : 0,
         currency: 'EUR',
         freeWaitingMinutes: 60,
         isMeetAndGreetIncluded,
@@ -486,15 +513,15 @@ export function AirportTransferForm({ initialData }: Props) {
             />
           </div>
 
-          {/* Row 4: Distance Tariff Rate & Minimum Base Fare */}
-          <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-5 pt-1 border-t border-[#27272A]/40">
+          {/* Row 4: Distance Tariff Rate, Minimum Base Fare & Round-trip Discount */}
+          <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-5 pt-1 border-t border-[#27272A]/40">
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs text-[#D4D4D8]">
                   Rate Per KM (€/km)<span className="text-red-500">*</span>
                 </label>
                 <span className="text-[10px] text-[#71717A]">
-                  Route distance tariff (e.g. €2.50)
+                  Route tariff (e.g. €2.50)
                 </span>
               </div>
               <div className="relative">
@@ -523,7 +550,7 @@ export function AirportTransferForm({ initialData }: Props) {
                   Minimum Base Fare (€)<span className="text-red-500">*</span>
                 </label>
                 <span className="text-[10px] text-[#71717A]">
-                  Trip minimum price floor (e.g. €20.00)
+                  Trip floor (e.g. €20.00)
                 </span>
               </div>
               <div className="relative">
@@ -543,19 +570,62 @@ export function AirportTransferForm({ initialData }: Props) {
               </div>
             </div>
 
-            <div className="md:col-span-2 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 flex items-center justify-between text-xs">
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs text-[#D4D4D8]">
+                  Round-trip Discount (%)
+                </label>
+                <span className="text-[10px] text-[#71717A]">
+                  Return discount (0 - 50%)
+                </span>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={roundTripDiscount}
+                  onChange={(e) => handleRoundTripDiscountChange(e.target.value)}
+                  className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] pl-3 pr-8 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none transition-colors"
+                  placeholder="5"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#FACC15] font-bold">
+                  %
+                </span>
+              </div>
+            </div>
+
+            <div className="md:col-span-3 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
               <span className="text-gray-400">
                 Formula:{' '}
                 <strong className="text-white">
                   max(Min Fare, Distance × Rate/km)
                 </strong>
+                {Number(roundTripDiscount || 0) > 0 && (
+                  <span className="text-[#10B981] ml-2">
+                    · Round-trip discount: -{roundTripDiscount}% applied
+                  </span>
+                )}
               </span>
               <span className="text-yellow-400 font-medium">
-                Example 15 km trip = €
+                Example 15 km one-way = €
                 {Math.max(
                   Number(minPrice || 20),
                   Math.round(15 * Number(pricePerKm || 2.5) * 100) / 100
                 ).toFixed(2)}
+                {Number(roundTripDiscount || 0) > 0 && (
+                  <span className="text-white ml-2">
+                    | Round-trip = €
+                    {(
+                      Math.max(
+                        Number(minPrice || 20),
+                        Math.round(15 * Number(pricePerKm || 2.5) * 100) / 100
+                      ) *
+                      2 *
+                      (1 - Number(roundTripDiscount) / 100)
+                    ).toFixed(2)}
+                  </span>
+                )}
               </span>
             </div>
           </div>
@@ -680,7 +750,7 @@ export function AirportTransferForm({ initialData }: Props) {
               </span>
             </div>
             <span className="text-[11px] text-[#71717A] mt-0.5 block">
-              Chauffeur waits inside the airport terminal arrival hall with a guest nameboard.
+              Driver waits inside the airport terminal arrival hall with a guest nameboard.
             </span>
           </div>
         </label>

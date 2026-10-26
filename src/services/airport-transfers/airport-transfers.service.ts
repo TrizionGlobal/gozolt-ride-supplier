@@ -15,6 +15,7 @@ export interface AirportTransferVehicle {
   fixedPrice: number;
   pricePerKm?: number;
   minPrice?: number;
+  roundTripDiscount?: number;
   currency: string;
   status: string;
   isApproved?: boolean;

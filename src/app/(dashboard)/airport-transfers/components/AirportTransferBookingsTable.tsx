@@ -2,7 +2,20 @@
 
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
 import { format } from 'date-fns';
-import { Plane, MoreVertical, MapPin, Sparkles, ArrowRight, UserCheck, CheckCircle2, Car, Navigation } from 'lucide-react';
+import {
+  Plane,
+  MoreVertical,
+  MapPin,
+  UserCheck,
+  CheckCircle2,
+  Car,
+  Navigation,
+  CreditCard,
+  Mail,
+  Phone,
+  User,
+  Users,
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,7 +33,15 @@ interface AirportTransferBookingsTableProps {
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
   onViewDetails: (booking: any) => void;
-  onUpdateStatus: (id: string, newStatus: string) => void;
+  onUpdateStatus: (id: string, newStatus: string, tripLeg?: 'OUTBOUND' | 'RETURN') => void;
+  onAssignWorker?: (
+    bookingId: string,
+    bookingRef: string,
+    mode: 'WORKER' | 'SELF',
+    tripLeg?: 'OUTBOUND' | 'RETURN',
+    booking?: any,
+  ) => void;
+  onSelfAssign?: (bookingId: string, tripLeg: 'OUTBOUND' | 'RETURN') => void;
 }
 
 export function AirportTransferBookingsTable({
@@ -33,136 +54,118 @@ export function AirportTransferBookingsTable({
   onLimitChange,
   onViewDetails,
   onUpdateStatus,
+  onAssignWorker,
+  onSelfAssign,
 }: AirportTransferBookingsTableProps) {
   const columns: ColumnDef<any>[] = [
+    // ── 1. VEHICLE ─────────────────────────────────────────────────────────────
     {
       key: 'vehicle',
-      title: 'Vehicle & Flight',
-      dataIndex: 'vehicle',
+      title: 'Vehicle',
       render: (row) => {
         const vehicleName = row.vehicle?.make
-          ? `${row.vehicle.make} ${row.vehicle.model}`
-          : (row.vehicle?.name || 'Standard Vehicle');
+          ? `${row.vehicle.make} ${row.vehicle.model || ''}`.trim()
+          : row.vehicle?.name || 'Standard Vehicle';
+
+        const plate =
+          row.vehicle?.registrationNo ||
+          row.vehicle?.plateNumber ||
+          row.vehicle?.vehicleType ||
+          'N/A';
 
         return (
-          <div>
-            <div className="text-white font-medium">{vehicleName}</div>
-            <div className="flex items-center gap-1.5 flex-wrap mt-1">
+          <div className="min-w-[140px]">
+            <div className="text-white font-semibold text-sm leading-tight">{vehicleName}</div>
+            <div className="flex items-center gap-1 mt-1">
+              <CreditCard className="h-3 w-3 text-[#71717A]" />
               <span className="px-1.5 py-0.5 bg-[#27272A] rounded border border-[#3F3F46] text-[10px] font-mono text-[#A1A1AA]">
-                {row.vehicle?.registrationNo || row.vehicle?.vehicleType || 'Plate: N/A'}
+                {plate}
               </span>
-              {row.flightNumber && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-500/10 text-blue-400 rounded border border-blue-500/20 text-[10px] font-mono">
-                  <Plane className="h-2.5 w-2.5" /> Out: {row.flightNumber}
-                </span>
-              )}
-              {row.returnFlightNumber && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-indigo-500/10 text-indigo-400 rounded border border-indigo-500/20 text-[10px] font-mono">
-                  <Plane className="h-2.5 w-2.5" /> Ret: {row.returnFlightNumber}
-                </span>
-              )}
             </div>
-            <div className="text-[10px] font-mono text-[#71717A] mt-1">
+            <div className="text-[10px] font-mono text-[#52525B] mt-1">
               Ref: {row.bookingReference}
             </div>
           </div>
         );
       },
     },
+
+    // ── 2. USER ─────────────────────────────────────────────────────────────────
     {
-      key: 'customer',
-      title: 'Passenger Details',
+      key: 'user',
+      title: 'User',
       render: (row) => {
-        const customerName =
+        const fullName =
           row.leadPassengerName ||
           `${row.user?.firstName || ''} ${row.user?.lastName || ''}`.trim() ||
           'Passenger';
+        const phone = row.leadPassengerPhone || row.user?.phone || row.user?.phoneNumber || '—';
+        const email = row.user?.email || row.leadPassengerEmail || '—';
 
         return (
-          <div>
-            <div className="text-white font-medium">{customerName}</div>
-            <div className="text-xs text-[#71717A] mt-1">
-              {row.leadPassengerPhone || row.user?.phone || 'No phone'}
+          <div className="min-w-[160px] space-y-1">
+            <div className="flex items-center gap-1.5">
+              <User className="h-3 w-3 text-[#71717A] shrink-0" />
+              <span className="text-white font-semibold text-sm leading-tight">{fullName}</span>
             </div>
-            <div className="text-xs text-[#71717A]">
-              {row.adults || 1} Adult{(row.adults || 1) === 1 ? '' : 's'}
-              {row.children ? ` · ${row.children} Ch` : ''}
-              {row.infants ? ` · ${row.infants} Inf` : ''}
-              {(row.standardLuggage || row.largeLuggage) ? ` · ${(row.standardLuggage || 0) + (row.largeLuggage || 0)} Bags` : ''}
+            <div className="flex items-center gap-1.5">
+              <Phone className="h-3 w-3 text-[#71717A] shrink-0" />
+              <span className="text-xs text-[#A1A1AA]">{phone}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Mail className="h-3 w-3 text-[#71717A] shrink-0" />
+              <span className="text-xs text-[#A1A1AA] truncate max-w-[160px]" title={email}>
+                {email}
+              </span>
             </div>
           </div>
         );
       },
     },
+
+    // ── 3. LOCATION ─────────────────────────────────────────────────────────────
     {
-      key: 'locations',
-      title: 'Pickup & Drop-off Route',
+      key: 'location',
+      title: 'Location',
       render: (row) => {
         const isRound = row.transferType === 'ROUND_TRIP';
-
         return (
-          <div className="space-y-1.5 max-w-[280px]">
-            <div className="flex items-center gap-1 text-[11px] font-semibold">
-              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${isRound ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'}`}>
-                {isRound ? 'ROUND TRIP' : 'ONE WAY'}
-              </span>
-              {row.specialRequests && (
-                <span className="inline-flex items-center gap-0.5 text-[9px] px-1 py-0.5 bg-amber-500/10 text-amber-300 rounded border border-amber-500/20">
-                  <Sparkles className="h-2.5 w-2.5" /> Meet & Greet
-                </span>
-              )}
-            </div>
-
-            {/* Outbound Route */}
-            <div className="text-xs bg-[#18181B] p-2 rounded-lg border border-[#27272A]/70">
+          <div className="space-y-1.5 min-w-[200px] max-w-[260px]">
+            {/* Outbound / First Trip */}
+            <div className="bg-[#18181B] p-2 rounded-lg border border-[#27272A]/70">
               {isRound && (
-                <div className="text-[10px] uppercase font-bold text-emerald-400 mb-1 flex items-center gap-1">
-                  <span>Leg 1: Outbound</span>
+                <div className="text-[9px] uppercase font-bold text-emerald-400 mb-1">
+                  First Trip
                 </div>
               )}
               <div className="flex items-start gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 mt-1" />
-                <div className="min-w-0">
-                  <span className="text-[10px] text-[#71717A] uppercase font-medium">Meet at Pickup: </span>
-                  <p className="text-white text-xs truncate" title={row.pickupLocation}>
-                    {row.pickupLocation || 'Pickup location'}
-                  </p>
-                </div>
+                <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 mt-0.5" />
+                <p className="text-white text-[11px] leading-tight truncate" title={row.pickupLocation}>
+                  {row.pickupLocation || 'Pickup'}
+                </p>
               </div>
-              <div className="flex items-start gap-1.5 mt-1.5">
-                <div className="w-2 h-2 rounded-full bg-red-400 shrink-0 mt-1" />
-                <div className="min-w-0">
-                  <span className="text-[10px] text-[#71717A] uppercase font-medium">Drop-off: </span>
-                  <p className="text-white text-xs truncate" title={row.dropoffLocation}>
-                    {row.dropoffLocation || 'Drop-off location'}
-                  </p>
-                </div>
+              <div className="flex items-start gap-1.5 mt-1">
+                <div className="w-2 h-2 rounded-full bg-red-400 shrink-0 mt-0.5" />
+                <p className="text-white text-[11px] leading-tight truncate" title={row.dropoffLocation}>
+                  {row.dropoffLocation || 'Drop-off'}
+                </p>
               </div>
             </div>
-
-            {/* Return Route if Round Trip */}
+            {/* Return Trip */}
             {isRound && (
-              <div className="text-xs bg-[#18181B] p-2 rounded-lg border border-[#27272A]/70">
-                <div className="text-[10px] uppercase font-bold text-indigo-400 mb-1 flex items-center gap-1">
-                  <span>Leg 2: Return</span>
-                </div>
+              <div className="bg-[#18181B] p-2 rounded-lg border border-[#27272A]/70">
+                <div className="text-[9px] uppercase font-bold text-indigo-400 mb-1">Return Trip</div>
                 <div className="flex items-start gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 mt-1" />
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-[#71717A] uppercase font-medium">Meet at Return: </span>
-                    <p className="text-white text-xs truncate" title={row.dropoffLocation}>
-                      {row.dropoffLocation || 'Return pickup'}
-                    </p>
-                  </div>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 mt-0.5" />
+                  <p className="text-white text-[11px] leading-tight truncate" title={row.dropoffLocation}>
+                    {row.dropoffLocation || 'Return from'}
+                  </p>
                 </div>
-                <div className="flex items-start gap-1.5 mt-1.5">
-                  <div className="w-2 h-2 rounded-full bg-red-400 shrink-0 mt-1" />
-                  <div className="min-w-0">
-                    <span className="text-[10px] text-[#71717A] uppercase font-medium">Drop-off: </span>
-                    <p className="text-white text-xs truncate" title={row.pickupLocation}>
-                      {row.pickupLocation || 'Return destination'}
-                    </p>
-                  </div>
+                <div className="flex items-start gap-1.5 mt-1">
+                  <div className="w-2 h-2 rounded-full bg-red-400 shrink-0 mt-0.5" />
+                  <p className="text-white text-[11px] leading-tight truncate" title={row.pickupLocation}>
+                    {row.pickupLocation || 'Return to'}
+                  </p>
                 </div>
               </div>
             )}
@@ -170,12 +173,14 @@ export function AirportTransferBookingsTable({
         );
       },
     },
+
+    // ── 5. TRANSFER SCHEDULE ────────────────────────────────────────────────────
     {
-      key: 'dates',
+      key: 'schedule',
       title: 'Transfer Schedule',
-      dataIndex: 'pickupDateTime',
       render: (row) => {
-        const formatDateTime = (dtStr?: string) => {
+        const isRound = row.transferType === 'ROUND_TRIP' || !!row.returnDateTime;
+        const fmt = (dtStr?: string) => {
           if (!dtStr) return 'N/A';
           try {
             return format(new Date(dtStr.replace('Z', '')), 'dd MMM yyyy, hh:mm a');
@@ -185,25 +190,28 @@ export function AirportTransferBookingsTable({
         };
 
         return (
-          <div className="space-y-1.5">
-            <div className="text-xs">
-              <span className="text-[10px] text-[#71717A] uppercase font-semibold block">Outbound Pickup:</span>
-              <span className="text-white font-medium">{formatDateTime(row.pickupDateTime)}</span>
+          <div className="space-y-1.5 min-w-[155px]">
+            <div>
+              <div className="text-[9px] uppercase font-semibold text-[#71717A]">
+                {isRound ? 'First Trip Pickup' : 'Pickup Time'}
+              </div>
+              <div className="text-xs text-white font-medium">{fmt(row.pickupDateTime)}</div>
             </div>
             {row.returnDateTime && (
-              <div className="text-xs border-t border-[#27272A] pt-1">
-                <span className="text-[10px] text-indigo-400 uppercase font-semibold block">Return Pickup:</span>
-                <span className="text-white font-medium">{formatDateTime(row.returnDateTime)}</span>
+              <div className="border-t border-[#27272A] pt-1">
+                <div className="text-[9px] uppercase font-semibold text-indigo-400">Return Trip Pickup</div>
+                <div className="text-xs text-white font-medium">{fmt(row.returnDateTime)}</div>
               </div>
             )}
           </div>
         );
       },
     },
+
+    // ── 6. TRANSFER STATUS ──────────────────────────────────────────────────────
     {
       key: 'status',
       title: 'Transfer Status',
-      dataIndex: 'status',
       className: 'text-center',
       render: (row) => {
         const colors: Record<string, string> = {
@@ -225,51 +233,203 @@ export function AirportTransferBookingsTable({
           PENDING: 'Pending Request',
           CONFIRMED: 'Confirmed',
           DRIVER_ASSIGNED: 'Driver Assigned',
-          EN_ROUTE_TO_PICKUP: 'En Route to Pickup',
+          EN_ROUTE_TO_PICKUP: 'En Route',
           ARRIVED_AT_AIRPORT: 'At Pickup Point',
           PASSENGER_MET: 'Passenger Boarded',
-          IN_TRANSIT: 'In Transit to Drop-off',
-          COMPLETED: 'Dropped Off / Completed',
+          IN_TRANSIT: 'In Transit',
+          COMPLETED: 'Completed',
           CANCELLED: 'Cancelled',
           REJECTED: 'Rejected',
         };
 
+        const isRound = row.transferType === 'ROUND_TRIP';
         const color = colors[row.status] || 'text-yellow-500 bg-yellow-500/10 border-yellow-500/20';
-        const label = labelMap[row.status] || row.status?.replace(/_/g, ' ') || 'Confirmed';
+        const label = labelMap[row.status] || row.status?.replace(/_/g, ' ') || 'Unknown';
+
+        const returnStatus = row.returnStatus || row.status;
+        const returnColor = colors[returnStatus] || 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20';
+        const returnLabel = labelMap[returnStatus] || returnStatus?.replace(/_/g, ' ') || 'Unknown';
+
+        if (isRound) {
+          return (
+            <div className="flex flex-col gap-1 items-center">
+              <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full border ${color} inline-block whitespace-nowrap`}>
+                🛫 {label}
+              </span>
+              <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full border ${returnColor} inline-block whitespace-nowrap`}>
+                🛬 {returnLabel}
+              </span>
+            </div>
+          );
+        }
 
         return (
-          <span className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${color} inline-block whitespace-nowrap`}>
+          <span
+            className={`px-2.5 py-1 text-xs font-semibold rounded-full border ${color} inline-block whitespace-nowrap`}
+          >
             {label}
           </span>
         );
       },
     },
+
+    // ── 7. ASSIGNED DRIVER ─────────────────────────────────────────────────────
     {
-      key: 'amountPaid',
-      title: 'Transfer Fare',
-      render: (row) => (
-        <div className="text-sm font-semibold text-emerald-400">
-          {row.currency === 'EUR' || !row.currency ? '€' : row.currency} {Number(row.grandTotal || 0).toFixed(2)}
-        </div>
-      ),
+      key: 'assignedTo',
+      title: 'Assigned Driver',
+      render: (row) => {
+        const isRound = row.transferType === 'ROUND_TRIP';
+        const outboundTask =
+          row.tasks?.find((t: any) => t.tripLeg === 'OUTBOUND') ||
+          (!isRound && row.tasks?.length ? row.tasks[0] : null);
+        const returnTask = row.tasks?.find((t: any) => t.tripLeg === 'RETURN');
+
+        const renderBadge = (task: any, driver: any) => {
+          if (task) {
+            if (task.selfAssigned) {
+              return (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 whitespace-nowrap">
+                  <User className="h-3 w-3" /> Self Assigned
+                </span>
+              );
+            }
+            return (
+              <div className="flex flex-col">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
+                  <UserCheck className="h-3 w-3" /> {task.assignedToName}
+                </span>
+                {task.assignedToEmail && (
+                  <span className="text-[10px] text-[#71717A] truncate max-w-[130px] mt-0.5" title={task.assignedToEmail}>
+                    {task.assignedToEmail}
+                  </span>
+                )}
+              </div>
+            );
+          }
+          if (driver) {
+            return (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-blue-500/15 text-blue-300 border border-blue-500/30 whitespace-nowrap">
+                <UserCheck className="h-3 w-3" /> {driver.firstName} {driver.lastName}
+              </span>
+            );
+          }
+          return (
+            <span className="text-[11px] text-[#71717A] italic">
+              Unassigned
+            </span>
+          );
+        };
+
+        if (isRound) {
+          return (
+            <div className="min-w-[130px] space-y-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-emerald-400">First:</span>
+                {renderBadge(outboundTask, row.driver)}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold text-indigo-400">Return:</span>
+                {renderBadge(returnTask, null)}
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="min-w-[130px]">
+            {renderBadge(outboundTask, row.driver)}
+          </div>
+        );
+      },
     },
+
+    // ── 8. TRANSFER FARE ────────────────────────────────────────────────────────
+    {
+      key: 'fare',
+      title: 'Transfer Fare',
+      render: (row) => {
+        const symbol = row.currency === 'USD' ? '$' : row.currency === 'GBP' ? '£' : '€';
+        return (
+          <div className="text-sm font-bold text-emerald-400 whitespace-nowrap">
+            {symbol} {Number(row.grandTotal || 0).toFixed(2)}
+          </div>
+        );
+      },
+    },
+
+    // ── 9. ACTIONS ──────────────────────────────────────────────────────────────
     {
       key: 'actions',
       title: 'Actions',
-      dataIndex: 'id',
       className: 'text-center',
       render: (row) => {
+        const isRound = row.transferType === 'ROUND_TRIP';
+        const outboundTask =
+          row.tasks?.find((t: any) => t.tripLeg === 'OUTBOUND') ||
+          (!isRound && row.tasks?.length ? row.tasks[0] : null);
+        const returnTask = row.tasks?.find((t: any) => t.tripLeg === 'RETURN');
+
+        const isOutboundAssigned = !!outboundTask || !!row.driver || row.status === 'DRIVER_ASSIGNED';
+        const isReturnAssigned = !!returnTask || row.returnStatus === 'DRIVER_ASSIGNED';
+
+        const isOutboundCompleted = row.status === 'COMPLETED';
+        const isReturnCompleted = isRound ? row.returnStatus === 'COMPLETED' : true;
+        const isFullyCompleted = isOutboundCompleted && isReturnCompleted;
+
+        // One-time assignment: only allowed if not already assigned and not completed
+        const canAssignOutbound =
+          row.status !== 'CANCELLED' &&
+          !isOutboundCompleted &&
+          !isOutboundAssigned &&
+          ['CONFIRMED', 'PENDING_APPROVAL'].includes(row.status);
+
+        const canAssignReturn =
+          isRound &&
+          row.returnStatus !== 'CANCELLED' &&
+          !isReturnCompleted &&
+          !isReturnAssigned &&
+          ['CONFIRMED', 'PENDING_APPROVAL'].includes(row.returnStatus || row.status);
+
+        const canSelfAssign = canAssignOutbound || canAssignReturn;
+        const pendingLegForSelfAssign: 'OUTBOUND' | 'RETURN' = canAssignReturn && !canAssignOutbound ? 'RETURN' : 'OUTBOUND';
+
+        const hasActiveActions =
+          row.status === 'PENDING_APPROVAL' ||
+          canAssignOutbound ||
+          canAssignReturn ||
+          canSelfAssign ||
+          (!isOutboundCompleted &&
+            ['DRIVER_ASSIGNED', 'EN_ROUTE_TO_PICKUP', 'ARRIVED_AT_AIRPORT', 'PASSENGER_MET', 'IN_TRANSIT'].includes(row.status)) ||
+          (isRound &&
+            !isReturnCompleted &&
+            ['DRIVER_ASSIGNED', 'EN_ROUTE_TO_PICKUP', 'ARRIVED_AT_AIRPORT', 'PASSENGER_MET', 'IN_TRANSIT'].includes(row.returnStatus));
+
+        // In completed history / fully completed bookings, show View transfer details button directly
+        if (isFullyCompleted || !hasActiveActions) {
+          return (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => onViewDetails(row)}
+                className="rounded bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 hover:border-white/20 transition-colors cursor-pointer whitespace-nowrap"
+              >
+                View details
+              </button>
+            </div>
+          );
+        }
+
         return (
           <div className="flex justify-center">
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1 transition-colors outline-none">
                 Options <MoreVertical className="h-3 w-3" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-[#111111] border-[#27272A] text-white">
+              <DropdownMenuContent align="end" className="w-60 bg-[#111111] border-[#27272A] text-white">
                 {row.status === 'PENDING_APPROVAL' && (
                   <>
                     <DropdownMenuItem
-                      onClick={() => onUpdateStatus(row.id, 'CONFIRMED')}
+                      onClick={() => onUpdateStatus(row.id, 'CONFIRMED', 'OUTBOUND')}
                       className="text-emerald-400 focus:text-emerald-300 focus:bg-emerald-500/10 cursor-pointer text-xs flex items-center gap-1.5"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Accept Transfer Request
@@ -284,67 +444,119 @@ export function AirportTransferBookingsTable({
                   </>
                 )}
 
-                {(row.status === 'CONFIRMED' || row.status === 'DRIVER_ASSIGNED') && (
-                  <>
-                    <DropdownMenuItem
-                      onClick={() => onUpdateStatus(row.id, 'EN_ROUTE_TO_PICKUP')}
-                      className="text-blue-400 focus:text-blue-300 focus:bg-blue-500/10 cursor-pointer text-xs flex items-center gap-1.5"
-                    >
-                      <Navigation className="h-3.5 w-3.5" /> Chauffeur En Route to Pickup
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-[#27272A]" />
-                  </>
+                {/* Driver Assignments (shown ONLY if not yet assigned) */}
+                {canAssignOutbound && (
+                  <DropdownMenuItem
+                    onClick={() => onAssignWorker?.(row.id, row.bookingReference, 'WORKER', 'OUTBOUND', row)}
+                    className="text-emerald-400 focus:text-emerald-300 focus:bg-emerald-500/10 cursor-pointer text-xs font-semibold flex items-center gap-1.5"
+                  >
+                    <Users className="h-3.5 w-3.5" /> {isRound ? 'Assign Driver (First Trip)' : 'Assign Driver'}
+                  </DropdownMenuItem>
                 )}
 
-                {row.status === 'EN_ROUTE_TO_PICKUP' && (
-                  <>
-                    <DropdownMenuItem
-                      onClick={() => onUpdateStatus(row.id, 'ARRIVED_AT_AIRPORT')}
-                      className="text-amber-400 focus:text-amber-300 focus:bg-amber-500/10 cursor-pointer text-xs flex items-center gap-1.5"
-                    >
-                      <MapPin className="h-3.5 w-3.5" /> Arrived at Pickup (Meet Passenger)
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-[#27272A]" />
-                  </>
+                {canAssignReturn && (
+                  <DropdownMenuItem
+                    onClick={() => onAssignWorker?.(row.id, row.bookingReference, 'WORKER', 'RETURN', row)}
+                    className="text-indigo-400 focus:text-indigo-300 focus:bg-indigo-500/10 cursor-pointer text-xs font-semibold flex items-center gap-1.5"
+                  >
+                    <Users className="h-3.5 w-3.5" /> Assign Driver (Return Trip)
+                  </DropdownMenuItem>
                 )}
 
-                {row.status === 'ARRIVED_AT_AIRPORT' && (
-                  <>
-                    <DropdownMenuItem
-                      onClick={() => onUpdateStatus(row.id, 'PASSENGER_MET')}
-                      className="text-purple-400 focus:text-purple-300 focus:bg-purple-500/10 cursor-pointer text-xs flex items-center gap-1.5"
-                    >
-                      <UserCheck className="h-3.5 w-3.5" /> Passenger Met & Boarded Vehicle
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-[#27272A]" />
-                  </>
+                {canSelfAssign && (
+                  <DropdownMenuItem
+                    onClick={() => onSelfAssign?.(row.id, pendingLegForSelfAssign)}
+                    className="text-blue-400 focus:text-blue-300 focus:bg-blue-500/10 cursor-pointer text-xs flex items-center gap-1.5"
+                  >
+                    <User className="h-3.5 w-3.5" /> Self Assign ({isRound ? (pendingLegForSelfAssign === 'RETURN' ? 'Return Trip' : 'First Trip') : 'Supplier'})
+                  </DropdownMenuItem>
                 )}
 
-                {(row.status === 'PASSENGER_MET' || row.status === 'IN_TRANSIT') && (
-                  <>
-                    {row.status === 'PASSENGER_MET' && (
-                      <DropdownMenuItem
-                        onClick={() => onUpdateStatus(row.id, 'IN_TRANSIT')}
-                        className="text-cyan-400 focus:text-cyan-300 focus:bg-cyan-500/10 cursor-pointer text-xs flex items-center gap-1.5"
-                      >
-                        <Car className="h-3.5 w-3.5" /> In Transit to Drop-off Location
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem
-                      onClick={() => onUpdateStatus(row.id, 'COMPLETED')}
-                      className="text-[#FACC15] focus:text-[#FACC15] focus:bg-[#FACC15]/10 cursor-pointer text-xs font-semibold flex items-center gap-1.5"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Complete Drop-off at Destination
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-[#27272A]" />
-                  </>
+                {(canAssignOutbound || canAssignReturn || canSelfAssign) && (
+                  <DropdownMenuSeparator className="bg-[#27272A]" />
                 )}
+
+                {/* First Trip in-progress manual updates */}
+                {!isOutboundCompleted && row.status === 'DRIVER_ASSIGNED' && (
+                  <DropdownMenuItem
+                    onClick={() => onUpdateStatus(row.id, 'EN_ROUTE_TO_PICKUP', 'OUTBOUND')}
+                    className="text-blue-400 focus:text-blue-300 focus:bg-blue-500/10 cursor-pointer text-xs flex items-center gap-1.5"
+                  >
+                    <Navigation className="h-3.5 w-3.5" /> {isRound ? 'First Trip: En Route' : 'Driver En Route to Pickup'}
+                  </DropdownMenuItem>
+                )}
+
+                {!isOutboundCompleted && row.status === 'EN_ROUTE_TO_PICKUP' && (
+                  <DropdownMenuItem
+                    onClick={() => onUpdateStatus(row.id, 'ARRIVED_AT_AIRPORT', 'OUTBOUND')}
+                    className="text-amber-400 focus:text-amber-300 focus:bg-amber-500/10 cursor-pointer text-xs flex items-center gap-1.5"
+                  >
+                    <MapPin className="h-3.5 w-3.5" /> {isRound ? 'First Trip: Arrived at Pickup' : 'Arrived at Pickup'}
+                  </DropdownMenuItem>
+                )}
+
+                {!isOutboundCompleted && row.status === 'ARRIVED_AT_AIRPORT' && (
+                  <DropdownMenuItem
+                    onClick={() => onUpdateStatus(row.id, 'PASSENGER_MET', 'OUTBOUND')}
+                    className="text-purple-400 focus:text-purple-300 focus:bg-purple-500/10 cursor-pointer text-xs flex items-center gap-1.5"
+                  >
+                    <UserCheck className="h-3.5 w-3.5" /> {isRound ? 'First Trip: Boarded' : 'Passenger Met & Boarded'}
+                  </DropdownMenuItem>
+                )}
+
+                {!isOutboundCompleted && (row.status === 'PASSENGER_MET' || row.status === 'IN_TRANSIT') && (
+                  <DropdownMenuItem
+                    onClick={() => onUpdateStatus(row.id, 'COMPLETED', 'OUTBOUND')}
+                    className="text-[#FACC15] focus:text-[#FACC15] focus:bg-[#FACC15]/10 cursor-pointer text-xs font-semibold flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" /> {isRound ? 'First Trip: Complete Drop-off' : 'Complete Drop-off'}
+                  </DropdownMenuItem>
+                )}
+
+                {/* Return Trip in-progress manual updates */}
+                {isRound && !isReturnCompleted && row.returnStatus === 'DRIVER_ASSIGNED' && (
+                  <DropdownMenuItem
+                    onClick={() => onUpdateStatus(row.id, 'EN_ROUTE_TO_PICKUP', 'RETURN')}
+                    className="text-blue-400 focus:text-blue-300 focus:bg-blue-500/10 cursor-pointer text-xs flex items-center gap-1.5"
+                  >
+                    <Navigation className="h-3.5 w-3.5" /> Return Trip: En Route
+                  </DropdownMenuItem>
+                )}
+
+                {isRound && !isReturnCompleted && row.returnStatus === 'EN_ROUTE_TO_PICKUP' && (
+                  <DropdownMenuItem
+                    onClick={() => onUpdateStatus(row.id, 'ARRIVED_AT_AIRPORT', 'RETURN')}
+                    className="text-amber-400 focus:text-amber-300 focus:bg-amber-500/10 cursor-pointer text-xs flex items-center gap-1.5"
+                  >
+                    <MapPin className="h-3.5 w-3.5" /> Return Trip: Arrived at Pickup
+                  </DropdownMenuItem>
+                )}
+
+                {isRound && !isReturnCompleted && row.returnStatus === 'ARRIVED_AT_AIRPORT' && (
+                  <DropdownMenuItem
+                    onClick={() => onUpdateStatus(row.id, 'PASSENGER_MET', 'RETURN')}
+                    className="text-purple-400 focus:text-purple-300 focus:bg-purple-500/10 cursor-pointer text-xs flex items-center gap-1.5"
+                  >
+                    <UserCheck className="h-3.5 w-3.5" /> Return Trip: Boarded
+                  </DropdownMenuItem>
+                )}
+
+                {isRound && !isReturnCompleted && (row.returnStatus === 'PASSENGER_MET' || row.returnStatus === 'IN_TRANSIT') && (
+                  <DropdownMenuItem
+                    onClick={() => onUpdateStatus(row.id, 'COMPLETED', 'RETURN')}
+                    className="text-[#FACC15] focus:text-[#FACC15] focus:bg-[#FACC15]/10 cursor-pointer text-xs font-semibold flex items-center gap-1.5"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Return Trip: Complete Drop-off
+                  </DropdownMenuItem>
+                )}
+
+                <DropdownMenuSeparator className="bg-[#27272A]" />
 
                 <DropdownMenuItem
                   onClick={() => onViewDetails(row)}
                   className="cursor-pointer focus:bg-[#27272A] focus:text-white text-xs"
                 >
-                  View Transfer Details
+                  View Details
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -366,7 +578,6 @@ export function AirportTransferBookingsTable({
         onPageChange={onPageChange}
         onLimitChange={onLimitChange}
         emptyText="No airport transfer bookings found."
-        onRowClick={(row) => onViewDetails(row)}
       />
     </div>
   );

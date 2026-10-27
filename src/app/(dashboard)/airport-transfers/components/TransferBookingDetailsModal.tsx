@@ -427,7 +427,9 @@ export function TransferBookingDetailsModal({
                           </span>
                         ) : (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#27272A] text-gray-400 border border-[#3F3F46]">
-                            Unassigned
+                            {booking.status === 'PENDING_APPROVAL' || booking.status === 'PENDING'
+                              ? 'Pending Confirmation'
+                              : 'Unassigned'}
                           </span>
                         )}
                       </div>
@@ -472,7 +474,9 @@ export function TransferBookingDetailsModal({
                         </div>
                       ) : (
                         <div className="text-xs text-gray-400 italic">
-                          No worker or driver has been assigned to this trip yet.
+                          {booking.status === 'PENDING_APPROVAL' || booking.status === 'PENDING'
+                            ? 'Transfer request is pending confirmation. Driver can be assigned once confirmed.'
+                            : 'No worker or driver has been assigned to this trip yet.'}
                         </div>
                       )}
                     </div>
@@ -532,59 +536,6 @@ export function TransferBookingDetailsModal({
                     Decline Request
                   </button>
                 </>
-              )}
-
-              {(booking.status === 'CONFIRMED' || booking.status === 'DRIVER_ASSIGNED') && (
-                <button
-                  onClick={() => { onStatusUpdate(booking.id, 'EN_ROUTE_TO_PICKUP'); onClose(); }}
-                  className="rounded-lg bg-blue-500/20 border border-blue-500/30 px-4 py-2 text-xs font-bold text-blue-400 hover:bg-blue-500/30 transition-colors flex items-center gap-1.5"
-                >
-                  <Navigation className="h-3.5 w-3.5" /> Driver En Route to Pickup
-                </button>
-              )}
-
-              {booking.status === 'EN_ROUTE_TO_PICKUP' && (
-                <button
-                  onClick={() => { onStatusUpdate(booking.id, 'ARRIVED_AT_AIRPORT'); onClose(); }}
-                  className="rounded-lg bg-amber-500/20 border border-amber-500/30 px-4 py-2 text-xs font-bold text-amber-400 hover:bg-amber-500/30 transition-colors flex items-center gap-1.5"
-                >
-                  <MapPin className="h-3.5 w-3.5" /> Arrived at Pickup (Meet Passenger)
-                </button>
-              )}
-
-              {booking.status === 'ARRIVED_AT_AIRPORT' && (
-                <button
-                  onClick={() => { onStatusUpdate(booking.id, 'PASSENGER_MET'); onClose(); }}
-                  className="rounded-lg bg-purple-500/20 border border-purple-500/30 px-4 py-2 text-xs font-bold text-purple-400 hover:bg-purple-500/30 transition-colors flex items-center gap-1.5"
-                >
-                  <UserCheck className="h-3.5 w-3.5" /> Passenger Met & Boarded Vehicle
-                </button>
-              )}
-
-              {booking.status === 'PASSENGER_MET' && (
-                <>
-                  <button
-                    onClick={() => { onStatusUpdate(booking.id, 'IN_TRANSIT'); onClose(); }}
-                    className="rounded-lg bg-cyan-500/20 border border-cyan-500/30 px-3 py-2 text-xs font-bold text-cyan-400 hover:bg-cyan-500/30 transition-colors flex items-center gap-1.5"
-                  >
-                    <Car className="h-3.5 w-3.5" /> In Transit to Drop-off
-                  </button>
-                  <button
-                    onClick={() => { onStatusUpdate(booking.id, 'COMPLETED'); onClose(); }}
-                    className="rounded-lg bg-[#FACC15] px-4 py-2 text-xs font-bold text-black hover:bg-[#EAB308] transition-colors flex items-center gap-1.5"
-                  >
-                    <CheckCircle className="h-3.5 w-3.5" /> Complete Drop-off at Destination
-                  </button>
-                </>
-              )}
-
-              {booking.status === 'IN_TRANSIT' && (
-                <button
-                  onClick={() => { onStatusUpdate(booking.id, 'COMPLETED'); onClose(); }}
-                  className="rounded-lg bg-[#FACC15] px-4 py-2 text-xs font-bold text-black hover:bg-[#EAB308] transition-colors flex items-center gap-1.5"
-                >
-                  <CheckCircle className="h-3.5 w-3.5" /> Complete Drop-off at Destination
-                </button>
               )}
             </div>
           )}

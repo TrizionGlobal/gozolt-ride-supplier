@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Search, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Search, RefreshCw, Filter, Plane, Clock, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { io, Socket } from 'socket.io-client';
 import { apiClient } from '@/lib/api-client';
@@ -11,16 +12,49 @@ import { TransferBookingDetailsModal } from '../components/TransferBookingDetail
 import { AssignTransferWorkerModal } from '@/components/airport-transfers/assign-transfer-worker-modal';
 
 const TABS = [
-  { id: 'today', label: "Today's Transfers", statuses: ['PENDING_APPROVAL', 'CONFIRMED', 'DRIVER_ASSIGNED', 'EN_ROUTE_TO_PICKUP', 'ARRIVED_AT_AIRPORT', 'PASSENGER_MET', 'IN_TRANSIT'], dateFilter: 'TODAY' },
-  { id: 'pending', label: 'Pending Requests', statuses: ['PENDING_APPROVAL'], dateFilter: undefined },
-  { id: 'confirmed', label: 'Confirmed', statuses: ['CONFIRMED', 'DRIVER_ASSIGNED'], dateFilter: undefined },
-  { id: 'en_route_pickup', label: 'En Route & At Pickup', statuses: ['EN_ROUTE_TO_PICKUP', 'ARRIVED_AT_AIRPORT'], dateFilter: undefined },
-  { id: 'in_transit', label: 'In Transit to Drop-off', statuses: ['PASSENGER_MET', 'IN_TRANSIT'], dateFilter: undefined },
-] as { id: string; label: string; statuses: string[]; dateFilter?: 'TODAY' | 'UPCOMING' | 'OVERDUE' }[];
+  {
+    id: 'all',
+    label: 'All Active Transfers',
+    statuses: [],
+  },
+  {
+    id: 'pending',
+    label: 'Pending Requests',
+    statuses: ['PENDING_APPROVAL', 'PENDING_PAYMENT'],
+  },
+  {
+    id: 'confirmed',
+    label: 'Confirmed',
+    statuses: ['CONFIRMED', 'DRIVER_ASSIGNED'],
+  },
+  {
+    id: 'en_route_pickup',
+    label: 'En Route & At Pickup',
+    statuses: ['EN_ROUTE_TO_PICKUP', 'ARRIVED_AT_AIRPORT'],
+  },
+  {
+    id: 'in_transit',
+    label: 'In Transit to Drop-off',
+    statuses: ['PASSENGER_MET', 'IN_TRANSIT'],
+  },
+] as {
+  id: string;
+  label: string;
+  statuses: string[];
+}[];
 
-export default function AirportTransfersBookingsPage() {
-  const [activeTab, setActiveTab] = useState<string>('today');
-  const [search, setSearch] = useState('');
+function AirportTransfersBookingsContent() {
+  const searchParams = useSearchParams();
+  const urlTab = searchParams.get('tab');
+  const urlSearch = searchParams.get('search') || searchParams.get('ref') || '';
+  const urlAssignId = searchParams.get('assign') || searchParams.get('bookingId');
+
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (urlTab && TABS.some((t) => t.id === urlTab)) return urlTab;
+    return 'all'; // Default to All Active Transfers so no blank page
+  });
+
+  const [search, setSearch] = useState<string>(urlSearch);
   const debouncedSearch = useDebounce(search, 400);
 
   const [bookings, setBookings] = useState<any[]>([]);
@@ -39,11 +73,31 @@ export default function AirportTransfersBookingsPage() {
     isRoundTrip?: boolean;
   } | null>(null);
 
+  const hasOpenedInitialAssign = useRef(false);
+
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch]);
 
-  const activeTabConfig = useMemo(() => TABS.find((t) => t.id === activeTab) || TABS[0], [activeTab]);
+  // Sync state if URL query params change dynamically
+  useEffect(() => {
+    const s = searchParams.get('search') || searchParams.get('ref');
+    if (s !== null && s !== search) {
+      setSearch(s);
+      if (s.trim()) {
+        setActiveTab('all');
+      }
+    }
+    const t = searchParams.get('tab');
+    if (t && TABS.some((tab) => tab.id === t) && t !== activeTab) {
+      setActiveTab(t);
+    }
+  }, [searchParams]);
+
+  const activeTabConfig = useMemo(
+    () => TABS.find((t) => t.id === activeTab) || TABS[0],
+    [activeTab]
+  );
 
   const fetchBookings = useCallback(async () => {
     setIsLoading(true);
@@ -53,21 +107,45 @@ export default function AirportTransfersBookingsPage() {
         limit,
       };
 
-      if (debouncedSearch && debouncedSearch.trim()) {
+      const hasSearch = Boolean(debouncedSearch && debouncedSearch.trim());
+
+      if (hasSearch) {
         params.search = debouncedSearch.trim();
-      }
-
-      if (activeTabConfig.statuses && activeTabConfig.statuses.length > 0) {
-        params.statuses = activeTabConfig.statuses.join(',');
-      }
-
-      if (activeTabConfig.dateFilter && !debouncedSearch.trim()) {
-        params.dateFilter = activeTabConfig.dateFilter;
+        // If user is searching on 'all' tab, do not restrict to single sub-status
+        // so the search term will immediately find the requested booking
+        if (activeTab !== 'all' && activeTabConfig.statuses?.length > 0) {
+          params.statuses = activeTabConfig.statuses.join(',');
+        }
+      } else {
+        // Tab-based status filtering: only filter by specific sub-statuses on sub-tabs.
+        // On 'all' active tab, backend will automatically return all non-completed, non-cancelled transfers.
+        if (activeTab !== 'all' && activeTabConfig.statuses?.length > 0) {
+          params.statuses = activeTabConfig.statuses.join(',');
+        }
       }
 
       const res = await apiClient.get('/airport-transfers/supplier/bookings', { params });
-      setBookings(res.data.items || []);
-      setTotal(res.data.total || (res.data.items ? res.data.items.length : 0));
+      const items = res.data.items || [];
+      setBookings(items);
+      setTotal(res.data.total || items.length);
+
+      // If URL has assign parameter, automatically trigger the assignment modal for that booking
+      if (urlAssignId && !hasOpenedInitialAssign.current && items.length > 0) {
+        const found = items.find(
+          (b: any) => b.id === urlAssignId || b.bookingReference === urlAssignId
+        );
+        // Only open assign modal if booking is confirmed (not pending approval)
+        if (found && found.status !== 'PENDING_APPROVAL' && found.status !== 'PENDING') {
+          hasOpenedInitialAssign.current = true;
+          setAssignModal({
+            isOpen: true,
+            bookingId: found.id,
+            bookingRef: found.bookingReference,
+            tripLeg: 'OUTBOUND',
+            isRoundTrip: found.transferType === 'ROUND_TRIP' || Boolean(found.returnDateTime),
+          });
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch airport transfer bookings:', err);
       toast.error('Failed to load transfer bookings');
@@ -76,7 +154,7 @@ export default function AirportTransfersBookingsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, limit, debouncedSearch, activeTabConfig]);
+  }, [page, limit, debouncedSearch, activeTabConfig, activeTab, urlAssignId]);
 
   const fetchBookingsRef = useRef(fetchBookings);
   useEffect(() => {
@@ -160,9 +238,7 @@ export default function AirportTransfersBookingsPage() {
       const target = bookings.find((b: any) => b.id === id);
       const isRound = target?.transferType === 'ROUND_TRIP';
       const legName = tripLeg === 'RETURN' ? 'Return Trip' : isRound ? 'First Trip' : 'Transfer';
-      toast.success(
-        `Transfer (${legName}) status updated to ${newStatus.replace(/_/g, ' ')}`
-      );
+      toast.success(`Transfer (${legName}) status updated to ${newStatus.replace(/_/g, ' ')}`);
       fetchBookings();
       if (selectedBooking && selectedBooking.id === id) {
         setSelectedBooking((prev: any) => {
@@ -180,17 +256,19 @@ export default function AirportTransfersBookingsPage() {
   };
 
   const handleSelfAssign = async (id: string, tripLeg: 'OUTBOUND' | 'RETURN' = 'OUTBOUND') => {
+    const targetBooking = bookings.find((b: any) => b.id === id);
+    if (targetBooking?.status === 'PENDING_APPROVAL' || targetBooking?.status === 'PENDING') {
+      toast.error('Please accept and confirm the transfer request first before self-assigning.');
+      return;
+    }
     try {
       await apiClient.post(`/airport-transfers/supplier/bookings/${id}/self-assign`, {
         magicLinkBaseUrl: window.location.origin,
         tripLeg,
       });
-      const targetBooking = bookings.find((b: any) => b.id === id);
       const isRound = targetBooking?.transferType === 'ROUND_TRIP';
       const label = !isRound ? 'One-Way Trip' : tripLeg === 'RETURN' ? 'Return Trip' : 'First Trip';
-      toast.success(
-        `Transfer (${label}) self-assigned! Magic link emailed to your supplier address.`
-      );
+      toast.success(`Transfer (${label}) self-assigned! Magic link emailed to your supplier address.`);
       fetchBookings();
     } catch (err: any) {
       console.error(err);
@@ -206,47 +284,53 @@ export default function AirportTransfersBookingsPage() {
   return (
     <div>
       {/* Page Header */}
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Transfer Bookings</h1>
+          <h1 className="text-2xl font-bold text-white mb-1 flex items-center gap-2.5">
+            <Plane className="h-6 w-6 text-[#FACC15]" />
+            Transfer Bookings
+          </h1>
           <p className="text-sm text-[#A1A1AA]">
-            Manage driver pickup and drop-off transfers for one-way and round-trip bookings.
+            Manage driver pickup and drop-off transfers for one-way and round-trip airport bookings.
           </p>
         </div>
         <button
           onClick={fetchBookings}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18181B] border border-[#27272A] text-gray-300 text-xs hover:text-white hover:bg-[#27272A] transition-colors"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18181B] border border-[#27272A] text-gray-300 text-xs hover:text-white hover:bg-[#27272A] transition-colors self-start sm:self-auto"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin text-[#FACC15]' : ''}`} />
           Refresh
         </button>
       </div>
 
       {/* Tabs */}
       <div
-        className="mb-6 flex space-x-1 rounded-xl bg-[#141414] p-1 border border-[#27272A] max-w-full overflow-x-auto"
+        className="mb-5 flex space-x-1.5 rounded-xl bg-[#141414] p-1.5 border border-[#27272A] max-w-full overflow-x-auto"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              setActiveTab(tab.id);
-              setPage(1);
-            }}
-            className={`whitespace-nowrap flex-shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-              activeTab === tab.id
-                ? 'bg-[#27272A] text-white shadow'
-                : 'text-[#A1A1AA] hover:text-white hover:bg-[#1A1A1A]'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setPage(1);
+              }}
+              className={`whitespace-nowrap flex-shrink-0 rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
+                isActive
+                  ? 'bg-[#27272A] text-white shadow-sm border border-white/10'
+                  : 'text-[#A1A1AA] hover:text-white hover:bg-[#1A1A1A]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Search Bar */}
-      <div className="mb-4 flex flex-col sm:flex-row gap-4">
+      {/* Search Bar & Active Filter Info */}
+      <div className="mb-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#52525B]" />
           <input
@@ -254,9 +338,18 @@ export default function AirportTransfersBookingsPage() {
             placeholder="Search by reference, passenger, pickup/drop-off, flight..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2 pl-10 pr-3 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15]"
+            className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2 pl-10 pr-3 text-xs text-white placeholder-[#52525B] outline-none focus:border-[#FACC15]"
           />
         </div>
+
+        {search.trim() && (
+          <button
+            onClick={() => setSearch('')}
+            className="text-xs text-gray-400 hover:text-white underline self-start sm:self-auto"
+          >
+            Clear Search
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -266,6 +359,7 @@ export default function AirportTransfersBookingsPage() {
         page={page}
         limit={limit}
         total={total}
+        activeTab={activeTab}
         onPageChange={setPage}
         onLimitChange={(newLimit) => {
           setLimit(newLimit);
@@ -273,15 +367,19 @@ export default function AirportTransfersBookingsPage() {
         }}
         onViewDetails={handleViewDetails}
         onUpdateStatus={handleUpdateStatus}
-        onAssignWorker={(bookingId, bookingRef, _mode, tripLeg, booking) =>
+        onAssignWorker={(bookingId, bookingRef, _mode, tripLeg, booking) => {
+          if (booking?.status === 'PENDING_APPROVAL' || booking?.status === 'PENDING') {
+            toast.error('Please accept and confirm the transfer request first before assigning a driver.');
+            return;
+          }
           setAssignModal({
             isOpen: true,
             bookingId,
             bookingRef,
             tripLeg: tripLeg || 'OUTBOUND',
-            isRoundTrip: booking?.transferType === 'ROUND_TRIP' || !!booking?.returnDateTime,
-          })
-        }
+            isRoundTrip: booking?.transferType === 'ROUND_TRIP' || Boolean(booking?.returnDateTime),
+          });
+        }}
         onSelfAssign={handleSelfAssign}
       />
 
@@ -309,5 +407,20 @@ export default function AirportTransfersBookingsPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function AirportTransfersBookingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-gray-400">
+          <RefreshCw className="h-6 w-6 animate-spin mx-auto text-[#FACC15] mb-2" />
+          Loading transfer bookings...
+        </div>
+      }
+    >
+      <AirportTransfersBookingsContent />
+    </Suspense>
   );
 }

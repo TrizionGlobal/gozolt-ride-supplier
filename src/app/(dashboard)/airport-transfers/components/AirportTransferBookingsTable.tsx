@@ -1,7 +1,8 @@
 'use client';
 
+import { useMemo } from 'react';
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
-import { format } from 'date-fns';
+import { formatDateTime } from '@/lib/utils';
 import {
   Plane,
   MoreVertical,
@@ -30,6 +31,7 @@ interface AirportTransferBookingsTableProps {
   page: number;
   limit: number;
   total: number;
+  activeTab?: string;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
   onViewDetails: (booking: any) => void;
@@ -50,6 +52,7 @@ export function AirportTransferBookingsTable({
   page,
   limit,
   total,
+  activeTab,
   onPageChange,
   onLimitChange,
   onViewDetails,
@@ -57,7 +60,7 @@ export function AirportTransferBookingsTable({
   onAssignWorker,
   onSelfAssign,
 }: AirportTransferBookingsTableProps) {
-  const columns: ColumnDef<any>[] = [
+  const allColumns: ColumnDef<any>[] = [
     // ── 1. VEHICLE ─────────────────────────────────────────────────────────────
     {
       key: 'vehicle',
@@ -180,27 +183,18 @@ export function AirportTransferBookingsTable({
       title: 'Transfer Schedule',
       render: (row) => {
         const isRound = row.transferType === 'ROUND_TRIP' || !!row.returnDateTime;
-        const fmt = (dtStr?: string) => {
-          if (!dtStr) return 'N/A';
-          try {
-            return format(new Date(dtStr.replace('Z', '')), 'dd MMM yyyy, hh:mm a');
-          } catch {
-            return dtStr;
-          }
-        };
-
         return (
           <div className="space-y-1.5 min-w-[155px]">
             <div>
               <div className="text-[9px] uppercase font-semibold text-[#71717A]">
                 {isRound ? 'First Trip Pickup' : 'Pickup Time'}
               </div>
-              <div className="text-xs text-white font-medium">{fmt(row.pickupDateTime)}</div>
+              <div className="text-xs text-white font-medium">{formatDateTime(row.pickupDateTime)}</div>
             </div>
             {row.returnDateTime && (
               <div className="border-t border-[#27272A] pt-1">
                 <div className="text-[9px] uppercase font-semibold text-indigo-400">Return Trip Pickup</div>
-                <div className="text-xs text-white font-medium">{fmt(row.returnDateTime)}</div>
+                <div className="text-xs text-white font-medium">{formatDateTime(row.returnDateTime)}</div>
               </div>
             )}
           </div>
@@ -278,6 +272,15 @@ export function AirportTransferBookingsTable({
       key: 'assignedTo',
       title: 'Assigned Driver',
       render: (row) => {
+        // Pending bookings cannot have a driver assigned yet
+        if (row.status === 'PENDING_APPROVAL' || row.status === 'PENDING') {
+          return (
+            <div className="min-w-[130px]">
+              <span className="text-[11px] text-[#71717A] italic">—</span>
+            </div>
+          );
+        }
+
         const isRound = row.transferType === 'ROUND_TRIP';
         const outboundTask =
           row.tasks?.find((t: any) => t.tripLeg === 'OUTBOUND') ||
@@ -376,35 +379,30 @@ export function AirportTransferBookingsTable({
         const isReturnCompleted = isRound ? row.returnStatus === 'COMPLETED' : true;
         const isFullyCompleted = isOutboundCompleted && isReturnCompleted;
 
-        // One-time assignment: only allowed if not already assigned and not completed
+        // Driver assignment is strictly allowed ONLY after booking is CONFIRMED (never when PENDING or CANCELLED)
         const canAssignOutbound =
-          row.status !== 'CANCELLED' &&
+          row.status === 'CONFIRMED' &&
           !isOutboundCompleted &&
-          !isOutboundAssigned &&
-          ['CONFIRMED', 'PENDING_APPROVAL'].includes(row.status);
+          !isOutboundAssigned;
 
         const canAssignReturn =
           isRound &&
-          row.returnStatus !== 'CANCELLED' &&
+          (row.returnStatus || row.status) === 'CONFIRMED' &&
           !isReturnCompleted &&
-          !isReturnAssigned &&
-          ['CONFIRMED', 'PENDING_APPROVAL'].includes(row.returnStatus || row.status);
+          !isReturnAssigned;
 
         const canSelfAssign = canAssignOutbound || canAssignReturn;
         const pendingLegForSelfAssign: 'OUTBOUND' | 'RETURN' = canAssignReturn && !canAssignOutbound ? 'RETURN' : 'OUTBOUND';
 
+        // Only pending approval and unassigned bookings have operational actions in the supplier portal.
+        // Once assigned, the driver manages all trip steps (En Route, At Pickup, Boarded, Complete) via the Magic Link.
         const hasActiveActions =
           row.status === 'PENDING_APPROVAL' ||
           canAssignOutbound ||
           canAssignReturn ||
-          canSelfAssign ||
-          (!isOutboundCompleted &&
-            ['DRIVER_ASSIGNED', 'EN_ROUTE_TO_PICKUP', 'ARRIVED_AT_AIRPORT', 'PASSENGER_MET', 'IN_TRANSIT'].includes(row.status)) ||
-          (isRound &&
-            !isReturnCompleted &&
-            ['DRIVER_ASSIGNED', 'EN_ROUTE_TO_PICKUP', 'ARRIVED_AT_AIRPORT', 'PASSENGER_MET', 'IN_TRANSIT'].includes(row.returnStatus));
+          canSelfAssign;
 
-        // In completed history / fully completed bookings, show View transfer details button directly
+        // Once assigned or completed, show direct View details button
         if (isFullyCompleted || !hasActiveActions) {
           return (
             <div className="flex justify-center">
@@ -429,7 +427,7 @@ export function AirportTransferBookingsTable({
                 {row.status === 'PENDING_APPROVAL' && (
                   <>
                     <DropdownMenuItem
-                      onClick={() => onUpdateStatus(row.id, 'CONFIRMED', 'OUTBOUND')}
+                      onClick={() => onUpdateStatus(row.id, 'CONFIRMED')}
                       className="text-emerald-400 focus:text-emerald-300 focus:bg-emerald-500/10 cursor-pointer text-xs flex items-center gap-1.5"
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" /> Accept Transfer Request
@@ -472,84 +470,6 @@ export function AirportTransferBookingsTable({
                   </DropdownMenuItem>
                 )}
 
-                {(canAssignOutbound || canAssignReturn || canSelfAssign) && (
-                  <DropdownMenuSeparator className="bg-[#27272A]" />
-                )}
-
-                {/* First Trip in-progress manual updates */}
-                {!isOutboundCompleted && row.status === 'DRIVER_ASSIGNED' && (
-                  <DropdownMenuItem
-                    onClick={() => onUpdateStatus(row.id, 'EN_ROUTE_TO_PICKUP', 'OUTBOUND')}
-                    className="text-blue-400 focus:text-blue-300 focus:bg-blue-500/10 cursor-pointer text-xs flex items-center gap-1.5"
-                  >
-                    <Navigation className="h-3.5 w-3.5" /> {isRound ? 'First Trip: En Route' : 'Driver En Route to Pickup'}
-                  </DropdownMenuItem>
-                )}
-
-                {!isOutboundCompleted && row.status === 'EN_ROUTE_TO_PICKUP' && (
-                  <DropdownMenuItem
-                    onClick={() => onUpdateStatus(row.id, 'ARRIVED_AT_AIRPORT', 'OUTBOUND')}
-                    className="text-amber-400 focus:text-amber-300 focus:bg-amber-500/10 cursor-pointer text-xs flex items-center gap-1.5"
-                  >
-                    <MapPin className="h-3.5 w-3.5" /> {isRound ? 'First Trip: Arrived at Pickup' : 'Arrived at Pickup'}
-                  </DropdownMenuItem>
-                )}
-
-                {!isOutboundCompleted && row.status === 'ARRIVED_AT_AIRPORT' && (
-                  <DropdownMenuItem
-                    onClick={() => onUpdateStatus(row.id, 'PASSENGER_MET', 'OUTBOUND')}
-                    className="text-purple-400 focus:text-purple-300 focus:bg-purple-500/10 cursor-pointer text-xs flex items-center gap-1.5"
-                  >
-                    <UserCheck className="h-3.5 w-3.5" /> {isRound ? 'First Trip: Boarded' : 'Passenger Met & Boarded'}
-                  </DropdownMenuItem>
-                )}
-
-                {!isOutboundCompleted && (row.status === 'PASSENGER_MET' || row.status === 'IN_TRANSIT') && (
-                  <DropdownMenuItem
-                    onClick={() => onUpdateStatus(row.id, 'COMPLETED', 'OUTBOUND')}
-                    className="text-[#FACC15] focus:text-[#FACC15] focus:bg-[#FACC15]/10 cursor-pointer text-xs font-semibold flex items-center gap-1.5"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" /> {isRound ? 'First Trip: Complete Drop-off' : 'Complete Drop-off'}
-                  </DropdownMenuItem>
-                )}
-
-                {/* Return Trip in-progress manual updates */}
-                {isRound && !isReturnCompleted && row.returnStatus === 'DRIVER_ASSIGNED' && (
-                  <DropdownMenuItem
-                    onClick={() => onUpdateStatus(row.id, 'EN_ROUTE_TO_PICKUP', 'RETURN')}
-                    className="text-blue-400 focus:text-blue-300 focus:bg-blue-500/10 cursor-pointer text-xs flex items-center gap-1.5"
-                  >
-                    <Navigation className="h-3.5 w-3.5" /> Return Trip: En Route
-                  </DropdownMenuItem>
-                )}
-
-                {isRound && !isReturnCompleted && row.returnStatus === 'EN_ROUTE_TO_PICKUP' && (
-                  <DropdownMenuItem
-                    onClick={() => onUpdateStatus(row.id, 'ARRIVED_AT_AIRPORT', 'RETURN')}
-                    className="text-amber-400 focus:text-amber-300 focus:bg-amber-500/10 cursor-pointer text-xs flex items-center gap-1.5"
-                  >
-                    <MapPin className="h-3.5 w-3.5" /> Return Trip: Arrived at Pickup
-                  </DropdownMenuItem>
-                )}
-
-                {isRound && !isReturnCompleted && row.returnStatus === 'ARRIVED_AT_AIRPORT' && (
-                  <DropdownMenuItem
-                    onClick={() => onUpdateStatus(row.id, 'PASSENGER_MET', 'RETURN')}
-                    className="text-purple-400 focus:text-purple-300 focus:bg-purple-500/10 cursor-pointer text-xs flex items-center gap-1.5"
-                  >
-                    <UserCheck className="h-3.5 w-3.5" /> Return Trip: Boarded
-                  </DropdownMenuItem>
-                )}
-
-                {isRound && !isReturnCompleted && (row.returnStatus === 'PASSENGER_MET' || row.returnStatus === 'IN_TRANSIT') && (
-                  <DropdownMenuItem
-                    onClick={() => onUpdateStatus(row.id, 'COMPLETED', 'RETURN')}
-                    className="text-[#FACC15] focus:text-[#FACC15] focus:bg-[#FACC15]/10 cursor-pointer text-xs font-semibold flex items-center gap-1.5"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" /> Return Trip: Complete Drop-off
-                  </DropdownMenuItem>
-                )}
-
                 <DropdownMenuSeparator className="bg-[#27272A]" />
 
                 <DropdownMenuItem
@@ -566,10 +486,18 @@ export function AirportTransferBookingsTable({
     },
   ];
 
+  // In the Pending Requests section, do not display the "Assigned Driver" column
+  const visibleColumns = useMemo(() => {
+    if (activeTab === 'pending') {
+      return allColumns.filter((col) => col.key !== 'assignedTo');
+    }
+    return allColumns;
+  }, [allColumns, activeTab]);
+
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#111111] overflow-hidden">
       <ServerSideTable
-        columns={columns}
+        columns={visibleColumns}
         data={bookings}
         isLoading={isLoading}
         page={page}

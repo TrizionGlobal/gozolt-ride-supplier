@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatDateTime } from '@/lib/utils';
 import {
   Car,
   MapPin,
@@ -263,19 +264,7 @@ export function AirportTransferTask({ token }: Props) {
   const displayNationality = special.nationality || 'Maltese';
 
   const fmtDateTime = (dtStr?: string) => {
-    if (!dtStr) return 'N/A';
-    try {
-      return new Date(dtStr).toLocaleString([], {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return dtStr;
-    }
+    return formatDateTime(dtStr);
   };
 
   return (

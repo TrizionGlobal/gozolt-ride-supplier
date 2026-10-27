@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Search, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Search, RefreshCw, History as HistoryIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { io, Socket } from 'socket.io-client';
 import { apiClient } from '@/lib/api-client';
@@ -15,9 +16,17 @@ const HISTORY_TABS = [
   { id: 'cancelled', label: 'Cancelled Rides', historyFilter: 'CANCELLED' },
 ] as const;
 
-export default function AirportTransfersHistoryPage() {
-  const [activeTab, setActiveTab] = useState<string>('all');
-  const [search, setSearch] = useState('');
+function AirportTransfersHistoryContent() {
+  const searchParams = useSearchParams();
+  const urlTab = searchParams.get('tab');
+  const urlSearch = searchParams.get('search') || searchParams.get('ref') || '';
+
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    if (urlTab && HISTORY_TABS.some((t) => t.id === urlTab)) return urlTab;
+    return 'all';
+  });
+
+  const [search, setSearch] = useState<string>(urlSearch);
   const debouncedSearch = useDebounce(search, 400);
 
   const [bookings, setBookings] = useState<any[]>([]);
@@ -33,6 +42,17 @@ export default function AirportTransfersHistoryPage() {
     setPage(1);
   }, [debouncedSearch]);
 
+  useEffect(() => {
+    const s = searchParams.get('search') || searchParams.get('ref');
+    if (s !== null && s !== search) {
+      setSearch(s);
+    }
+    const t = searchParams.get('tab');
+    if (t && HISTORY_TABS.some((tab) => tab.id === t) && t !== activeTab) {
+      setActiveTab(t);
+    }
+  }, [searchParams]);
+
   const activeTabConfig = useMemo(
     () => HISTORY_TABS.find((t) => t.id === activeTab) || HISTORY_TABS[0],
     [activeTab]
@@ -45,6 +65,8 @@ export default function AirportTransfersHistoryPage() {
         page,
         limit,
         historyFilter: activeTabConfig.historyFilter,
+        sortBy: 'pickupDateTime',
+        order: 'desc',
       };
 
       if (debouncedSearch && debouncedSearch.trim()) {
@@ -68,11 +90,6 @@ export default function AirportTransfersHistoryPage() {
   useEffect(() => {
     fetchBookingsRef.current = fetchBookings;
   }, [fetchBookings]);
-
-  const selectedBookingRef = useRef(selectedBooking);
-  useEffect(() => {
-    selectedBookingRef.current = selectedBooking;
-  }, [selectedBooking]);
 
   useEffect(() => {
     fetchBookings();
@@ -98,43 +115,12 @@ export default function AirportTransfersHistoryPage() {
       fetchBookingsRef.current();
     });
 
-    socket.on('airport_transfer:cancelled', (data: any) => {
+    socket.on('airport_transfer:status:changed', () => {
       fetchBookingsRef.current();
-      if (
-        selectedBookingRef.current &&
-        (selectedBookingRef.current.id === data.bookingId ||
-          selectedBookingRef.current.bookingReference === data.bookingReference)
-      ) {
-        setSelectedBooking((prev: any) =>
-          prev
-            ? {
-                ...prev,
-                status: 'CANCELLED',
-                cancellationReason: data.reason || 'Cancelled by passenger',
-              }
-            : null
-        );
-      }
-    });
-
-    socket.on('airport_transfer:status:changed', (data: any) => {
-      fetchBookingsRef.current();
-      if (selectedBookingRef.current && selectedBookingRef.current.id === data.bookingId) {
-        setSelectedBooking((prev: any) =>
-          prev
-            ? {
-                ...prev,
-                status: data.status !== undefined ? data.status : prev.status,
-                returnStatus: data.returnStatus !== undefined ? data.returnStatus : prev.returnStatus,
-              }
-            : null
-        );
-      }
     });
 
     return () => {
       socket.off('supplier:refresh');
-      socket.off('airport_transfer:cancelled');
       socket.off('airport_transfer:status:changed');
       socket.disconnect();
     };
@@ -143,22 +129,8 @@ export default function AirportTransfersHistoryPage() {
   const handleUpdateStatus = async (id: string, newStatus: string, tripLeg?: 'OUTBOUND' | 'RETURN') => {
     try {
       await apiClient.put(`/airport-transfers/supplier/bookings/${id}/status`, { status: newStatus, tripLeg });
-      const target = bookings.find((b: any) => b.id === id);
-      const isRound = target?.transferType === 'ROUND_TRIP';
-      const legName = tripLeg === 'RETURN' ? 'Return Trip' : isRound ? 'First Trip' : 'Transfer';
-      toast.success(
-        `Transfer (${legName}) status updated to ${newStatus.replace(/_/g, ' ')}`
-      );
+      toast.success(`Booking status updated to ${newStatus.replace(/_/g, ' ')}`);
       fetchBookings();
-      if (selectedBooking && selectedBooking.id === id) {
-        setSelectedBooking((prev: any) => {
-          if (!prev) return null;
-          if (tripLeg === 'RETURN') {
-            return { ...prev, returnStatus: newStatus };
-          }
-          return { ...prev, status: newStatus };
-        });
-      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.response?.data?.message || 'Failed to update booking status');
@@ -173,47 +145,53 @@ export default function AirportTransfersHistoryPage() {
   return (
     <div>
       {/* Page Header */}
-      <div className="mb-6 flex items-end justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Booking History</h1>
+          <h1 className="text-2xl font-bold text-white mb-1 flex items-center gap-2.5">
+            <HistoryIcon className="h-6 w-6 text-[#FACC15]" />
+            Transfer Booking History
+          </h1>
           <p className="text-sm text-[#A1A1AA]">
-            View completed and cancelled airport transfer rides and past trip records.
+            Archive of completed rides, passenger handover logs, and cancelled airport transfers.
           </p>
         </div>
         <button
           onClick={fetchBookings}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18181B] border border-[#27272A] text-gray-300 text-xs hover:text-white hover:bg-[#27272A] transition-colors"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#18181B] border border-[#27272A] text-gray-300 text-xs hover:text-white hover:bg-[#27272A] transition-colors self-start sm:self-auto"
         >
-          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin text-[#FACC15]' : ''}`} />
           Refresh
         </button>
       </div>
 
-      {/* Filter Tabs */}
+      {/* Tabs */}
       <div
-        className="mb-6 flex space-x-1 rounded-xl bg-[#141414] p-1 border border-[#27272A] max-w-full overflow-x-auto"
+        className="mb-5 flex space-x-1.5 rounded-xl bg-[#141414] p-1.5 border border-[#27272A] max-w-full overflow-x-auto"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {HISTORY_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              setActiveTab(tab.id);
-              setPage(1);
-            }}
-            className={`whitespace-nowrap flex-shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-              activeTab === tab.id
-                ? 'bg-[#27272A] text-white shadow'
-                : 'text-[#A1A1AA] hover:text-white hover:bg-[#1A1A1A]'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {HISTORY_TABS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setPage(1);
+              }}
+              className={`whitespace-nowrap flex-shrink-0 rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
+                isActive
+                  ? 'bg-[#27272A] text-white shadow-sm border border-white/10'
+                  : 'text-[#A1A1AA] hover:text-white hover:bg-[#1A1A1A]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Search Bar */}
-      <div className="mb-4 flex flex-col sm:flex-row gap-4">
+      <div className="mb-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#52525B]" />
           <input
@@ -221,9 +199,18 @@ export default function AirportTransfersHistoryPage() {
             placeholder="Search by reference, passenger, pickup/drop-off, flight..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2 pl-10 pr-3 text-sm text-white placeholder-[#52525B] outline-none focus:border-[#FACC15]"
+            className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2 pl-10 pr-3 text-xs text-white placeholder-[#52525B] outline-none focus:border-[#FACC15]"
           />
         </div>
+
+        {search.trim() && (
+          <button
+            onClick={() => setSearch('')}
+            className="text-xs text-gray-400 hover:text-white underline self-start sm:self-auto"
+          >
+            Clear Search
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -250,5 +237,20 @@ export default function AirportTransfersHistoryPage() {
         onStatusUpdate={handleUpdateStatus}
       />
     </div>
+  );
+}
+
+export default function AirportTransfersHistoryPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-gray-400">
+          <RefreshCw className="h-6 w-6 animate-spin mx-auto text-[#FACC15] mb-2" />
+          Loading transfer history...
+        </div>
+      }
+    >
+      <AirportTransfersHistoryContent />
+    </Suspense>
   );
 }

@@ -87,6 +87,27 @@ function parseSpecialRequests(specialRequests?: string | null) {
   };
 }
 
+const BACKEND_API_BASE =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  (typeof window !== 'undefined' && (window.location.hostname === 'supplier.primooo.com' || window.location.hostname.includes('primooo.com'))
+    ? 'https://gozolt-new-ride-backend-gozoltridedemo.up.railway.app'
+    : 'http://localhost:4000');
+
+async function callTaskApi(endpointPath: string, options?: RequestInit) {
+  // First attempt via internal /api/proxy
+  try {
+    const proxyRes = await fetch(`/api/proxy/airport-transfers/public/task/${endpointPath}`, options);
+    // If proxy responds with 401 Unauthorized (unauthenticated mobile device without cookie) or 502/504:
+    if (proxyRes.status === 401 || proxyRes.status === 502 || proxyRes.status === 504) {
+      return await fetch(`${BACKEND_API_BASE}/v1/airport-transfers/public/task/${endpointPath}`, options);
+    }
+    return proxyRes;
+  } catch {
+    // Network or proxy error: fallback directly to backend
+    return await fetch(`${BACKEND_API_BASE}/v1/airport-transfers/public/task/${endpointPath}`, options);
+  }
+}
+
 export function AirportTransferTask({ token }: Props) {
   const [task, setTask] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -100,7 +121,7 @@ export function AirportTransferTask({ token }: Props) {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`/api/proxy/airport-transfers/public/task/${token}`);
+      const res = await callTaskApi(`${token}`);
       const data = await res.json();
       if (!res.ok || data.statusCode >= 400) {
         setError(data.message || 'Invalid or expired task link.');
@@ -122,7 +143,7 @@ export function AirportTransferTask({ token }: Props) {
     setActionLoading(true);
     setActionError(null);
     try {
-      const res = await fetch(`/api/proxy/airport-transfers/public/task/${token}/start`, {
+      const res = await callTaskApi(`${token}/start`, {
         method: 'POST',
       });
       const data = await res.json();
@@ -141,7 +162,7 @@ export function AirportTransferTask({ token }: Props) {
     setActionLoading(true);
     setActionError(null);
     try {
-      const res = await fetch(`/api/proxy/airport-transfers/public/task/${token}/reached-pickup`, {
+      const res = await callTaskApi(`${token}/reached-pickup`, {
         method: 'POST',
       });
       const data = await res.json();
@@ -166,7 +187,7 @@ export function AirportTransferTask({ token }: Props) {
     setActionLoading(true);
     setActionError(null);
     try {
-      const res = await fetch(`/api/proxy/airport-transfers/public/task/${token}/verify-pin`, {
+      const res = await callTaskApi(`${token}/verify-pin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin: pinInput.trim() }),
@@ -188,7 +209,7 @@ export function AirportTransferTask({ token }: Props) {
     setActionLoading(true);
     setActionError(null);
     try {
-      const res = await fetch(`/api/proxy/airport-transfers/public/task/${token}/complete`, {
+      const res = await callTaskApi(`${token}/complete`, {
         method: 'POST',
       });
       const data = await res.json();

@@ -434,6 +434,7 @@ export interface FinancialKPIs {
   netRevenue: number;
   pendingPayout: number;
   settledPayout: number;
+  adminPendingAmount?: number;
   totalRefunds: number;
   totalCancellations: number;
   tipEarnings: number;
@@ -530,6 +531,9 @@ export interface SubscriptionInfo {
   maxDrivers: number;
   maxRides: number;
   currentPeriodEnd: string | null;
+  createdAt?: string | null;
+  status?: string;
+  cancelledAt?: string | null;
 }
 
 export interface PlanDetails {

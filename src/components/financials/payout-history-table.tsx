@@ -30,14 +30,14 @@ const statusStyles: Record<string, { bg: string; text: string; label: string }> 
 
 function formatPeriodFull(start: string | null, end: string | null): string {
   if (!start || !end) return '——';
-  const d1 = new Date(start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const d2 = new Date(end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const d1 = new Date(start).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const d2 = new Date(end).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   return `${d1} - ${d2}`;
 }
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '——';
-  return new Date(dateStr).toLocaleDateString('en-CA');
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function PrintRowButton({ row, supplier, serviceName }: { row: PayoutRecord; supplier: SupplierProfile | null; serviceName?: string }) {

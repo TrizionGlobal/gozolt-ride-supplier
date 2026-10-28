@@ -6,6 +6,7 @@ import { Camera, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), { ssr: false });
 import { QuickServiceTask } from '@/components/quick-services/quick-service-task';
+import { AirportTransferTask } from '@/components/airport-transfers/airport-transfer-task';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 
@@ -15,7 +16,7 @@ function HandoverTaskContent({ token }: { token: string }) {
   const typeParam = searchParams.get('type') || 'car';
 
   const [task, setTask] = useState<any>(null);
-  const [loading, setLoading] = useState(typeParam !== 'quick-service');
+  const [loading, setLoading] = useState(typeParam !== 'quick-service' && typeParam !== 'airport-transfer');
   const [error, setError] = useState('');
   const [step, setStep] = useState<'VERIFY' | 'SCAN' | 'FORM' | 'SUCCESS'>('VERIFY');
   const [rentalType, setRentalType] = useState(typeParam);
@@ -54,8 +55,8 @@ function HandoverTaskContent({ token }: { token: string }) {
   }, [task]);
 
   useEffect(() => {
-    if (typeParam === 'quick-service') {
-      return; // The QuickServiceTask component will handle its own fetching
+    if (typeParam === 'quick-service' || typeParam === 'airport-transfer') {
+      return; // Handled by their dedicated task components
     }
 
     fetch(`/api/proxy/${typeParam === 'bike' ? 'bike-rentals' : 'car-rentals'}/public/task/${token}`)
@@ -78,6 +79,10 @@ function HandoverTaskContent({ token }: { token: string }) {
 
   if (typeParam === 'quick-service') {
     return <QuickServiceTask token={token} />;
+  }
+
+  if (typeParam === 'airport-transfer') {
+    return <AirportTransferTask token={token} />;
   }
 
   const handleScan = (result: string) => {

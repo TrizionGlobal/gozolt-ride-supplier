@@ -127,7 +127,8 @@ export function Sidebar() {
 
           // Make "Fleet" active for new vehicle and edit vehicle pages
           if ((item.href === '/car-rentals/fleet' && (pathname === '/car-rentals/new' || pathname.match(/^\/car-rentals\/[a-zA-Z0-9-]+\/edit$/))) ||
-            (item.href === '/bike-rentals/fleet' && (pathname === '/bike-rentals/new' || pathname.match(/^\/bike-rentals\/[a-zA-Z0-9-]+\/edit$/)))) {
+            (item.href === '/bike-rentals/fleet' && (pathname === '/bike-rentals/new' || pathname.match(/^\/bike-rentals\/[a-zA-Z0-9-]+\/edit$/))) ||
+            (item.href === '/airport-transfers/fleet' && (pathname === '/airport-transfers/new' || pathname.match(/^\/airport-transfers\/[a-zA-Z0-9-]+\/edit$/)))) {
             isActive = true;
           }
 

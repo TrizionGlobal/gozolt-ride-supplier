@@ -2,13 +2,15 @@ export type SupplierService =
   | 'CAB'
   | 'CAR_RENTAL'
   | 'BIKE_RENTAL'
-  | 'QUICK_SERVICES';
+  | 'QUICK_SERVICES'
+  | 'AIRPORT_TRANSFER';
 
 export const SUPPLIER_SERVICE_NAMES: Record<SupplierService, string> = {
   CAB: 'Cab Booking',
   CAR_RENTAL: 'Car Rentals',
   BIKE_RENTAL: 'Bike Rentals',
   QUICK_SERVICES: 'Quick Services',
+  AIRPORT_TRANSFER: 'Airport Transport',
 };
 
 export function isSupplierService(
@@ -18,6 +20,7 @@ export function isSupplierService(
     value === 'CAB' ||
     value === 'CAR_RENTAL' ||
     value === 'BIKE_RENTAL' ||
-    value === 'QUICK_SERVICES'
+    value === 'QUICK_SERVICES' ||
+    value === 'AIRPORT_TRANSFER'
   );
 }

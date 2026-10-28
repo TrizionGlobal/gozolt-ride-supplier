@@ -44,6 +44,7 @@ import { QUICK_SERVICES_CATALOG } from '@/lib/quick-services-catalog';
 import { useAuthStore } from '@/stores/auth.store';
 import { useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { formatDateTime } from '@/lib/utils';
 
 export default function ServiceBookingManagementPage() {
   const params = useParams<{ service: string }>();
@@ -555,22 +556,4 @@ function StatusBadge({
       {status.replaceAll('_', ' ')}
     </span>
   );
-}
-
-function formatDateTime(value: string) {
-  if (!value) return 'Not scheduled';
-  const clean = typeof value === 'string' ? value.replace('Z', '') : value;
-  const date = new Date(clean);
-
-  if (Number.isNaN(date.getTime())) {
-    return 'Not scheduled';
-  }
-
-  return date.toLocaleString('en-US', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }

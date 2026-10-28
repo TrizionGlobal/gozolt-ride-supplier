@@ -25,6 +25,17 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
+  const isMissingSubscription = !user?.subscription;
+
+  const isExpired = Boolean(
+    user?.subscription?.currentPeriodEnd &&
+      new Date(user.subscription.currentPeriodEnd) <
+        new Date()
+  );
+
+  const hasActiveSubscription =
+    !isMissingSubscription && !isExpired;
+
   // Restore authenticated supplier session
   useEffect(() => {
     hydrateFromSession();
@@ -54,17 +65,6 @@ export default function DashboardLayout({
     const activeModule =
       useSidebarStore.getState().activeModule;
 
-    const isMissingSubscription = !user.subscription;
-
-    const isExpired = Boolean(
-      user.subscription?.currentPeriodEnd &&
-        new Date(user.subscription.currentPeriodEnd) <
-          new Date()
-    );
-
-    const hasActiveSubscription =
-      !isMissingSubscription && !isExpired;
-
     const isCommonSubscriptionPage =
       pathname === '/subscription';
 
@@ -73,9 +73,15 @@ export default function DashboardLayout({
         '/quick-services/subscription'
       );
 
+    const isAirportTransfersSubscriptionPage =
+      pathname.startsWith(
+        '/airport-transfers/subscription'
+      );
+
     const isAnySubscriptionPage =
       isCommonSubscriptionPage ||
-      isQuickServicesSubscriptionPage;
+      isQuickServicesSubscriptionPage ||
+      isAirportTransfersSubscriptionPage;
 
     // No service was selected
     if (!selectedService) {
@@ -102,8 +108,18 @@ export default function DashboardLayout({
         router.replace('/quick-services/subscription');
         return;
       }
+    }
 
-
+    /*
+     * AIRPORT TRANSPORT
+     *
+     * Dedicated airport transfers subscription page.
+     */
+    if (selectedService === 'AIRPORT_TRANSFER') {
+      if (!hasActiveSubscription && !isAirportTransfersSubscriptionPage) {
+        router.replace('/airport-transfers/subscription');
+        return;
+      }
     }
 
     /*
@@ -113,6 +129,7 @@ export default function DashboardLayout({
      */
     if (
       selectedService !== 'QUICK_SERVICES' &&
+      selectedService !== 'AIRPORT_TRANSFER' &&
       !hasActiveSubscription &&
       !isCommonSubscriptionPage
     ) {
@@ -155,11 +172,17 @@ export default function DashboardLayout({
             .setActiveModule('QUICK_SERVICES');
           break;
 
+        case 'AIRPORT_TRANSFER':
+          useSidebarStore
+            .getState()
+            .setActiveModule('AIRPORT_TRANSFER');
+          break;
+
         default:
           router.replace('/');
       }
     }
-  }, [user, isLoading, pathname, router]);
+  }, [user, isLoading, pathname, router, hasActiveSubscription]);
 
   // Loading screen
   if (isLoading) {
@@ -211,12 +234,12 @@ export default function DashboardLayout({
    * This applies to:
    * - Common transport subscription
    * - Quick Services subscription
+   * - Airport Transport subscription (when supplier has no active subscription)
    */
   const isSubscriptionSetupPage =
     pathname === '/subscription' ||
-    pathname.startsWith(
-      '/quick-services/subscription'
-    );
+    pathname.startsWith('/quick-services/subscription') ||
+    (pathname.startsWith('/airport-transfers/subscription') && !hasActiveSubscription);
 
   if (isSubscriptionSetupPage) {
     return (

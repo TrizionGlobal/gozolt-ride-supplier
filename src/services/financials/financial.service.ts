@@ -23,36 +23,56 @@ export const financialService = {
       const payouts = payoutsRes.data.data || payoutsRes.data;
 
       let bd = analytics.breakdown || {};
-      if (module === 'CAB') {
-        bd = { cab: bd.cab };
-      } else if (module === 'RENTAL') {
-        bd = { carRental: bd.carRental };
-      } else if (module === 'BIKE_RENTAL') {
-        bd = { bikeRental: bd.bikeRental };
-      } else if (module === 'QUICK_SERVICES') {
-        bd = { quickServices: bd.quickServices };
+      let grossRevenue = 0;
+      let commissionAmount = 0;
+      let netRevenue = 0;
+      let totalRefunds = 0;
+      let totalCancellations = 0;
+
+      if (module === 'AIRPORT_TRANSFER') {
+        const atRes = await apiClient.get('/airport-transfers/supplier/dashboard');
+        const at = atRes.data;
+        const completedAmount = Number(at.completedRevenue ?? at.totalRevenue ?? 0);
+        grossRevenue = Number(at.totalGrossVolume ?? completedAmount);
+        commissionAmount = 0; // 0% commission for airport transfers
+        netRevenue = completedAmount; // gained amount after ride completed which are fixed
+        totalRefunds = Number(at.totalCancelledRefunded || 0);
+        totalCancellations = totalRefunds;
+        bd = { airportTransfer: at };
+      } else {
+        if (module === 'CAB') {
+          bd = { cab: bd.cab };
+        } else if (module === 'RENTAL') {
+          bd = { carRental: bd.carRental };
+        } else if (module === 'BIKE_RENTAL') {
+          bd = { bikeRental: bd.bikeRental };
+        } else if (module === 'QUICK_SERVICES') {
+          bd = { quickServices: bd.quickServices };
+        }
+
+        grossRevenue = (bd.cab?.totalEarned || 0) + (bd.carRental?.totalEarned || 0) + (bd.bikeRental?.totalEarned || 0) + (bd.quickServices?.totalEarned || 0);
+        commissionAmount = (bd.cab?.totalEarned || 0) - (bd.cab?.netAmount || 0);
+        netRevenue = grossRevenue - commissionAmount;
+        totalRefunds = (bd.cab?.refunds || 0) + (bd.carRental?.refunds || 0) + (bd.bikeRental?.refunds || 0) + (bd.quickServices?.refunds || 0);
+        totalCancellations = (bd.cab?.cancellations || 0) + (bd.carRental?.cancellations || 0) + (bd.bikeRental?.cancellations || 0) + (bd.quickServices?.cancellations || 0);
       }
-
-      const grossRevenue = (bd.cab?.totalEarned || 0) + (bd.carRental?.totalEarned || 0) + (bd.bikeRental?.totalEarned || 0) + (bd.quickServices?.totalEarned || 0);
       
-      const commissionRate = profile.defaultDriverCommission || 0;
+      const commissionRate = module === 'AIRPORT_TRANSFER' ? 0 : (profile.defaultDriverCommission || 0);
       
-      // ONLY CAB takes commission. Car Rental, Bike Rental, and Quick Services take 0 commission.
-      const commissionAmount = (bd.cab?.totalEarned || 0) - (bd.cab?.netAmount || 0);
-      
-      const netRevenue = grossRevenue - commissionAmount;
-      const pendingPayout = payouts
-        .filter((p: PayoutRecord) => p.status === 'PENDING')
-        .reduce((sum: number, p: PayoutRecord) => sum + p.amount, 0);
-
       const settledPayout = payouts
         .filter((p: PayoutRecord) => (p.status as string) === 'PAID' || p.status === 'COMPLETED')
-        .reduce((sum: number, p: PayoutRecord) => sum + p.amount, 0);
+        .reduce((sum: number, p: PayoutRecord) => sum + Number(p.amount), 0);
+
+      const pendingPayout = module === 'AIRPORT_TRANSFER'
+        ? Number(bd.airportTransfer?.pendingActiveRevenue ?? 0)
+        : payouts
+            .filter((p: PayoutRecord) => p.status === 'PENDING')
+            .reduce((sum: number, p: PayoutRecord) => sum + Number(p.amount), 0);
 
       const tipEarnings = analytics.tipEarnings || 0;
-      
-      const totalRefunds = (bd.cab?.refunds || 0) + (bd.carRental?.refunds || 0) + (bd.bikeRental?.refunds || 0) + (bd.quickServices?.refunds || 0);
-      const totalCancellations = (bd.cab?.cancellations || 0) + (bd.carRental?.cancellations || 0) + (bd.bikeRental?.cancellations || 0) + (bd.quickServices?.cancellations || 0);
+      const adminPendingAmount = module === 'AIRPORT_TRANSFER'
+        ? Math.max(0, netRevenue - settledPayout)
+        : undefined;
 
       return { 
         grossRevenue, 
@@ -61,6 +81,7 @@ export const financialService = {
         netRevenue, 
         pendingPayout, 
         settledPayout,
+        adminPendingAmount,
         totalRefunds,
         totalCancellations,
         tipEarnings,
@@ -108,7 +129,7 @@ export const financialService = {
 
       const res = await apiClient.get('/suppliers/analytics/revenue-trend', { params });
       return res.data.map((d: any) => ({
-        month: new Date(d.periodStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        month: new Date(d.periodStart).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
         revenue: d.revenue
       }));
     } catch {

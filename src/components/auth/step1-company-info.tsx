@@ -102,7 +102,7 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
     'h-10 rounded-lg border-[#27272A] bg-[#0A0A0A] text-white placeholder:text-[#71717A] placeholder:normal-case focus-visible:border-[#FACC15] focus-visible:ring-[#FACC15]/20 text-sm';
 
   const handleNext = (data: Step1FormData) => {
-    if ((selectedService === 'CAR_RENTAL' || selectedService === 'BIKE_RENTAL') && (!data.latitude || !data.longitude)) {
+    if ((selectedService === 'CAR_RENTAL' || selectedService === 'BIKE_RENTAL' || selectedService === 'AIRPORT_TRANSFER') && (!data.latitude || !data.longitude)) {
       toast.error('Please pinpoint your Company Map Location before proceeding.');
       return;
     }
@@ -285,7 +285,7 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
           </div>
         )}
 
-        {(selectedService === 'CAR_RENTAL' || selectedService === 'BIKE_RENTAL') && (
+        {(selectedService === 'CAR_RENTAL' || selectedService === 'BIKE_RENTAL' || selectedService === 'AIRPORT_TRANSFER') && (
           <div className="mt-4">
             <label className="mb-2 block text-xs text-white">
               Company Map Location (Pinpoint for Distance Calculation)

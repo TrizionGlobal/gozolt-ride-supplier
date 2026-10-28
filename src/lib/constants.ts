@@ -16,6 +16,8 @@ import {
   Star,
   CalendarCheck,
   Key,
+  Crown,
+  History,
 } from 'lucide-react';
 
 export const ROUTES = {
@@ -46,9 +48,22 @@ export const ROUTES = {
   QUICK_SERVICES_BOOKING_MANAGEMENT: '/quick-services/booking-management',
   QUICK_SERVICES_WORKERS: '/quick-services/workers',
   QUICK_SERVICES_ANALYTICS: '/quick-services/analytics',
+  AIRPORT_TRANSFERS_DASHBOARD: '/airport-transfers/dashboard',
+  AIRPORT_TRANSFERS_FLEET: '/airport-transfers/fleet',
+  AIRPORT_TRANSFERS_BOOKINGS: '/airport-transfers/bookings',
+  AIRPORT_TRANSFERS_HISTORY: '/airport-transfers/history',
+  AIRPORT_TRANSFERS_PAYOUTS: '/airport-transfers/payouts',
+  AIRPORT_TRANSFERS_SUBSCRIPTION: '/airport-transfers/subscription',
 } as const;
 
 export const SIDEBAR_ITEMS = [
+
+  { label: 'Dashboard', href: '/airport-transfers/dashboard', icon: LayoutDashboard, module: 'AIRPORT_TRANSFER' },
+  { label: 'Transfer Fleet', href: '/airport-transfers/fleet', icon: Truck, module: 'AIRPORT_TRANSFER' },
+  { label: 'Booking Management', href: '/airport-transfers/bookings', icon: CalendarCheck, module: 'AIRPORT_TRANSFER' },
+  { label: 'Booking History', href: '/airport-transfers/history', icon: History, module: 'AIRPORT_TRANSFER' },
+  { label: 'Payments & Settlements', href: '/airport-transfers/payouts', icon: Wallet, module: 'AIRPORT_TRANSFER' },
+  { label: 'Subscription Plan', href: '/airport-transfers/subscription', icon: Crown, module: 'AIRPORT_TRANSFER' },
 
   { label: 'Dashboard', href: ROUTES.QUICK_SERVICES_DASHBOARD, icon: LayoutDashboard, module: 'QUICK_SERVICES', },
   { label: 'Booking Management', href: ROUTES.QUICK_SERVICES_BOOKING_MANAGEMENT, icon: CalendarCheck, module: 'QUICK_SERVICES', },

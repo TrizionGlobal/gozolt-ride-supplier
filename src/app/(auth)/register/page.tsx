@@ -85,10 +85,44 @@ export default function RegisterPage() {
   useEffect(() => {
     if (!isAuthLoading && isAuthenticated && user) {
       const service = user.registeredService;
-      if (service === 'CAB') router.push('/dashboard');
-      else if (service === 'CAR_RENTAL' || service === 'RENTAL') router.push('/car-rentals/dashboard');
-      else if (service === 'BIKE_RENTAL') router.push('/bike-rentals/dashboard');
-      else if (service === 'QUICK_SERVICES') router.push('/quick-services/dashboard');
+      const subscription = user.subscription;
+      const hasActiveSub = Boolean(
+        subscription?.currentPeriodEnd &&
+        new Date(subscription.currentPeriodEnd) > new Date()
+      );
+
+      if (service === 'AIRPORT_TRANSFER') {
+        if (!hasActiveSub) {
+          router.push('/airport-transfers/subscription');
+        } else {
+          router.push('/airport-transfers/dashboard');
+        }
+      } else if (service === 'QUICK_SERVICES') {
+        const quickServicesMode = typeof window !== 'undefined' ? localStorage.getItem('quick-services-access-mode') : null;
+        if (!hasActiveSub && quickServicesMode !== 'WITH_SUBSCRIPTION' && quickServicesMode !== 'WITHOUT_SUBSCRIPTION') {
+          router.push('/quick-services/subscription');
+        } else {
+          router.push('/quick-services/dashboard');
+        }
+      } else if (service === 'CAB') {
+        if (!hasActiveSub) {
+          router.push('/subscription?service=CAB');
+        } else {
+          router.push('/dashboard');
+        }
+      } else if (service === 'CAR_RENTAL' || service === 'RENTAL') {
+        if (!hasActiveSub) {
+          router.push('/subscription?service=CAR_RENTAL');
+        } else {
+          router.push('/car-rentals/dashboard');
+        }
+      } else if (service === 'BIKE_RENTAL') {
+        if (!hasActiveSub) {
+          router.push('/subscription?service=BIKE_RENTAL');
+        } else {
+          router.push('/bike-rentals/dashboard');
+        }
+      }
     }
   }, [isAuthenticated, isAuthLoading, user, router]);
 
@@ -107,7 +141,7 @@ export default function RegisterPage() {
     try {
       setIsLoading(true);
       const res = await apiClient.get(`/auth/supplier/check-email?email=${encodeURIComponent(data.email)}`);
-      
+
       if (res.data) {
         if (!res.data.isAvailable) {
           const serviceName = res.data.registeredService?.replace(/_/g, ' ') || 'another service';
@@ -119,7 +153,7 @@ export default function RegisterPage() {
     } catch (error) {
       console.error('Email check error:', error);
     }
-    
+
     setIsLoading(false);
     setStep1Data(data);
     setCurrentStep(2);

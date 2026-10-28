@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 
 import { Step5Payment } from '@/components/auth/step5-payment';
 import { CurrentPlanBanner } from '@/components/subscription/current-plan-banner';
+import { ExpiredSubscriptionBanner } from '@/components/subscription/expired-subscription-banner';
 import { PlanComparisonCards } from '@/components/subscription/plan-comparison-cards';
 import { useFleetTracking } from '@/hooks/use-fleet-tracking';
 import { subscriptionService } from '@/services/subscription/subscription.service';
@@ -170,7 +171,7 @@ export default function SubscriptionPage() {
    * Quick Services has a separate subscription page.
    */
   useEffect(() => {
-    const activeModule = useSidebarStore.getState().activeModule;
+    let activeModule = useSidebarStore.getState().activeModule;
     
     // Map activeModule to SupplierService (activeModule uses RENTAL, SupplierService uses CAR_RENTAL)
     let service: SupplierService | null = null;
@@ -179,12 +180,21 @@ export default function SubscriptionPage() {
     if (activeModule === 'BIKE_RENTAL') service = 'BIKE_RENTAL';
 
     if (!service) {
+      const queryParamService = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('service') : null;
+      const fallback = (queryParamService || user?.registeredService || (typeof window !== 'undefined' ? localStorage.getItem('gozolt-selected-service') : null)) as SupplierService | null;
+      if (fallback === 'CAB' || fallback === 'CAR_RENTAL' || (fallback as string) === 'RENTAL' || fallback === 'BIKE_RENTAL') {
+        service = (fallback as string) === 'RENTAL' ? 'CAR_RENTAL' : fallback;
+        useSidebarStore.getState().setActiveModule((fallback as string) === 'CAR_RENTAL' ? 'RENTAL' : fallback as any);
+      }
+    }
+
+    if (!service) {
       router.replace('/');
       return;
     }
 
     setSelectedService(service);
-  }, [router]);
+  }, [router, user]);
 
   /*
    * Fetch current subscription and usage.
@@ -226,10 +236,12 @@ export default function SubscriptionPage() {
     onRefresh: fetchData,
   });
 
+  const effectiveSubscription = subscription || user?.subscription;
+
   const isExpired = Boolean(
-    subscription?.currentPeriodEnd &&
+    effectiveSubscription?.currentPeriodEnd &&
       new Date(
-        subscription.currentPeriodEnd
+        effectiveSubscription.currentPeriodEnd
       ) < new Date()
   );
 
@@ -562,8 +574,17 @@ export default function SubscriptionPage() {
         />
       )}
 
-      {/* Welcome message */}
-      {(!subscription || isExpired) && (
+      {/* Expired Subscription Notice */}
+      {isExpired && effectiveSubscription && (
+        <ExpiredSubscriptionBanner
+          subscription={effectiveSubscription}
+          plans={PLAN_CONFIG}
+          selectedService={selectedService}
+        />
+      )}
+
+      {/* First time Welcome message (no subscription ever) */}
+      {!effectiveSubscription && !isExpired && (
         <div className="mb-4 space-y-2 py-8 text-center">
           <h2 className="text-3xl font-bold text-white">
             Welcome to GOZOLT

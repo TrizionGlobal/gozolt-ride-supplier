@@ -276,7 +276,7 @@ export function CompanyProfileTab() {
       </div>
 
 
-      {(user?.registeredService === 'CAR_RENTAL' || user?.registeredService === 'RENTAL' || user?.registeredService === 'BIKE_RENTAL') && (
+      {(user?.registeredService === 'CAR_RENTAL' || user?.registeredService === 'RENTAL' || user?.registeredService === 'BIKE_RENTAL' || user?.registeredService === 'AIRPORT_TRANSFER') && (
         <div className="mt-8">
           <label className="mb-2 block text-sm font-medium text-[#A1A1AA]">
             Company Map Location (Pinpoint for Distance Calculation)

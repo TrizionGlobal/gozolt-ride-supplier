@@ -81,7 +81,6 @@ export default function AirportTransfersFleetPage() {
               'Reg & Year': `${v.registrationNo} (${v.year || '-'})`,
               Category: v.vehicleType?.replace(/_/g, ' '),
               'Rate Per KM': `€${Number(v.pricePerKm || 2.50).toFixed(2)}/km`,
-              'Min Fare': `€${Number(v.minPrice || v.fixedPrice || 20.00).toFixed(2)}`,
               Capacity: `${v.passengerCapacity} Passengers, ${v.luggageCapacity} Bags`,
               'Meet & Greet': v.isMeetAndGreetIncluded ? 'Included' : 'No',
               'Free Waiting': `${v.freeWaitingMinutes || 60} mins`,

@@ -434,6 +434,7 @@ export interface FinancialKPIs {
   netRevenue: number;
   pendingPayout: number;
   settledPayout: number;
+  adminPendingAmount?: number;
   totalRefunds: number;
   totalCancellations: number;
   tipEarnings: number;

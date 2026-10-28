@@ -262,10 +262,6 @@ export function AirportTransferForm({ initialData }: Props) {
       toast.error('Please enter rate per kilometer');
       return;
     }
-    if (!minPrice) {
-      toast.error('Please enter minimum base fare');
-      return;
-    }
     if (imageUrls.length === 0 && localImages.length === 0) {
       toast.error('Please upload or select at least one vehicle image');
       return;
@@ -285,8 +281,8 @@ export function AirportTransferForm({ initialData }: Props) {
         passengerCapacity: Number(seats),
         luggageCapacity: Number(luggageCapacity || 0),
         pricePerKm: Number(pricePerKm),
-        minPrice: Number(minPrice),
-        fixedPrice: Number(minPrice),
+        minPrice: 0,
+        fixedPrice: 0,
         roundTripDiscount: roundTripDiscount !== '' ? Number(roundTripDiscount) : 0,
         currency: 'EUR',
         freeWaitingMinutes: 60,
@@ -513,8 +509,8 @@ export function AirportTransferForm({ initialData }: Props) {
             />
           </div>
 
-          {/* Row 4: Distance Tariff Rate, Minimum Base Fare & Round-trip Discount */}
-          <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-5 pt-1 border-t border-[#27272A]/40">
+          {/* Row 4: Distance Tariff Rate & Round-trip Discount */}
+          <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-5 pt-1 border-t border-[#27272A]/40">
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs text-[#D4D4D8]">
@@ -547,32 +543,6 @@ export function AirportTransferForm({ initialData }: Props) {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs text-[#D4D4D8]">
-                  Minimum Base Fare (€)<span className="text-red-500">*</span>
-                </label>
-                <span className="text-[10px] text-[#71717A]">
-                  Trip floor (e.g. €20.00)
-                </span>
-              </div>
-              <div className="relative">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#FACC15] font-semibold">
-                  €
-                </span>
-                <input
-                  required
-                  type="text"
-                  inputMode="decimal"
-                  maxLength={6}
-                  value={minPrice}
-                  onChange={(e) => handleMinPriceChange(e.target.value)}
-                  className="w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] pl-8 pr-3 py-2 text-xs text-white placeholder-[#52525B] focus:border-[#FACC15] focus:outline-none transition-colors"
-                  placeholder="20.00"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs text-[#D4D4D8]">
                   Round-trip Discount (%)
                 </label>
                 <span className="text-[10px] text-[#71717A]">
@@ -595,11 +565,11 @@ export function AirportTransferForm({ initialData }: Props) {
               </div>
             </div>
 
-            <div className="md:col-span-3 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="md:col-span-2 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
               <span className="text-gray-400">
                 Formula:{' '}
                 <strong className="text-white">
-                  max(Min Fare, Distance × Rate/km)
+                  Distance × Rate/km
                 </strong>
                 {Number(roundTripDiscount || 0) > 0 && (
                   <span className="text-[#10B981] ml-2">
@@ -609,18 +579,12 @@ export function AirportTransferForm({ initialData }: Props) {
               </span>
               <span className="text-yellow-400 font-medium">
                 Example 15 km one-way = €
-                {Math.max(
-                  Number(minPrice || 20),
-                  Math.round(15 * Number(pricePerKm || 2.5) * 100) / 100
-                ).toFixed(2)}
+                {(Math.round(15 * Number(pricePerKm || 2.5) * 100) / 100).toFixed(2)}
                 {Number(roundTripDiscount || 0) > 0 && (
                   <span className="text-white ml-2">
                     | Round-trip = €
                     {(
-                      Math.max(
-                        Number(minPrice || 20),
-                        Math.round(15 * Number(pricePerKm || 2.5) * 100) / 100
-                      ) *
+                      Math.round(15 * Number(pricePerKm || 2.5) * 100) / 100 *
                       2 *
                       (1 - Number(roundTripDiscount) / 100)
                     ).toFixed(2)}

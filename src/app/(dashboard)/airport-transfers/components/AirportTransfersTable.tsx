@@ -97,9 +97,6 @@ export function AirportTransfersTable({
             €{Number(row.pricePerKm || 2.5).toFixed(2)}
             <span className="text-xs text-[#A1A1AA] font-normal"> / km</span>
           </div>
-          <div className="text-[11px] text-[#71717A] mt-0.5">
-            Min: €{Number(row.minPrice || row.fixedPrice || 20).toFixed(2)}
-          </div>
         </div>
       ),
     },

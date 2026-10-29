@@ -2,6 +2,7 @@
 
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
 import { format } from 'date-fns';
+import { formatDateTime } from '@/lib/utils';
 import Link from 'next/link';
 import { MoreVertical } from 'lucide-react';
 import {
@@ -94,11 +95,11 @@ export function CarRentalBookingsTable({
         <div>
           <div className="text-xs">
             <span className="text-[#71717A]">Pickup: </span>
-            <span className="text-white">{row.startDate ? format(new Date(row.startDate.replace('Z', '')), 'dd-MMM-yyyy hh:mm a') : 'N/A'}</span>
+            <span className="text-white">{formatDateTime(row.startDate)}</span>
           </div>
           <div className="text-xs mt-1">
             <span className="text-[#71717A]">Return: </span>
-            <span className="text-white">{row.endDate ? format(new Date(row.endDate.replace('Z', '')), 'dd-MMM-yyyy hh:mm a') : 'N/A'}</span>
+            <span className="text-white">{formatDateTime(row.endDate)}</span>
           </div>
         </div>
       ),

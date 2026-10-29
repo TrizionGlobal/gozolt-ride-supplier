@@ -48,7 +48,7 @@ export const useCarRentalsStore = create<CarRentalsStore>((set) => ({
   managementPage: 1,
   managementLimit: 20,
   managementSearch: '',
-  managementTab: 'today',
+  managementTab: 'pending',
   managementLastFetchedStr: '',
   setManagementBookings: (bookings, total, fetchedStr) => set({ managementBookings: bookings, managementTotal: total, managementLastFetchedStr: fetchedStr }),
   setManagementLoading: (loading) => set({ isManagementLoading: loading }),

@@ -53,6 +53,7 @@ export const ROUTES = {
   AIRPORT_TRANSFERS_BOOKINGS: '/airport-transfers/bookings',
   AIRPORT_TRANSFERS_HISTORY: '/airport-transfers/history',
   AIRPORT_TRANSFERS_PAYOUTS: '/airport-transfers/payouts',
+  AIRPORT_TRANSFERS_WORKERS: '/airport-transfers/workers',
   AIRPORT_TRANSFERS_SUBSCRIPTION: '/airport-transfers/subscription',
 } as const;
 
@@ -63,6 +64,7 @@ export const SIDEBAR_ITEMS = [
   { label: 'Booking Management', href: '/airport-transfers/bookings', icon: CalendarCheck, module: 'AIRPORT_TRANSFER' },
   { label: 'Booking History', href: '/airport-transfers/history', icon: History, module: 'AIRPORT_TRANSFER' },
   { label: 'Payments & Settlements', href: '/airport-transfers/payouts', icon: Wallet, module: 'AIRPORT_TRANSFER' },
+  { label: 'Staff & Workers', href: '/airport-transfers/workers', icon: Users, module: 'AIRPORT_TRANSFER' },
   { label: 'Subscription Plan', href: '/airport-transfers/subscription', icon: Crown, module: 'AIRPORT_TRANSFER' },
 
   { label: 'Dashboard', href: ROUTES.QUICK_SERVICES_DASHBOARD, icon: LayoutDashboard, module: 'QUICK_SERVICES', },

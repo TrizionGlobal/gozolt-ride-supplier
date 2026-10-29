@@ -6,6 +6,7 @@ import { ArrowLeft, Camera, ShieldAlert, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { carRentalsService } from '@/services/car-rentals/car-rentals.service';
 import { format } from 'date-fns';
+import { formatDateTime } from '@/lib/utils';
 import { useCarRentalsStore } from '@/stores/car-rentals.store';
 
 export default function VehicleReturnPage() {
@@ -172,14 +173,14 @@ export default function VehicleReturnPage() {
                 <div>
                   <p className="text-xs text-gray-500 mb-0.5">Pickup Date & Time</p>
                   <p className="text-sm text-gray-300 font-medium">
-                    {booking.startDate ? format(new Date(booking.startDate.replace('Z', '')), 'MMM d, yyyy - h:mm a') : 'N/A'}
+                    {formatDateTime(booking.startDate)}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5 break-words">{booking.pickupLocation}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-0.5">Return Date & Time</p>
                   <p className="text-sm text-gray-300 font-medium">
-                    {booking.endDate ? format(new Date(booking.endDate.replace('Z', '')), 'MMM d, yyyy - h:mm a') : 'N/A'}
+                    {formatDateTime(booking.endDate)}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5 break-words">{booking.dropoffLocation}</p>
                 </div>
@@ -207,14 +208,17 @@ export default function VehicleReturnPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1.5">Return Odometer Reading</label>
+              <label className="block text-sm font-medium text-gray-400 mb-1.5">Return Odometer Reading (KM)</label>
               <input 
-                type="number" 
+                type="text" 
+                inputMode="numeric"
+                pattern="[0-9]*"
                 required
                 value={formData.odometerReading}
-                onChange={e => setFormData({...formData, odometerReading: e.target.value})}
+                onChange={e => setFormData({ ...formData, odometerReading: e.target.value.replace(/\D/g, '').slice(0, 7) })}
                 className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2.5 px-3 text-white focus:border-[#FACC15] outline-none"
                 placeholder="e.g. 25980"
+                maxLength={7}
               />
             </div>
             <div className="col-span-2">

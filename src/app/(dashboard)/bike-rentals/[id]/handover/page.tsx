@@ -6,17 +6,18 @@ import { ArrowLeft, Check, Camera, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { bikeRentalsService } from '@/services/bike-rentals/bike-rentals.service';
 import { format } from 'date-fns';
+import { formatDateTime } from '@/lib/utils';
 import { useBikeRentalsStore } from '@/stores/bike-rentals.store';
 
 export default function BikeHandoverPage() {
   const params = useParams();
   const router = useRouter();
   const bookingId = params.id as string;
-  
+
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     fuelLevel: 'FULL',
     odometerReading: '',
@@ -48,7 +49,7 @@ export default function BikeHandoverPage() {
       toast.error("Please fill in all required fields (Odometer and Signatures)");
       return;
     }
-    
+
     if (photos.length === 0) {
       toast.error("Please upload at least one vehicle photo before handover");
       return;
@@ -56,7 +57,7 @@ export default function BikeHandoverPage() {
 
     setSubmitting(true);
     const payload = { ...formData, photos };
-    
+
     try {
       await bikeRentalsService.handoverBooking(bookingId, payload);
       toast.success("Handover completed successfully!");
@@ -102,7 +103,7 @@ export default function BikeHandoverPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        
+
         {/* Bike Info */}
         <div className="bg-[#111111] rounded-xl p-4 border border-[#27272A] flex gap-4 items-center">
           <div className="w-20 h-20 bg-[#1A1A1A] rounded-lg overflow-hidden flex items-center justify-center shrink-0">
@@ -121,7 +122,7 @@ export default function BikeHandoverPage() {
             <p className="text-xs text-[#FACC15] mt-1 font-medium">Plate: {booking.vehicle?.registrationNo || 'N/A'}</p>
           </div>
         </div>
-        
+
         {/* Booking Details */}
         <div className="bg-[#111111] rounded-xl p-4 border border-[#27272A]">
           <h3 className="text-sm font-semibold text-white mb-2 uppercase tracking-wider text-xs">Booking Details</h3>
@@ -136,14 +137,14 @@ export default function BikeHandoverPage() {
                 <div>
                   <p className="text-xs text-gray-500 mb-0.5">Pickup Date & Time</p>
                   <p className="text-sm text-gray-300 font-medium">
-                    {booking.startDate ? format(new Date(booking.startDate.replace('Z', '')), 'MMM d, yyyy - h:mm a') : 'N/A'}
+                    {formatDateTime(booking.startDate)}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5 break-words">{booking.pickupLocation}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-0.5">Return Date & Time</p>
                   <p className="text-sm text-gray-300 font-medium">
-                    {booking.endDate ? format(new Date(booking.endDate.replace('Z', '')), 'MMM d, yyyy - h:mm a') : 'N/A'}
+                    {formatDateTime(booking.endDate)}
                   </p>
                   <p className="text-xs text-gray-400 mt-0.5 break-words">{booking.dropoffLocation}</p>
                 </div>
@@ -169,13 +170,13 @@ export default function BikeHandoverPage() {
         {/* Handover Details */}
         <div className="bg-[#111111] p-6 rounded-xl border border-[#27272A]">
           <h3 className="text-lg font-semibold text-white mb-4">Handover Condition</h3>
-          
+
           <div className="grid grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1.5">Fuel Level</label>
-              <select 
+              <select
                 value={formData.fuelLevel}
-                onChange={e => setFormData({...formData, fuelLevel: e.target.value})}
+                onChange={e => setFormData({ ...formData, fuelLevel: e.target.value })}
                 className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2.5 px-3 text-white focus:border-[#FACC15] outline-none"
               >
                 <option value="FULL">Full (8/8)</option>
@@ -186,20 +187,23 @@ export default function BikeHandoverPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1.5">Odometer Reading (KM)</label>
-              <input 
-                type="number" 
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 required
                 value={formData.odometerReading}
-                onChange={e => setFormData({...formData, odometerReading: e.target.value})}
+                onChange={e => setFormData({ ...formData, odometerReading: e.target.value.replace(/\D/g, '').slice(0, 7) })}
                 className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2.5 px-3 text-white focus:border-[#FACC15] outline-none"
                 placeholder="e.g. 25450"
+                maxLength={7}
               />
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-400 mb-1.5">Bike Condition</label>
-              <select 
+              <select
                 value={formData.bikeCondition}
-                onChange={e => setFormData({...formData, bikeCondition: e.target.value})}
+                onChange={e => setFormData({ ...formData, bikeCondition: e.target.value })}
                 className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2.5 px-3 text-white focus:border-[#FACC15] outline-none"
               >
                 <option value="Good">Good</option>
@@ -207,19 +211,19 @@ export default function BikeHandoverPage() {
                 <option value="Damaged">Damaged</option>
               </select>
             </div>
-            
+
             {formData.bikeCondition !== 'Good' && (
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-400 mb-1.5">Damage Notes</label>
-                <textarea 
+                <textarea
                   value={formData.damageNotes}
-                  onChange={e => setFormData({...formData, damageNotes: e.target.value})}
+                  onChange={e => setFormData({ ...formData, damageNotes: e.target.value })}
                   className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2.5 px-3 text-white focus:border-[#FACC15] outline-none min-h-[100px]"
                   placeholder="Describe the damage..."
                 />
               </div>
             )}
-            
+
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-400 mb-1.5">Bike Photos</label>
               <div className="border-2 border-dashed border-[#27272A] rounded-lg p-8 flex flex-col items-center justify-center text-gray-400 hover:border-[#FACC15] hover:text-[#FACC15] transition-colors cursor-pointer" onClick={() => document.getElementById('photo-upload')?.click()}>
@@ -253,15 +257,15 @@ export default function BikeHandoverPage() {
         {/* Signatures */}
         <div className="bg-[#111111] p-6 rounded-xl border border-[#27272A]">
           <h3 className="text-lg font-semibold text-white mb-4">Digital Signatures</h3>
-          
+
           <div className="grid grid-cols-1 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1.5">Supplier Signature (Type Name)</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 required
                 value={formData.supplierSignature}
-                onChange={e => setFormData({...formData, supplierSignature: e.target.value})}
+                onChange={e => setFormData({ ...formData, supplierSignature: e.target.value })}
                 className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2.5 px-3 text-white focus:border-[#FACC15] outline-none"
                 placeholder="Supplier agent name"
               />
@@ -270,8 +274,8 @@ export default function BikeHandoverPage() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={submitting}
             className="px-6 py-3 rounded-lg text-sm font-semibold bg-[#FACC15] text-black hover:bg-[#EAB308] disabled:opacity-50 disabled:cursor-not-allowed"
           >

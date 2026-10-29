@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { carRentalsService } from '@/services/car-rentals/car-rentals.service';
 import { useCarRentalsStore } from '@/stores/car-rentals.store';
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
+import { formatDateTime } from '@/lib/utils';
 
 const TABS = [
   { id: 'completed', label: 'Completed Rentals', statuses: ['COMPLETED'] },
@@ -134,11 +135,11 @@ export default function CarRentalsHistoryPage() {
         <div className="flex flex-col">
           <div className="text-xs">
             <span className="text-[#71717A]">Pickup: </span>
-            <span className="text-white">{format(new Date(b.startDate), 'dd-MMM-yyyy hh:mm a')}</span>
+            <span className="text-white">{formatDateTime(b.startDate)}</span>
           </div>
           <div className="text-xs mt-1">
             <span className="text-[#71717A]">Return: </span>
-            <span className="text-white">{format(new Date(b.endDate), 'dd-MMM-yyyy hh:mm a')}</span>
+            <span className="text-white">{formatDateTime(b.endDate)}</span>
           </div>
         </div>
       )

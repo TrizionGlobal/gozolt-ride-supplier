@@ -62,7 +62,7 @@ export function formatDocumentType(type: string): string {
 
 export function parseCleanDate(value: string | Date | null | undefined): Date | null {
   if (!value) return null;
-  const clean = typeof value === 'string' ? value.replace('Z', '') : value;
+  const clean = typeof value === 'string' ? value.replace(/(\+00:?00|Z)$/i, '') : value;
   const d = new Date(clean);
   return isNaN(d.getTime()) ? null : d;
 }

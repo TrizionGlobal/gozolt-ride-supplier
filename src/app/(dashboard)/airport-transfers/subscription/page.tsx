@@ -96,6 +96,76 @@ type PaymentData = {
   brand: string;
 };
 
+const Shimmer = ({ className = '' }: { className?: string }) => (
+  <div className={`animate-pulse rounded-md bg-[#1F1F1F] ${className}`} />
+);
+
+function SubscriptionPageSkeleton() {
+  return (
+    <div className="mx-auto max-w-7xl space-y-8 p-4 md:p-6">
+      {/* Header Skeleton */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="mt-1 flex shrink-0 items-center justify-center rounded-xl bg-white/5 p-2.5">
+            <Shimmer className="h-6 w-6 rounded-lg" />
+          </div>
+          <div className="space-y-2">
+            <Shimmer className="h-7 w-72 rounded-md" />
+            <Shimmer className="h-4 w-96 max-w-full rounded-md" />
+          </div>
+        </div>
+      </div>
+
+      {/* Plan Comparison Cards Skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <div
+            key={i}
+            className="relative overflow-hidden rounded-2xl border border-[#27272A] bg-[#111111] p-6 flex flex-col justify-between h-[500px]"
+          >
+            {i === 1 && (
+              <div className="absolute top-4 left-1/2 -translate-x-1/2">
+                <Shimmer className="h-5 w-28 rounded-full bg-[#FACC15]/20" />
+              </div>
+            )}
+            <div>
+              <div className="text-center pt-4 space-y-3">
+                <Shimmer className="h-6 w-32 rounded-md mx-auto" />
+                <Shimmer className="h-10 w-28 rounded-md mx-auto" />
+              </div>
+
+              <div className="mt-8 space-y-3.5">
+                <div className="flex items-center gap-2.5">
+                  <Shimmer className="h-4 w-4 rounded-full shrink-0" />
+                  <Shimmer className="h-3.5 w-4/5 rounded" />
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Shimmer className="h-4 w-4 rounded-full shrink-0" />
+                  <Shimmer className="h-3.5 w-3/4 rounded" />
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Shimmer className="h-4 w-4 rounded-full shrink-0" />
+                  <Shimmer className="h-3.5 w-5/6 rounded" />
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Shimmer className="h-4 w-4 rounded-full shrink-0" />
+                  <Shimmer className="h-3.5 w-2/3 rounded" />
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Shimmer className="h-4 w-4 rounded-full shrink-0" />
+                  <Shimmer className="h-3.5 w-4/5 rounded" />
+                </div>
+              </div>
+            </div>
+
+            <Shimmer className="h-11 w-full rounded-xl mt-6" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function AirportTransfersSubscriptionPage() {
   const router = useRouter();
   const { user, hydrateFromSession } = useAuthStore();
@@ -256,6 +326,10 @@ export default function AirportTransfersSubscriptionPage() {
         </div>
       </div>
     );
+  }
+
+  if (isLoading) {
+    return <SubscriptionPageSkeleton />;
   }
 
   return (

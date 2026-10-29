@@ -8,6 +8,7 @@ const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod
 import { QuickServiceTask } from '@/components/quick-services/quick-service-task';
 import { AirportTransferTask } from '@/components/airport-transfers/airport-transfer-task';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { formatDateTime } from '@/lib/utils';
 
 
 function HandoverTaskContent({ token }: { token: string }) {
@@ -218,14 +219,14 @@ function HandoverTaskContent({ token }: { token: string }) {
                   <div>
                     <p className="text-xs text-gray-500 mb-0.5">Pickup Date & Time</p>
                     <p className="text-sm text-gray-300 font-medium">
-                      {new Date(task.booking.startDate).toLocaleDateString()} {new Date(task.booking.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {formatDateTime(task.booking.startDate)}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5 break-words">{task.booking.pickupLocation}</p>
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 mb-0.5">Return Date & Time</p>
                     <p className="text-sm text-gray-300 font-medium">
-                      {new Date(task.booking.endDate).toLocaleDateString()} {new Date(task.booking.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {formatDateTime(task.booking.endDate)}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5 break-words">{task.booking.dropoffLocation}</p>
                   </div>
@@ -246,7 +247,7 @@ function HandoverTaskContent({ token }: { token: string }) {
           <div className="w-64 h-64 bg-gray-900 rounded-2xl overflow-hidden border-2 border-[#FACC15] relative flex items-center justify-center">
             {scanStatus === 'IDLE' && (
               !isCameraOpen ? (
-                <button 
+                <button
                   onClick={() => setIsCameraOpen(true)}
                   className="flex flex-col items-center justify-center text-[#FACC15] hover:text-yellow-400 p-4 w-full h-full bg-gray-900 rounded-2xl"
                 >
@@ -288,13 +289,17 @@ function HandoverTaskContent({ token }: { token: string }) {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Odometer Reading (km)</label>
+              <label className="block text-sm text-gray-400 mb-1">Odometer Reading (KM)</label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 required
                 value={formData.odometerReading}
-                onChange={e => setFormData({ ...formData, odometerReading: e.target.value })}
+                onChange={e => setFormData({ ...formData, odometerReading: e.target.value.replace(/\D/g, '').slice(0, 7) })}
                 className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#FACC15] outline-none"
+                placeholder="e.g. 25450"
+                maxLength={7}
               />
             </div>
 

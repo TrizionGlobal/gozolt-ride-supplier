@@ -5,6 +5,7 @@ import { bikeRentalsService } from '@/services/bike-rentals/bike-rentals.service
 
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
 import { format, differenceInDays } from 'date-fns';
+import { formatDateTime } from '@/lib/utils';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
 interface ExtensionRequestsTableProps {
@@ -80,17 +81,17 @@ export function ExtensionRequestsTable({
         <div>
           <div className="text-xs mb-1">
             <span className={`font-medium text-white ${row.status !== 'REJECTED' ? 'line-through' : ''}`}>
-              {format(new Date(row.originalEndDate), 'dd-MMM-yyyy')}
+              {formatDateTime(row.originalEndDate)}
             </span>
           </div>
           <div className="text-xs mt-1">
             {row.status === 'REJECTED' ? (
               <span className="font-medium text-red-500/70 line-through" title="Rejected requested date">
-                {format(new Date(row.newEndDate), 'dd-MMM-yyyy')}
+                {formatDateTime(row.newEndDate)}
               </span>
             ) : (
               <span className="font-medium text-[#FACC15]">
-                New: {format(new Date(row.newEndDate), 'dd-MMM-yyyy')}
+                New: {formatDateTime(row.newEndDate)}
               </span>
             )}
           </div>
@@ -310,7 +311,7 @@ export function ExtensionRequestsTable({
                               <div className="flex justify-between"><span className="text-gray-300">Previous Paid Amount:</span> <span className="font-medium text-white">€{previousPaidAmount.toFixed(2)}</span></div>
                             </div>
 
-                            <div className="flex justify-between"><span className="text-gray-300">Extended Amount ({differenceInDays(new Date(selectedRequest.newEndDate), new Date(selectedRequest.originalEndDate))} days):</span> <span className={`font-medium ${isRejected ? 'text-red-400 line-through' : 'text-emerald-400'}`}>€{extensionCost.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span className="text-gray-300">Extended Amount ({differenceInDays(new Date(typeof selectedRequest.newEndDate === 'string' ? selectedRequest.newEndDate.replace('Z', '') : selectedRequest.newEndDate), new Date(typeof selectedRequest.originalEndDate === 'string' ? selectedRequest.originalEndDate.replace('Z', '') : selectedRequest.originalEndDate))} days):</span> <span className={`font-medium ${isRejected ? 'text-red-400 line-through' : 'text-emerald-400'}`}>€{extensionCost.toFixed(2)}</span></div>
 
                             <div className="flex justify-between font-bold pt-3 border-t border-[#27272A]">
                               <span className="text-white">Grand Total:</span> 
@@ -329,7 +330,7 @@ export function ExtensionRequestsTable({
 
                   <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <p className="text-sm"><span className="text-gray-500 block text-xs">Requested On</span> <span className="font-medium">{format(new Date(selectedRequest.createdAt), 'MMM dd, yyyy HH:mm')}</span></p>
+                      <p className="text-sm"><span className="text-gray-500 block text-xs">Requested On</span> <span className="font-medium">{formatDateTime(selectedRequest.createdAt)}</span></p>
                     </div>
                     <div className="space-y-1">
                       {selectedRequest.stripePaymentIntentId && (

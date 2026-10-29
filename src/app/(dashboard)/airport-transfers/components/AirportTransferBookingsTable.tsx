@@ -324,6 +324,18 @@ export function AirportTransferBookingsTable({
         };
 
         if (isRound) {
+          const isOutboundCompleted = row.status === 'COMPLETED';
+          if (!isOutboundCompleted && !returnTask) {
+            return (
+              <div className="min-w-[130px]">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-emerald-400">First:</span>
+                  {renderBadge(outboundTask, row.driver)}
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div className="min-w-[130px] space-y-1">
               <div className="flex items-center gap-1.5">
@@ -385,8 +397,10 @@ export function AirportTransferBookingsTable({
           !isOutboundCompleted &&
           !isOutboundAssigned;
 
+        // Return trip assignment is ONLY shown and allowed AFTER first trip is completed
         const canAssignReturn =
           isRound &&
+          isOutboundCompleted &&
           (row.returnStatus || row.status) === 'CONFIRMED' &&
           !isReturnCompleted &&
           !isReturnAssigned;

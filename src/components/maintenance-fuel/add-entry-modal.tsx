@@ -174,7 +174,16 @@ export function AddEntryModal({ isOpen, onClose, onAdded, activeTab }: AddEntryM
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <label className={labelCls}>Mileage (Km)</label>
-                <input type="number" value={maintMileage} onChange={(e) => setMaintMileage(e.target.value)} placeholder="0" className={inputCls} />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={maintMileage}
+                  onChange={(e) => setMaintMileage(e.target.value.replace(/\D/g, '').slice(0, 7))}
+                  placeholder="0"
+                  maxLength={7}
+                  className={inputCls}
+                />
               </div>
               <div>
                 <label className={labelCls}>Cost (€)</label>
@@ -208,7 +217,16 @@ export function AddEntryModal({ isOpen, onClose, onAdded, activeTab }: AddEntryM
             </div>
             <div className="mb-6">
               <label className={labelCls}>Odometer (Km)</label>
-              <input type="number" value={fuelOdometer} onChange={(e) => setFuelOdometer(e.target.value)} placeholder="0" className={inputCls} />
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={fuelOdometer}
+                onChange={(e) => setFuelOdometer(e.target.value.replace(/\D/g, '').slice(0, 7))}
+                placeholder="0"
+                maxLength={7}
+                className={inputCls}
+              />
             </div>
           </>
         )}

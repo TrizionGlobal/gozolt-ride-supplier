@@ -56,15 +56,15 @@ export function AirportTransferForm({ initialData }: Props) {
     initialData?.pricePerKm !== undefined
       ? Number(initialData.pricePerKm)
       : initialData?.fixedPrice !== undefined && Number(initialData.fixedPrice) <= 10
-      ? Number(initialData.fixedPrice)
-      : 2.50
+        ? Number(initialData.fixedPrice)
+        : 2.50
   );
   const [minPrice, setMinPrice] = useState<number | ''>(
     initialData?.minPrice !== undefined
       ? Number(initialData.minPrice)
       : initialData?.fixedPrice !== undefined && Number(initialData.fixedPrice) > 10
-      ? Number(initialData.fixedPrice)
-      : 20.00
+        ? Number(initialData.fixedPrice)
+        : 20.00
   );
   const [roundTripDiscount, setRoundTripDiscount] = useState<number | ''>(
     initialData?.roundTripDiscount !== undefined
@@ -318,8 +318,8 @@ export function AirportTransferForm({ initialData }: Props) {
       console.error(err);
       toast.error(
         err?.response?.data?.message ||
-          err?.message ||
-          'Failed to save vehicle. Please check all fields and try again.'
+        err?.message ||
+        'Failed to save vehicle. Please check all fields and try again.'
       );
     } finally {
       setIsSubmitting(false);
@@ -370,9 +370,8 @@ export function AirportTransferForm({ initialData }: Props) {
                 required
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 pr-9 text-xs focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer transition-colors ${
-                  !category ? 'text-[#71717A]' : 'text-white'
-                }`}
+                className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 pr-9 text-xs focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer transition-colors ${!category ? 'text-[#71717A]' : 'text-white'
+                  }`}
               >
                 <option value="" disabled className="bg-[#18181B] text-[#71717A]">
                   Select Category
@@ -427,9 +426,8 @@ export function AirportTransferForm({ initialData }: Props) {
                 required
                 value={transmission}
                 onChange={(e) => setTransmission(e.target.value)}
-                className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 pr-9 text-xs focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer transition-colors ${
-                  !transmission ? 'text-[#71717A]' : 'text-white'
-                }`}
+                className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 pr-9 text-xs focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer transition-colors ${!transmission ? 'text-[#71717A]' : 'text-white'
+                  }`}
               >
                 <option value="AUTOMATIC" className="bg-[#18181B] text-white">
                   Automatic
@@ -452,9 +450,8 @@ export function AirportTransferForm({ initialData }: Props) {
                 required
                 value={fuelType}
                 onChange={(e) => setFuelType(e.target.value)}
-                className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 pr-9 text-xs focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer transition-colors ${
-                  !fuelType ? 'text-[#71717A]' : 'text-white'
-                }`}
+                className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 pr-9 text-xs focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer transition-colors ${!fuelType ? 'text-[#71717A]' : 'text-white'
+                  }`}
               >
                 <option value="DIESEL" className="bg-[#18181B] text-white">
                   Diesel
@@ -563,34 +560,6 @@ export function AirportTransferForm({ initialData }: Props) {
                   %
                 </span>
               </div>
-            </div>
-
-            <div className="md:col-span-2 rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="text-gray-400">
-                Formula:{' '}
-                <strong className="text-white">
-                  Distance × Rate/km
-                </strong>
-                {Number(roundTripDiscount || 0) > 0 && (
-                  <span className="text-[#10B981] ml-2">
-                    · Round-trip discount: -{roundTripDiscount}% applied
-                  </span>
-                )}
-              </span>
-              <span className="text-yellow-400 font-medium">
-                Example 15 km one-way = €
-                {(Math.round(15 * Number(pricePerKm || 2.5) * 100) / 100).toFixed(2)}
-                {Number(roundTripDiscount || 0) > 0 && (
-                  <span className="text-white ml-2">
-                    | Round-trip = €
-                    {(
-                      Math.round(15 * Number(pricePerKm || 2.5) * 100) / 100 *
-                      2 *
-                      (1 - Number(roundTripDiscount) / 100)
-                    ).toFixed(2)}
-                  </span>
-                )}
-              </span>
             </div>
           </div>
         </div>

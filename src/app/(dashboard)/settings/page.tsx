@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
-import { Building2, Bell, Users, Globe, Shield, Lock, Landmark } from 'lucide-react';
+import { Building2, Bell, Globe, Shield, Lock, Landmark } from 'lucide-react';
 import { CompanyProfileTab } from '@/components/settings/company-profile-tab';
 import { QuickServicesTab } from '@/components/settings/quick-services-tab';
 import { NotificationsTab } from '@/components/settings/notifications-tab';
-import { UsersTab } from '@/components/settings/users-tab';
 import { LanguageTab } from '@/components/settings/language-tab';
 import { PrivacyTab } from '@/components/settings/privacy-tab';
 import { SecurityTab } from '@/components/settings/security-tab';
@@ -18,7 +17,6 @@ const TABS: { key: SettingsTab; label: string; icon: React.ElementType; showFor?
   { key: 'quick-services', label: 'Quick Services', icon: Bell, showFor: ['QUICK_SERVICES'] },
   { key: 'bank', label: 'Bank Details', icon: Landmark },
   { key: 'notifications', label: 'Notifications', icon: Bell },
-  { key: 'users', label: 'Users', icon: Users },
   { key: 'language', label: 'Language', icon: Globe },
   { key: 'privacy', label: 'Privacy', icon: Shield },
   { key: 'security', label: 'Security', icon: Lock },
@@ -60,7 +58,6 @@ export default function SettingsPage() {
         {activeTab === 'quick-services' && <QuickServicesTab />}
         {activeTab === 'bank' && <BankDetailsTab />}
         {activeTab === 'notifications' && <NotificationsTab />}
-        {activeTab === 'users' && <UsersTab />}
         {activeTab === 'language' && <LanguageTab />}
         {activeTab === 'privacy' && <PrivacyTab />}
         {activeTab === 'security' && <SecurityTab />}

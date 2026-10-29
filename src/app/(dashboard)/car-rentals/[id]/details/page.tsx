@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatDateTime } from '@/lib/utils';
 import { toast } from 'sonner';
 import { carRentalsService } from '@/services/car-rentals/car-rentals.service';
 import Link from 'next/link';
@@ -156,9 +157,9 @@ export default function BookingDetailsPage() {
           <div className="space-y-4">
             <h4 className="font-semibold text-white text-lg">Rental Details</h4>
             <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm space-y-3">
-              <div className="flex justify-between"><span className="text-gray-400">Pickup Date & Time:</span> <span className="font-medium">{booking.startDate ? format(new Date(booking.startDate.replace('Z', '')), 'MMM dd, yyyy hh:mm a') : 'N/A'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Pickup Date & Time:</span> <span className="font-medium">{formatDateTime(booking.startDate)}</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Pickup Location:</span> <span className="font-medium truncate max-w-[200px]" title={booking.pickupLocation}>{booking.pickupLocation}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Return Date & Time:</span> <span className="font-medium">{booking.endDate ? format(new Date(booking.endDate.replace('Z', '')), 'MMM dd, yyyy hh:mm a') : 'N/A'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Return Date & Time:</span> <span className="font-medium">{formatDateTime(booking.endDate)}</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Return Location:</span> <span className="font-medium truncate max-w-[200px]" title={booking.dropoffLocation}>{booking.dropoffLocation}</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Delivery Option:</span> <span className="font-medium">{booking.deliveryType?.replace('_', ' ')}</span></div>
             </div>
@@ -393,7 +394,7 @@ export default function BookingDetailsPage() {
                         {ext.status}
                       </span>
                     </div>
-                    <div className="flex justify-between w-3/4"><span className="text-gray-400">Requested End Date:</span> <span className="font-medium">{format(new Date(ext.newEndDate), 'dd-MMM-yyyy hh:mm a')}</span></div>
+                    <div className="flex justify-between w-3/4"><span className="text-gray-400">Requested End Date:</span> <span className="font-medium">{formatDateTime(ext.newEndDate)}</span></div>
                     <div className="flex justify-between w-3/4"><span className="text-gray-400">Additional Cost:</span> <span className="font-medium text-[#FACC15]">€{Number(ext.additionalCost || 0).toFixed(2)}</span></div>
                     {ext.reason && (
                       <div className="flex justify-between w-3/4"><span className="text-gray-400">Reason:</span> <span className="font-medium">{ext.reason}</span></div>

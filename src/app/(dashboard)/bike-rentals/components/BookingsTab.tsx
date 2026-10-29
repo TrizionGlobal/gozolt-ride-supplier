@@ -12,13 +12,13 @@ import Swal from 'sweetalert2';
 import { ExtensionRequestsTable } from './ExtensionRequestsTable';
 import { useFleetTracking } from '@/hooks/use-fleet-tracking';
 const TABS = [
-  { id: 'today', label: 'Today\'s Scheduled', statuses: ['CONFIRMED'], dateFilter: 'TODAY' },
   { id: 'pending', label: 'Pending Requests', statuses: ['PENDING_APPROVAL'], dateFilter: undefined },
   { id: 'confirmed', label: 'Confirmed', statuses: ['CONFIRMED'], dateFilter: undefined },
   { id: 'on_rent', label: 'On Rent', statuses: ['ACTIVE'], dateFilter: undefined },
   { id: 'overdue', label: 'Overdue', statuses: ['ACTIVE'], dateFilter: 'OVERDUE' },
   { id: 'upcoming', label: 'Upcoming', statuses: ['CONFIRMED'], dateFilter: 'UPCOMING' },
   { id: 'extensions', label: 'Extension Requests', statuses: [], dateFilter: undefined },
+  { id: 'today', label: 'Today\'s Scheduled', statuses: ['CONFIRMED'], dateFilter: 'TODAY' },
 ] as { id: string; label: string; statuses: string[]; dateFilter?: 'TODAY' | 'UPCOMING' | 'OVERDUE' }[];
 
 export function BookingsTab() {

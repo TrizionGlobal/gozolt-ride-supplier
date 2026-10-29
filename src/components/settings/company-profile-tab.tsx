@@ -93,6 +93,7 @@ export function CompanyProfileTab() {
     try {
       const payload = {
         companyName: form.companyName,
+        email: form.email?.trim(),
         contactPhone: form.phone,
         vatNumber: form.vatNumber,
         registrationNo: form.registrationNumber,
@@ -110,8 +111,9 @@ export function CompanyProfileTab() {
         setUser({ ...user, ...response });
       }
       toast.success('Company profile updated');
-    } catch {
-      toast.error('Failed to update profile');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Failed to update profile';
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
@@ -266,7 +268,6 @@ export function CompanyProfileTab() {
                   ['companyName', 'address', 'city', 'country'].includes(key) ? 'capitalize' : 
                   ['registrationNumber', 'vatNumber', 'postalCode'].includes(key) ? 'uppercase' : ''
                 }`}
-                disabled={key === 'email'}
                 min={type === 'number' ? 0 : undefined}
                 max={type === 'number' ? 100 : undefined}
               />

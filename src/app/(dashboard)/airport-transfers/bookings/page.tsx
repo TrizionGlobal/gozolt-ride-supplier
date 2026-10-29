@@ -261,6 +261,10 @@ function AirportTransfersBookingsContent() {
       toast.error('Please accept and confirm the transfer request first before self-assigning.');
       return;
     }
+    if (tripLeg === 'RETURN' && targetBooking?.status !== 'COMPLETED') {
+      toast.error('The first trip must be completed before self-assigning the return trip.');
+      return;
+    }
     try {
       await apiClient.post(`/airport-transfers/supplier/bookings/${id}/self-assign`, {
         magicLinkBaseUrl: window.location.origin,
@@ -370,6 +374,10 @@ function AirportTransfersBookingsContent() {
         onAssignWorker={(bookingId, bookingRef, _mode, tripLeg, booking) => {
           if (booking?.status === 'PENDING_APPROVAL' || booking?.status === 'PENDING') {
             toast.error('Please accept and confirm the transfer request first before assigning a driver.');
+            return;
+          }
+          if (tripLeg === 'RETURN' && booking?.status !== 'COMPLETED') {
+            toast.error('The first trip must be completed before assigning a driver for the return trip.');
             return;
           }
           setAssignModal({

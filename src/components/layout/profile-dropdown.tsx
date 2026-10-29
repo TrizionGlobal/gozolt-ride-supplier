@@ -30,10 +30,16 @@ export function ProfileDropdown() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const isAirportTransfer =
+    activeModule === 'AIRPORT_TRANSFER' ||
+    pathname.startsWith('/airport-transfers') ||
+    user?.registeredService === 'AIRPORT_TRANSFER';
+
   const handleWorkersNavigation = () => {
     setIsOpen(false);
     if (activeModule === 'RENTAL') router.push('/car-rentals/workers');
     else if (activeModule === 'BIKE_RENTAL') router.push('/bike-rentals/workers');
+    else if (isAirportTransfer) router.push('/airport-transfers/workers');
     else router.push('/workers');
   };
 
@@ -73,7 +79,7 @@ export function ProfileDropdown() {
           <div className="py-1">
             {pathname !== '/module-selection' && (
               <>
-                {activeModule !== 'QUICK_SERVICES' && activeModule !== 'CAB' && (
+                {activeModule !== 'QUICK_SERVICES' && activeModule !== 'CAB' && !isAirportTransfer && (
                   <button
                     onClick={handleWorkersNavigation}
                     className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:text-[#FACC15] hover:bg-[#1A1A1A] transition-colors border-b border-[#27272A]"
@@ -87,15 +93,17 @@ export function ProfileDropdown() {
                   className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
                 >
                   <Settings className="h-4 w-4 mr-3 text-[#A1A1AA]" />
-                  Settings & Team
+                  Settings
                 </button>
-                <button
-                  onClick={handleSubscriptionNavigation}
-                  className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
-                >
-                  <CreditCard className="h-4 w-4 mr-3 text-[#A1A1AA]" />
-                  Billing & Subscription
-                </button>
+                {!isAirportTransfer && (
+                  <button
+                    onClick={handleSubscriptionNavigation}
+                    className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
+                  >
+                    <CreditCard className="h-4 w-4 mr-3 text-[#A1A1AA]" />
+                    Billing & Subscription
+                  </button>
+                )}
               </>
             )}
           </div>

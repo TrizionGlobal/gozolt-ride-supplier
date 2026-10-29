@@ -483,10 +483,18 @@ export function TransferBookingDetailsModal({
                   );
 
                   if (isRound) {
+                    const isOutboundCompleted = booking.status === 'COMPLETED';
                     return (
                       <div className="space-y-2">
                         {renderTaskCard('First Trip', outboundTask, assignedDriver)}
-                        {renderTaskCard('Return Trip', returnTask, null)}
+                        {isOutboundCompleted || returnTask ? (
+                          renderTaskCard('Return Trip', returnTask, null)
+                        ) : (
+                          <div className="rounded-lg border border-[#27272A] bg-[#111111] p-3 text-xs text-gray-400 italic">
+                            <span className="font-semibold text-indigo-400 block mb-1">Return Trip:</span>
+                            Driver assignment will unlock after the first trip is completed.
+                          </div>
+                        )}
                       </div>
                     );
                   }

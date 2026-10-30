@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Camera, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { bikeRentalsService } from '@/services/bike-rentals/bike-rentals.service';
-import { format } from 'date-fns';
 import { formatDateTime } from '@/lib/utils';
 import { useBikeRentalsStore } from '@/stores/bike-rentals.store';
 
@@ -14,6 +13,7 @@ export default function BikeHandoverPage() {
   const router = useRouter();
   const bookingId = params.id as string;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -26,7 +26,12 @@ export default function BikeHandoverPage() {
     supplierSignature: ''
   });
 
-  const [photos, setPhotos] = useState<string[]>([]);
+  interface PhotoItem {
+    file?: File;
+    preview: string;
+    url?: string;
+  }
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
 
   useEffect(() => {
     if (bookingId) {
@@ -42,6 +47,49 @@ export default function BikeHandoverPage() {
     }
   }, [bookingId]);
 
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const selectedFiles = Array.from(e.target.files);
+    
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const validFiles: File[] = [];
+
+    for (const file of selectedFiles) {
+      const fileName = file.name.toLowerCase();
+      const hasAllowedExt = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png');
+
+      if (!allowedMimeTypes.includes(file.type) || !hasAllowedExt) {
+        toast.error(`"${file.name}": Only JPG, JPEG, and PNG images are allowed`);
+        continue;
+      }
+
+      if (file.size > 15 * 1024 * 1024) {
+        toast.error(`"${file.name}": Image size must be less than 15MB`);
+        continue;
+      }
+
+      if (photos.length + validFiles.length >= 5) {
+        toast.error('Maximum 5 photos allowed');
+        break;
+      }
+
+      validFiles.push(file);
+    }
+
+    if (validFiles.length === 0) {
+      e.target.value = '';
+      return;
+    }
+
+    const newItems: PhotoItem[] = validFiles.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
+    setPhotos(prev => [...prev, ...newItems]);
+    e.target.value = '';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
@@ -56,16 +104,31 @@ export default function BikeHandoverPage() {
     }
 
     setSubmitting(true);
-    const payload = { ...formData, photos };
-
     try {
-      await bikeRentalsService.handoverBooking(bookingId, payload);
+      const formDataToSend = new FormData();
+      formDataToSend.append('data', JSON.stringify({
+        fuelLevel: formData.fuelLevel,
+        odometerReading: formData.odometerReading,
+        bikeCondition: formData.bikeCondition,
+        damageNotes: formData.damageNotes,
+        supplierSignature: formData.supplierSignature,
+        photos: photos.filter(p => p.url).map(p => p.url),
+      }));
+
+      for (const p of photos) {
+        if (p.file) {
+          formDataToSend.append('images', p.file);
+        }
+      }
+
+      await bikeRentalsService.handoverBooking(bookingId, formDataToSend);
       toast.success("Handover completed successfully!");
       useBikeRentalsStore.getState().setManagementBookings([], 0, ''); // Invalidate cache
       router.back();
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error("Failed to complete handover");
+      const errorMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || "Failed to complete handover";
+      toast.error(errorMsg);
       setSubmitting(false);
     }
   };
@@ -225,25 +288,35 @@ export default function BikeHandoverPage() {
             )}
 
             <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-400 mb-1.5">Bike Photos</label>
-              <div className="border-2 border-dashed border-[#27272A] rounded-lg p-8 flex flex-col items-center justify-center text-gray-400 hover:border-[#FACC15] hover:text-[#FACC15] transition-colors cursor-pointer" onClick={() => document.getElementById('photo-upload')?.click()}>
+              <div className="flex justify-between items-center mb-1.5">
+                <label className="block text-sm font-medium text-gray-400">Bike Photos</label>
+                <span className="text-xs text-[#A1A1AA]">
+                  <span className="text-[#FACC15] font-semibold">{photos.length}</span> / 5 photos
+                </span>
+              </div>
+              <div className="border-2 border-dashed border-[#27272A] rounded-lg p-6 flex flex-col items-center justify-center text-gray-400 hover:border-[#FACC15] hover:text-[#FACC15] transition-colors cursor-pointer" onClick={() => document.getElementById('photo-upload')?.click()}>
                 <Camera className="h-8 w-8 mb-2" />
                 <span className="text-sm font-medium">Click to upload photos</span>
-                <span className="text-xs mt-1">Upload exterior and interior photos before handover</span>
-                <input id="photo-upload" type="file" multiple accept="image/*" className="hidden" onChange={(e) => {
-                  if (e.target.files) {
-                    const newPhotos = Array.from(e.target.files).map(f => URL.createObjectURL(f));
-                    setPhotos([...photos, ...newPhotos]);
-                  }
-                }} />
+                <span className="text-xs text-[#71717A] mt-1">Upload up to 5 clear photos (JPG, JPEG, PNG up to 15MB each)</span>
+                <input id="photo-upload" type="file" multiple accept=".jpg, .jpeg, .png, image/jpeg, image/png" className="hidden" onChange={handlePhotoSelect} />
               </div>
               {photos.length > 0 && (
                 <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
                   {photos.map((photo, i) => (
-                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0">
+                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 border border-[#27272A]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={photo} alt="Upload preview" className="w-full h-full object-cover" />
-                      <button type="button" onClick={() => setPhotos(photos.filter((_, index) => index !== i))} className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:bg-red-500">
+                      <img src={photo.url || photo.preview} alt="Upload preview" className="w-full h-full object-cover" />
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const target = photos[i];
+                          if (target.preview && target.preview.startsWith('blob:')) {
+                            URL.revokeObjectURL(target.preview);
+                          }
+                          setPhotos(photos.filter((_, index) => index !== i));
+                        }} 
+                        className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:bg-red-500"
+                      >
                         <X className="h-3 w-3" />
                       </button>
                     </div>
@@ -264,8 +337,9 @@ export default function BikeHandoverPage() {
               <input
                 type="text"
                 required
+                maxLength={15}
                 value={formData.supplierSignature}
-                onChange={e => setFormData({ ...formData, supplierSignature: e.target.value })}
+                onChange={e => setFormData({ ...formData, supplierSignature: e.target.value.slice(0, 15) })}
                 className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] py-2.5 px-3 text-white focus:border-[#FACC15] outline-none"
                 placeholder="Supplier agent name"
               />

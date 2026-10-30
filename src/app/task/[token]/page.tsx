@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, use, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Camera, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Camera, CheckCircle2, AlertCircle, X, Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), { ssr: false });
 import { QuickServiceTask } from '@/components/quick-services/quick-service-task';
@@ -12,23 +12,31 @@ import { formatDateTime } from '@/lib/utils';
 
 
 function HandoverTaskContent({ token }: { token: string }) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const typeParam = searchParams.get('type') || 'car';
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [task, setTask] = useState<any>(null);
   const [loading, setLoading] = useState(typeParam !== 'quick-service' && typeParam !== 'airport-transfer');
   const [error, setError] = useState('');
   const [step, setStep] = useState<'VERIFY' | 'SCAN' | 'FORM' | 'SUCCESS'>('VERIFY');
-  const [rentalType, setRentalType] = useState(typeParam);
+  const rentalType = typeParam;
   const [scanStatus, setScanStatus] = useState<'IDLE' | 'SUCCESS' | 'FAILED'>('IDLE');
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [hasCameraSupport, setHasCameraSupport] = useState<boolean>(false);
+  const [manualMode, setManualMode] = useState(false);
+  const [manualInput, setManualInput] = useState('');
+  const [verifyingPin, setVerifyingPin] = useState(false);
   useEffect(() => {
     setHasCameraSupport(typeof navigator !== 'undefined' && !!navigator.mediaDevices && !!navigator.mediaDevices.getUserMedia);
   }, []);
   const [formData, setFormData] = useState({ fuelLevel: 'FULL', odometerReading: '', vehicleCondition: 'Good', damageNotes: '', refundAmount: '', refundAccountNumber: '', supplierSignature: '' });
-  const [photos, setPhotos] = useState<string[]>([]);
+  interface PhotoItem {
+    file?: File;
+    preview: string;
+    url?: string;
+  }
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [maxRefund, setMaxRefund] = useState(0);
   const [remainingDays, setRemainingDays] = useState(0);
   const [totalDays, setTotalDays] = useState(0);
@@ -74,7 +82,7 @@ function HandoverTaskContent({ token }: { token: string }) {
           }
         }
       })
-      .catch(err => setError('Failed to load task'))
+      .catch(() => setError('Failed to load task'))
       .finally(() => setLoading(false));
   }, [token, typeParam]);
 
@@ -86,25 +94,98 @@ function HandoverTaskContent({ token }: { token: string }) {
     return <AirportTransferTask token={token} />;
   }
 
-  const handleScan = (result: string) => {
-    if (result === task.booking.id) {
-      setScanStatus('SUCCESS');
-      setTimeout(() => setStep('FORM'), 1500);
-    } else {
+  const handleScan = async (result: string) => {
+    if (!result || !result.trim() || !task?.booking) return;
+    setVerifyingPin(true);
+    try {
+      const cleanResult = result.trim();
+      const expectedPin = task.booking?.validationPin?.toString();
+      const bookingId = task.booking?.id?.toString();
+
+      const isMatchLocally = 
+        (expectedPin && (cleanResult === expectedPin || cleanResult.includes(expectedPin))) ||
+        (bookingId && cleanResult.toLowerCase().includes(bookingId.toLowerCase())) ||
+        (bookingId && cleanResult.toUpperCase().includes(bookingId.substring(0, 8).toUpperCase()));
+
+      if (isMatchLocally) {
+        setScanStatus('SUCCESS');
+        setTimeout(() => setStep('FORM'), 1500);
+        return;
+      }
+
+      // Also verify with backend validate endpoint
+      const res = await fetch(`/api/proxy/${rentalType === 'bike' ? 'bike-rentals' : 'car-rentals'}/public/task/${token}/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: cleanResult }),
+      });
+
+      if (res.ok) {
+        setScanStatus('SUCCESS');
+        setTimeout(() => setStep('FORM'), 1500);
+      } else {
+        setScanStatus('FAILED');
+        setTimeout(() => setScanStatus('IDLE'), 2000);
+      }
+    } catch {
       setScanStatus('FAILED');
       setTimeout(() => setScanStatus('IDLE'), 2000);
+    } finally {
+      setVerifyingPin(false);
     }
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newPhotos = Array.from(e.target.files).map(f => URL.createObjectURL(f));
-      setPhotos([...photos, ...newPhotos]);
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const selectedFiles = Array.from(e.target.files);
+
+    const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+    const validFiles: File[] = [];
+
+    for (const file of selectedFiles) {
+      const fileName = file.name.toLowerCase();
+      const hasAllowedExt = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png');
+
+      if (!allowedMimeTypes.includes(file.type) || !hasAllowedExt) {
+        alert(`"${file.name}": Only JPG, JPEG, and PNG images are allowed`);
+        continue;
+      }
+
+      if (file.size > 15 * 1024 * 1024) {
+        alert(`"${file.name}": Image size must be less than 15MB`);
+        continue;
+      }
+
+      if (photos.length + validFiles.length >= 5) {
+        alert('Maximum 5 photos allowed');
+        break;
+      }
+
+      validFiles.push(file);
     }
+
+    if (validFiles.length === 0) {
+      e.target.value = '';
+      return;
+    }
+
+    const newItems: PhotoItem[] = validFiles.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
+    setPhotos(prev => [...prev, ...newItems]);
+    e.target.value = '';
   };
 
   const removePhoto = (index: number) => {
-    setPhotos(photos.filter((_, i) => i !== index));
+    setPhotos(prev => {
+      const removed = prev[index];
+      if (removed?.preview && removed.preview.startsWith('blob:')) {
+        URL.revokeObjectURL(removed.preview);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,8 +203,8 @@ function HandoverTaskContent({ token }: { token: string }) {
       return;
     }
 
-    // In a real app we would upload photos to S3 here.
-    const payload = {
+    const formDataToSend = new FormData();
+    formDataToSend.append('data', JSON.stringify({
       fuelLevel: formData.fuelLevel,
       odometerReading: formData.odometerReading,
       vehicleCondition: formData.vehicleCondition,
@@ -131,14 +212,19 @@ function HandoverTaskContent({ token }: { token: string }) {
       refundAmount: formData.refundAmount,
       refundAccountNumber: formData.refundAccountNumber,
       supplierSignature: formData.supplierSignature,
-      photos,
-    };
+      photos: photos.filter(p => p.url).map(p => p.url),
+    }));
+
+    for (const p of photos) {
+      if (p.file) {
+        formDataToSend.append('images', p.file);
+      }
+    }
 
     try {
       const res = await fetch(`/api/proxy/${rentalType === 'bike' ? 'bike-rentals' : 'car-rentals'}/public/task/${token}/complete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: formDataToSend,
       });
       const data = await res.json();
 
@@ -147,7 +233,7 @@ function HandoverTaskContent({ token }: { token: string }) {
       } else {
         alert(data.message || 'Failed to complete task');
       }
-    } catch (err) {
+    } catch {
       alert('Error submitting form');
     } finally {
       setLoading(false);
@@ -240,12 +326,12 @@ function HandoverTaskContent({ token }: { token: string }) {
       {step === 'SCAN' && (
         <div className="flex flex-col items-center space-y-6">
           <div className="text-center">
-            <h2 className="text-lg font-semibold mb-2">Scan Customer QR</h2>
-            <p className="text-gray-400 text-sm">Ask the customer to show their booking QR code.</p>
+            <h2 className="text-lg font-semibold mb-2">Verify Customer Before Starting</h2>
+            <p className="text-gray-400 text-sm">Scan customer QR or enter their 4-digit PIN to confirm.</p>
           </div>
 
           <div className="w-64 h-64 bg-gray-900 rounded-2xl overflow-hidden border-2 border-[#FACC15] relative flex items-center justify-center">
-            {scanStatus === 'IDLE' && (
+            {scanStatus === 'IDLE' && !manualMode && (
               !isCameraOpen ? (
                 <button
                   onClick={() => setIsCameraOpen(true)}
@@ -255,7 +341,7 @@ function HandoverTaskContent({ token }: { token: string }) {
                   <span className="font-semibold text-lg">Tap to Open Camera</span>
                 </button>
               ) : (
-                <ErrorBoundary fallback={<div className="flex flex-col items-center justify-center text-center p-4"><AlertCircle className="w-12 h-12 text-red-500 mb-2" /><p className="text-sm text-red-500">Camera access denied.</p><p className="text-xs text-gray-400 mt-2">Try opening this link in Safari/Chrome directly.</p></div>}>
+                <ErrorBoundary fallback={<div className="flex flex-col items-center justify-center text-center p-4"><AlertCircle className="w-12 h-12 text-red-500 mb-2" /><p className="text-sm text-red-500">Camera access denied.</p><p className="text-xs text-gray-400 mt-2">Try opening this link in Safari/Chrome directly or enter PIN manually.</p></div>}>
                   {hasCameraSupport ? <Scanner
                     onScan={(result) => handleScan(result[0].rawValue)}
                     onError={(err) => {
@@ -267,6 +353,34 @@ function HandoverTaskContent({ token }: { token: string }) {
               )
             )}
 
+            {scanStatus === 'IDLE' && manualMode && (
+              <div className="flex flex-col items-center justify-center p-4 w-full">
+                <p className="text-xs text-gray-400 mb-3 text-center">Enter 4-Digit Validation PIN from Customer</p>
+                <input 
+                  type="text" 
+                  value={manualInput}
+                  onChange={(e) => setManualInput(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  placeholder="PIN"
+                  className="bg-black border border-gray-700 rounded-lg px-4 py-2.5 w-full text-center text-2xl font-bold tracking-widest uppercase mb-3 text-white focus:border-[#FACC15] outline-none"
+                  maxLength={4}
+                />
+                <button 
+                  onClick={() => handleScan(manualInput)}
+                  disabled={verifyingPin || manualInput.length !== 4}
+                  className="bg-[#FACC15] text-black font-bold py-2.5 px-6 rounded-lg hover:bg-yellow-400 transition w-full text-xs flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {verifyingPin ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-black" />
+                      <span>Verifying PIN...</span>
+                    </>
+                  ) : (
+                    'Verify PIN'
+                  )}
+                </button>
+              </div>
+            )}
+
             {scanStatus === 'SUCCESS' && (
               <div className="flex flex-col items-center justify-center text-green-500 animate-in fade-in zoom-in">
                 <CheckCircle2 className="w-20 h-20 mb-4" />
@@ -275,13 +389,22 @@ function HandoverTaskContent({ token }: { token: string }) {
             )}
 
             {scanStatus === 'FAILED' && (
-              <div className="flex flex-col items-center justify-center text-red-500 animate-in fade-in zoom-in">
-                <AlertCircle className="w-20 h-20 mb-4" />
-                <p className="text-xl font-bold">Verification Failed</p>
-                <p className="text-sm mt-2 text-white">Invalid Booking QR</p>
+              <div className="flex flex-col items-center justify-center text-red-500 animate-in fade-in zoom-in p-4 text-center">
+                <AlertCircle className="w-14 h-14 mb-2" />
+                <p className="text-lg font-bold">Verification Failed</p>
+                <p className="text-xs mt-1 text-gray-400">PIN or QR code did not match</p>
               </div>
             )}
           </div>
+
+          {scanStatus === 'IDLE' && (
+            <button 
+              onClick={() => setManualMode(!manualMode)}
+              className="text-[#FACC15] text-xs underline font-medium block mx-auto hover:text-yellow-400"
+            >
+              {manualMode ? 'Switch to QR Camera Scanner' : 'Having camera trouble? Enter 4-Digit PIN manually'}
+            </button>
+          )}
         </div>
       )}
 
@@ -343,20 +466,25 @@ function HandoverTaskContent({ token }: { token: string }) {
             )}
 
             <div className="pt-2">
-              <label className="block text-sm text-gray-400 mb-2">Photos</label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm text-gray-400">Photos</label>
+                <span className="text-xs text-gray-500">
+                  <span className="text-yellow-400 font-semibold">{photos.length}</span> / 5 photos
+                </span>
+              </div>
               <div className="border-2 border-dashed border-gray-800 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-gray-600 transition-colors bg-gray-900/50" onClick={() => document.getElementById('photo-upload')?.click()}>
                 <Camera className="h-8 w-8 text-gray-500 mb-2" />
                 <p className="text-sm font-medium text-gray-300">Click to upload photos</p>
-                <p className="text-xs text-gray-500 mt-1">Upload exterior and interior photos (especially if damaged)</p>
-                <input id="photo-upload" type="file" multiple accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                <p className="text-xs text-gray-500 mt-1">Upload up to 5 clear photos (JPG, JPEG, PNG up to 15MB each)</p>
+                <input id="photo-upload" type="file" multiple accept=".jpg, .jpeg, .png, image/jpeg, image/png" className="hidden" onChange={handlePhotoUpload} />
               </div>
 
               {photos.length > 0 && (
                 <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
                   {photos.map((photo, i) => (
-                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0">
+                    <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden shrink-0 border border-gray-800">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={photo} alt="Upload preview" className="w-full h-full object-cover" />
+                      <img src={photo.url || photo.preview} alt="Upload preview" className="w-full h-full object-cover" />
                       <button type="button" onClick={() => removePhoto(i)} className="absolute top-1 right-1 bg-black/60 p-1 rounded-full text-white hover:bg-red-500">
                         <X className="h-3 w-3" />
                       </button>
@@ -396,7 +524,7 @@ function HandoverTaskContent({ token }: { token: string }) {
                   </div>
                   <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-blue-500"></div>
-                    <span className="text-sm text-blue-200">Refund will be automatically processed to the customer's original payment method.</span>
+                    <span className="text-sm text-blue-200">Refund will be automatically processed to the customer&apos;s original payment method.</span>
                   </div>
                 </div>
               </div>
@@ -410,8 +538,9 @@ function HandoverTaskContent({ token }: { token: string }) {
                   <input
                     type="text"
                     required
+                    maxLength={15}
                     value={formData.supplierSignature}
-                    onChange={e => setFormData({ ...formData, supplierSignature: e.target.value })}
+                    onChange={e => setFormData({ ...formData, supplierSignature: e.target.value.slice(0, 15) })}
                     className="w-full bg-gray-900 border border-gray-800 rounded-lg p-3 text-white focus:border-[#FACC15] outline-none"
                     placeholder="Staff agent name"
                   />

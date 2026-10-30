@@ -77,6 +77,15 @@ export default function QuickServicesSubscriptionPage() {
 
   const [activeTier, setActiveTier] = useState<string | null>(null);
 
+  const user = useAuthStore((s) => s.user);
+  const effectiveSubscription = user?.subscription;
+  const isExpired = Boolean(
+    effectiveSubscription?.status === 'EXPIRED' ||
+      Boolean(effectiveSubscription?.cancelledAt) ||
+      (effectiveSubscription?.currentPeriodEnd &&
+        new Date(effectiveSubscription.currentPeriodEnd) < new Date())
+  );
+
   useEffect(() => {
     const mode = localStorage.getItem('quick-services-access-mode') as AccessChoice;
     const storedTier = localStorage.getItem('quick-services-subscription-tier');
@@ -427,7 +436,7 @@ export default function QuickServicesSubscriptionPage() {
             })}
           </div>
 
-          {currentMode === 'WITH_SUBSCRIPTION' && (activeTier as string) === selectedPlan ? (
+          {currentMode === 'WITH_SUBSCRIPTION' && (activeTier as string) === selectedPlan && !isExpired ? (
             <button
               type="button"
               disabled
@@ -449,7 +458,11 @@ export default function QuickServicesSubscriptionPage() {
                 <ShieldCheck className="h-5 w-5" />
               )}
 
-              {currentMode === 'WITH_SUBSCRIPTION' ? 'Switch Plan & Pay' : 'Continue to Secure Payment'}
+              {currentMode === 'WITH_SUBSCRIPTION' && !isExpired
+                ? 'Switch Plan & Pay'
+                : isExpired && (activeTier as string) === selectedPlan
+                  ? 'Renew Plan & Pay'
+                  : 'Continue to Secure Payment'}
             </button>
           )}
         </div>

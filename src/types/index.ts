@@ -212,6 +212,7 @@ export interface SupplierSubscription {
   maxRides: number;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
+  cancelledAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Mail } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 interface Props {
   bookingId: string;
@@ -42,7 +43,10 @@ export function AssignTransferWorkerModal({
 
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedWorkerId) return;
+    if (!selectedWorkerId) {
+      toast.error('Please select a staff member or driver');
+      return;
+    }
     setAssigning(true);
     try {
       await apiClient.post(`/airport-transfers/supplier/bookings/${bookingId}/assign-task`, {
@@ -50,10 +54,13 @@ export function AssignTransferWorkerModal({
         magicLinkBaseUrl: window.location.origin,
         tripLeg,
       });
+      const selectedWorker = workers.find((w) => w.id === selectedWorkerId);
+      const workerName = selectedWorker?.name || 'Driver';
+      toast.success(`${workerName} has been assigned for ${legLabel.toLowerCase()} successfully! Magic link sent to email.`);
       onAssigned();
     } catch (err: any) {
       console.error(err);
-      alert(err.response?.data?.message || 'Failed to assign transfer task');
+      toast.error(err.response?.data?.message || 'Failed to assign transfer task');
     } finally {
       setAssigning(false);
     }

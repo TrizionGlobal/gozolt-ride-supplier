@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { Mail } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 interface Props {
   bookingId: string;
@@ -28,6 +29,10 @@ export function AssignWorkerModal({ bookingId, taskType, onClose, onAssigned }: 
 
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedWorkerId) {
+      toast.error('Please select a worker');
+      return;
+    }
     setAssigning(true);
     try {
       await apiClient.post(`/car-rentals/supplier/bookings/${bookingId}/assign-task`, { 
@@ -35,10 +40,14 @@ export function AssignWorkerModal({ bookingId, taskType, onClose, onAssigned }: 
         taskType,
         magicLinkBaseUrl: window.location.origin
       });
+      const selectedWorker = workers.find(w => w.id === selectedWorkerId);
+      const workerName = selectedWorker?.name || 'Worker';
+      const taskLabel = taskType === 'HANDOVER' ? 'Handover' : 'Return';
+      toast.success(`${workerName} has been assigned for ${taskLabel.toLowerCase()} successfully! Magic link sent to email.`);
       onAssigned();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Failed to assign task');
+      toast.error(err.response?.data?.message || 'Failed to assign task');
     } finally {
       setAssigning(false);
     }

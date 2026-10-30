@@ -10,10 +10,11 @@ export interface PhoneInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
-  ({ value = '', onChange, placeholder = 'Enter Mobile Number', disabled, className }, ref) => {
+  ({ value = '', onChange, placeholder = 'Enter Mobile Number', disabled, className, style }, ref) => {
     // If the input border is configured for the driver pages (using #3F3F46),
     // append the border-custom-driver class to adapt our global dark overrides.
     const isDriverBorder = className?.includes('!border-[#3F3F46]');
@@ -30,6 +31,7 @@ export const PhoneInput = React.forwardRef<any, PhoneInputProps>(
         disabled={disabled}
         placeholder={placeholder}
         className={containerClassName}
+        style={style}
         forceDialCode={true}
       />
     );

@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
-import { format } from 'date-fns';
 import { formatDateTime } from '@/lib/utils';
 import Link from 'next/link';
-import { MoreVertical } from 'lucide-react';
+import { MoreVertical, User, UserCheck } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -138,6 +138,114 @@ export function CarRentalBookingsTable({
       },
     },
     {
+      key: 'assignedTo',
+      title: 'Assigned Staff',
+      render: (row) => {
+        if (['PENDING_APPROVAL', 'PENDING_PAYMENT', 'CANCELLED', 'REJECTED'].includes(row.status)) {
+          return (
+            <div className="min-w-[130px]">
+              <span className="text-[11px] text-[#71717A] italic">—</span>
+            </div>
+          );
+        }
+
+        const handoverTask = row.handoverTasks?.find((t: any) => t.taskType === 'HANDOVER');
+        const returnTask = row.handoverTasks?.find((t: any) => t.taskType === 'RETURN');
+
+        const renderWorkerBadge = (workerName?: string, workerEmail?: string) => (
+          <div className="flex flex-col">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 whitespace-nowrap">
+              <UserCheck className="h-3 w-3" /> {workerName || 'Assigned Worker'}
+            </span>
+            {workerEmail && (
+              <span className="text-[10px] text-[#71717A] truncate max-w-[130px] mt-0.5" title={workerEmail}>
+                {workerEmail}
+              </span>
+            )}
+          </div>
+        );
+
+        const renderSelfBadge = () => (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 whitespace-nowrap">
+            <User className="h-3 w-3" /> Self Assigned
+          </span>
+        );
+
+        const renderUnassigned = () => (
+          <span className="text-[11px] text-[#71717A] italic">Unassigned</span>
+        );
+
+        if (row.status === 'CONFIRMED') {
+          return (
+            <div className="min-w-[130px]">
+              <div className="text-[9px] font-bold text-emerald-400 uppercase mb-1">Handover</div>
+              {handoverTask?.worker ? (
+                renderWorkerBadge(handoverTask.worker.name, handoverTask.worker.email)
+              ) : row.handover ? (
+                row.handover.worker ? renderWorkerBadge(row.handover.worker.name, row.handover.worker.email) : renderSelfBadge()
+              ) : (
+                renderUnassigned()
+              )}
+            </div>
+          );
+        }
+
+        if (row.status === 'ACTIVE') {
+          return (
+            <div className="min-w-[130px] space-y-1.5">
+              <div>
+                <div className="text-[9px] font-bold text-emerald-400 uppercase">Handover:</div>
+                {row.handover?.worker ? (
+                  renderWorkerBadge(row.handover.worker.name, row.handover.worker.email)
+                ) : (
+                  renderSelfBadge()
+                )}
+              </div>
+              <div className="border-t border-[#27272A] pt-1">
+                <div className="text-[9px] font-bold text-indigo-400 uppercase">Return:</div>
+                {returnTask?.worker ? (
+                  renderWorkerBadge(returnTask.worker.name, returnTask.worker.email)
+                ) : row.return ? (
+                  row.return.worker ? renderWorkerBadge(row.return.worker.name, row.return.worker.email) : renderSelfBadge()
+                ) : (
+                  renderUnassigned()
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        if (row.status === 'COMPLETED') {
+          return (
+            <div className="min-w-[130px] space-y-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-bold text-emerald-400 uppercase">Handover:</span>
+                {row.handover?.worker ? (
+                  <span className="text-xs text-white font-medium">{row.handover.worker.name}</span>
+                ) : (
+                  <span className="text-xs text-cyan-300 font-medium">Self Assigned</span>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] font-bold text-indigo-400 uppercase">Return:</span>
+                {row.return?.worker ? (
+                  <span className="text-xs text-white font-medium">{row.return.worker.name}</span>
+                ) : (
+                  <span className="text-xs text-cyan-300 font-medium">Self Assigned</span>
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="min-w-[130px]">
+            {renderUnassigned()}
+          </div>
+        );
+      },
+    },
+    {
       key: 'amountPaid',
       title: 'Amount Paid',
       render: (row) => (
@@ -152,12 +260,24 @@ export function CarRentalBookingsTable({
       dataIndex: 'id',
       className: 'text-center',
       render: (row) => {
-        const hasOptions = ['PENDING_APPROVAL', 'CONFIRMED', 'ACTIVE'].includes(row.status);
+        const handoverTask = row.handoverTasks?.find((t: any) => t.taskType === 'HANDOVER');
+        const returnTask = row.handoverTasks?.find((t: any) => t.taskType === 'RETURN');
+
+        const isHandoverAssigned = !!handoverTask;
+        const isReturnAssigned = !!returnTask;
+
+        const canPerformHandover = row.status === 'CONFIRMED' && !isHandoverAssigned;
+        const canPerformReturn = row.status === 'ACTIVE' && !isReturnAssigned;
+
+        const hasOptions =
+          row.status === 'PENDING_APPROVAL' ||
+          canPerformHandover ||
+          canPerformReturn;
 
         if (!hasOptions) {
           return (
             <div className="flex justify-center">
-              <Link href={`/car-rentals/${row.id}/details?source=bookings`} className="rounded bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 transition-colors">
+              <Link href={`/car-rentals/${row.id}/details?source=bookings`} className="rounded bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 transition-colors whitespace-nowrap">
                 View Details
               </Link>
             </div>
@@ -170,7 +290,7 @@ export function CarRentalBookingsTable({
               <DropdownMenuTrigger className="rounded bg-white/5 border border-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 flex items-center gap-1 transition-colors">
                 Options <MoreVertical className="h-3 w-3" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 bg-[#111111] border-[#27272A] text-white">
+              <DropdownMenuContent align="end" className="w-56 bg-[#111111] border-[#27272A] text-white">
                 {row.status === 'PENDING_APPROVAL' && (
                   <>
                     <DropdownMenuItem onClick={() => onAccept && onAccept(row.id)} className="text-blue-500 focus:text-blue-400 focus:bg-blue-500/10 cursor-pointer">
@@ -183,7 +303,7 @@ export function CarRentalBookingsTable({
                   </>
                 )}
 
-                {row.status === 'CONFIRMED' && (
+                {canPerformHandover && (
                   <>
                     <DropdownMenuItem asChild className="text-[#FACC15] focus:text-[#FACC15] focus:bg-[#FACC15]/10 cursor-pointer">
                       <Link href={`/car-rentals/${row.id}/handover?source=bookings`}>Supplier Handover</Link>
@@ -197,7 +317,7 @@ export function CarRentalBookingsTable({
                   </>
                 )}
 
-                {row.status === 'ACTIVE' && (
+                {canPerformReturn && (
                   <>
                     <DropdownMenuItem asChild className="text-green-500 focus:text-green-400 focus:bg-green-500/10 cursor-pointer">
                       <Link href={`/car-rentals/${row.id}/return?source=bookings`}>Supplier Return</Link>

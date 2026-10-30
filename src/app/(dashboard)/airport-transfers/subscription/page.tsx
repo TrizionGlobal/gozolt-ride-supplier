@@ -221,8 +221,10 @@ export default function AirportTransfersSubscriptionPage() {
   const effectiveSubscription = subscription || user?.subscription;
 
   const isExpired = Boolean(
-    effectiveSubscription?.currentPeriodEnd &&
-      new Date(effectiveSubscription.currentPeriodEnd) < new Date()
+    effectiveSubscription?.status === 'EXPIRED' ||
+      Boolean(effectiveSubscription?.cancelledAt) ||
+      (effectiveSubscription?.currentPeriodEnd &&
+        new Date(effectiveSubscription.currentPeriodEnd) < new Date())
   );
 
   const handleSelectPlan = (tier: SubscriptionInfo['tier']) => {
@@ -404,9 +406,10 @@ export default function AirportTransfersSubscriptionPage() {
       {/* Plan Comparison Cards */}
       <PlanComparisonCards
         plans={AIRPORT_TRANSFER_PLANS}
-        currentTier={subscription?.tier || null}
+        currentTier={subscription?.tier || effectiveSubscription?.tier || null}
         isChanging={isChanging}
         onSelectPlan={handleSelectPlan}
+        isExpired={isExpired}
       />
 
       {/* Cancel Subscription Confirmation Dialog */}

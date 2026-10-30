@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
-import { format } from 'date-fns';
+import { ArrowLeft, User, UserCheck } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { toast } from 'sonner';
 import { carRentalsService } from '@/services/car-rentals/car-rentals.service';
@@ -28,7 +28,7 @@ export default function BookingDetailsPage() {
     }
     switch (b.status) {
       case 'PENDING_APPROVAL': return 'Pending';
-      case 'CONFIRMED': return 'Upcoming';
+      case 'CONFIRMED': return 'Confirmed';
       case 'ACTIVE': return 'Active';
       case 'COMPLETED': return 'Completed';
       default: return b.status;
@@ -48,9 +48,8 @@ export default function BookingDetailsPage() {
     return colors[status] || 'text-white bg-[#27272A] border-[#3F3F46]';
   };
 
-  useEffect(() => {
+  const fetchBooking = useCallback(() => {
     if (bookingId) {
-      setLoading(true);
       carRentalsService.getBookingDetails(bookingId)
         .then(data => {
           setBooking(data);
@@ -62,6 +61,10 @@ export default function BookingDetailsPage() {
         });
     }
   }, [bookingId]);
+
+  useEffect(() => {
+    fetchBooking();
+  }, [fetchBooking]);
 
   if (loading) {
     return (
@@ -96,32 +99,72 @@ export default function BookingDetailsPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {booking.status === 'CONFIRMED' && (
-            <>
-              <button 
-                onClick={() => setAssignModal({ isOpen: true, taskType: 'HANDOVER' })}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-[#27272A] text-white hover:bg-[#3F3F46] border border-[#3F3F46]"
-              >
-                Assign Handover
-              </button>
-              <Link href={`/car-rentals/${booking.id}/handover${source ? `?source=${source}` : ''}`} className="px-4 py-2 rounded-lg text-sm font-medium bg-[#FACC15] text-black hover:bg-[#EAB308]">
-                Start Handover
-              </Link>
-            </>
-          )}
-          {booking.status === 'ACTIVE' && (
-            <>
-              <button 
-                onClick={() => setAssignModal({ isOpen: true, taskType: 'RETURN' })}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-[#27272A] text-white hover:bg-[#3F3F46] border border-[#3F3F46]"
-              >
-                Assign Return
-              </button>
-              <Link href={`/car-rentals/${booking.id}/return${source ? `?source=${source}` : ''}`} className="px-4 py-2 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600">
-                Start Return
-              </Link>
-            </>
-          )}
+          {(() => {
+            const handoverTask = booking.handoverTasks?.find((t: any) => t.taskType === 'HANDOVER');
+            const returnTask = booking.handoverTasks?.find((t: any) => t.taskType === 'RETURN');
+
+            if (booking.status === 'CONFIRMED') {
+              if (handoverTask?.worker) {
+                return (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    <UserCheck className="h-4 w-4" /> Assigned to Handover: {handoverTask.worker.name}
+                  </span>
+                );
+              }
+              if (booking.handover) {
+                return (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                    <User className="h-4 w-4" /> Self Assigned (Supplier Handover)
+                  </span>
+                );
+              }
+              return (
+                <>
+                  <button 
+                    onClick={() => setAssignModal({ isOpen: true, taskType: 'HANDOVER' })}
+                    className="px-4 py-2 rounded-lg text-sm font-medium bg-[#27272A] text-white hover:bg-[#3F3F46] border border-[#3F3F46]"
+                  >
+                    Assign Handover
+                  </button>
+                  <Link href={`/car-rentals/${booking.id}/handover${source ? `?source=${source}` : ''}`} className="px-4 py-2 rounded-lg text-sm font-medium bg-[#FACC15] text-black hover:bg-[#EAB308]">
+                    Start Handover
+                  </Link>
+                </>
+              );
+            }
+
+            if (booking.status === 'ACTIVE') {
+              if (returnTask?.worker) {
+                return (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    <UserCheck className="h-4 w-4" /> Assigned to Return: {returnTask.worker.name}
+                  </span>
+                );
+              }
+              if (booking.return) {
+                return (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+                    <User className="h-4 w-4" /> Self Assigned (Supplier Return)
+                  </span>
+                );
+              }
+              return (
+                <>
+                  <button 
+                    onClick={() => setAssignModal({ isOpen: true, taskType: 'RETURN' })}
+                    className="px-4 py-2 rounded-lg text-sm font-medium bg-[#27272A] text-white hover:bg-[#3F3F46] border border-[#3F3F46]"
+                  >
+                    Assign Return
+                  </button>
+                  <Link href={`/car-rentals/${booking.id}/return${source ? `?source=${source}` : ''}`} className="px-4 py-2 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600">
+                    Start Return
+                  </Link>
+                </>
+              );
+            }
+
+            return null;
+          })()}
         </div>
       </div>
 
@@ -162,6 +205,12 @@ export default function BookingDetailsPage() {
               <div className="flex justify-between"><span className="text-gray-400">Return Date & Time:</span> <span className="font-medium">{formatDateTime(booking.endDate)}</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Return Location:</span> <span className="font-medium truncate max-w-[200px]" title={booking.dropoffLocation}>{booking.dropoffLocation}</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Delivery Option:</span> <span className="font-medium">{booking.deliveryType?.replace('_', ' ')}</span></div>
+              {booking.validationPin && (
+                <div className="flex justify-between border-t border-[#27272A] pt-2">
+                  <span className="text-gray-400">Validation PIN:</span>
+                  <span className="font-mono font-bold text-[#FACC15] tracking-widest">{booking.validationPin}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -307,6 +356,43 @@ export default function BookingDetailsPage() {
             )}
           </div>
 
+          {/* Assigned Staff Details */}
+          {booking.handoverTasks && booking.handoverTasks.length > 0 && (
+            <div className="col-span-2 space-y-4">
+              <h4 className="font-semibold text-white text-lg">Assigned Staff</h4>
+              <div className="bg-[#111111] p-5 rounded-xl border border-[#27272A] text-sm grid grid-cols-1 md:grid-cols-2 gap-4">
+                {booking.handoverTasks.map((task: any) => (
+                  <div key={task.id} className="bg-[#18181B] p-4 rounded-lg border border-[#27272A] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-bold uppercase ${task.taskType === 'HANDOVER' ? 'text-emerald-400' : 'text-indigo-400'}`}>
+                        {task.taskType} Staff
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                        {task.isUsed ? 'Completed' : 'Assigned'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Worker Name:</span>
+                      <span className="font-medium text-white">{task.worker?.name || 'Worker'}</span>
+                    </div>
+                    {task.worker?.phone && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Phone:</span>
+                        <span className="font-medium text-white">{task.worker.phone}</span>
+                      </div>
+                    )}
+                    {task.worker?.email && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Email:</span>
+                        <span className="font-medium text-white">{task.worker.email}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Handover Details */}
           {booking.handover && (
             <div className="col-span-2 space-y-4">
@@ -319,13 +405,33 @@ export default function BookingDetailsPage() {
                 {booking.handover.photos?.length > 0 && (
                   <div>
                     <span className="text-gray-400 block mb-2">Photos:</span>
-                    <div className="flex gap-2 overflow-x-auto">
-                      {booking.handover.photos.map((p: string, i: number) => (
-                        <div key={i} className="w-16 h-16 rounded overflow-hidden shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={p} alt="Handover photo" className="w-full h-full object-cover" />
-                        </div>
-                      ))}
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {booking.handover.photos.map((p: string, i: number) => {
+                        const isBlob = typeof p === 'string' && p.startsWith('blob:');
+                        const displayUrl = isBlob ? (booking.vehicle?.images?.[0] || p) : p;
+                        return (
+                          <a
+                            key={i}
+                            href={displayUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-[#27272A] hover:border-[#FACC15] transition-all bg-[#1A1A1A] block cursor-pointer group relative"
+                            title="Click to view full photo"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={displayUrl}
+                              alt="Handover photo"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              onError={(e) => {
+                                if (booking.vehicle?.images?.[0]) {
+                                  (e.target as HTMLImageElement).src = booking.vehicle.images[0];
+                                }
+                              }}
+                            />
+                          </a>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -348,13 +454,33 @@ export default function BookingDetailsPage() {
                 {booking.return.photos?.length > 0 && (
                   <div>
                     <span className="text-gray-400 block mb-2">Photos:</span>
-                    <div className="flex gap-2 overflow-x-auto">
-                      {booking.return.photos.map((p: string, i: number) => (
-                        <div key={i} className="w-16 h-16 rounded overflow-hidden shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={p} alt="Return photo" className="w-full h-full object-cover" />
-                        </div>
-                      ))}
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {booking.return.photos.map((p: string, i: number) => {
+                        const isBlob = typeof p === 'string' && p.startsWith('blob:');
+                        const displayUrl = isBlob ? (booking.vehicle?.images?.[0] || p) : p;
+                        return (
+                          <a
+                            key={i}
+                            href={displayUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-[#27272A] hover:border-[#FACC15] transition-all bg-[#1A1A1A] block cursor-pointer group relative"
+                            title="Click to view full photo"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={displayUrl}
+                              alt="Return photo"
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              onError={(e) => {
+                                if (booking.vehicle?.images?.[0]) {
+                                  (e.target as HTMLImageElement).src = booking.vehicle.images[0];
+                                }
+                              }}
+                            />
+                          </a>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -414,7 +540,7 @@ export default function BookingDetailsPage() {
           onClose={() => setAssignModal({ isOpen: false, taskType: null })}
           onAssigned={() => {
             setAssignModal({ isOpen: false, taskType: null });
-            toast.success('Magic link has been emailed to the worker!');
+            fetchBooking();
           }}
         />
       )}

@@ -45,7 +45,9 @@ export function AssignWorkerModal({ bookingId, onClose, onAssigned }: Props) {
         workerId: selectedWorkerId,
         magicLinkBaseUrl: window.location.origin
       });
-      toast.success('Worker assigned successfully and magic link sent to their email!');
+      const selectedWorker = workers.find(w => w.id === selectedWorkerId);
+      const workerName = selectedWorker?.name || 'Worker';
+      toast.success(`${workerName} has been assigned successfully! Magic link sent to email.`);
       onAssigned();
     } catch (err) {
       console.error(err);

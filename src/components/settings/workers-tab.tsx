@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, Mail, Phone, Trash2, Edit2, ShieldAlert, Loader2 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
+import { PhoneInput } from '@/components/ui/phone-input';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { toast } from 'sonner';
@@ -23,6 +24,37 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
   const [currentWorker, setCurrentWorker] = useState({ id: '', name: '', email: '', phone: '' });
   const [newWorker, setNewWorker] = useState({ name: '', email: '', phone: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [addNameError, setAddNameError] = useState('');
+  const [editNameError, setEditNameError] = useState('');
+  const [addEmailError, setAddEmailError] = useState('');
+  const [editEmailError, setEditEmailError] = useState('');
+
+  const isValidEmail = (email: string) => {
+    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email.trim());
+  };
+
+  const validateEmail = (val: string): string => {
+    const trimmed = val.trim();
+    if (!trimmed) return '';
+    if (trimmed.includes('@')) {
+      const parts = trimmed.split('@');
+      if (parts.length > 2) return 'Email cannot contain multiple @ symbols';
+      const [local, domain] = parts;
+      if (!local) return 'Please enter username before @';
+      if (!domain) return 'Please enter domain after @ (e.g. gmail.com)';
+      if (!domain.includes('.')) return 'Domain must include an extension (e.g. .com)';
+      const domainParts = domain.split('.');
+      const tld = domainParts[domainParts.length - 1];
+      if (!tld) return 'Please enter domain extension (e.g. .com)';
+      if (!/^[a-zA-Z]{2,}$/.test(tld)) {
+        return 'Domain extension must contain only letters (e.g. .com)';
+      }
+    }
+    if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmed)) {
+      return 'Enter a valid email (e.g. name@example.com)';
+    }
+    return '';
+  };
 
   const fetchWorkers = useCallback(async () => {
     setLoading(true);
@@ -50,8 +82,47 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
     fetchWorkers();
   }, [fetchWorkers]);
 
+  const cleanPhone = (phone?: string) => {
+    if (!phone) return undefined;
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length <= 4) return undefined;
+    return phone.trim();
+  };
+
   const handleAddWorker = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedName = newWorker.name.trim();
+    const trimmedEmail = newWorker.email.trim();
+
+    let hasError = false;
+    if (!trimmedName) {
+      setAddNameError('Please enter worker name');
+      hasError = true;
+    } else if (trimmedName.length > 50) {
+      setAddNameError('Full name cannot exceed 50 characters');
+      hasError = true;
+    } else {
+      setAddNameError('');
+    }
+
+    if (!trimmedEmail) {
+      setAddEmailError('Email address is required');
+      hasError = true;
+    } else {
+      const emailErr = validateEmail(trimmedEmail);
+      if (emailErr) {
+        setAddEmailError(emailErr);
+        hasError = true;
+      } else {
+        setAddEmailError('');
+      }
+    }
+
+    if (hasError) {
+      toast.error('Please fix the errors in the form');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const endpoint = moduleType === 'QUICK_SERVICES'
@@ -59,14 +130,20 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
         : moduleType === 'BIKE_RENTAL'
           ? '/bike-rentals/supplier/workers'
           : '/car-rentals/supplier/workers';
-      await apiClient.post(endpoint, newWorker);
+      await apiClient.post(endpoint, {
+        name: trimmedName,
+        email: trimmedEmail.toLowerCase(),
+        phone: cleanPhone(newWorker.phone),
+      });
       setNewWorker({ name: '', email: '', phone: '' });
+      setAddNameError('');
+      setAddEmailError('');
       setIsAddModalOpen(false);
       toast.success('Worker added successfully');
       fetchWorkers();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Failed to add worker');
+      toast.error(err.response?.data?.message || 'Failed to add worker');
     } finally {
       setIsSubmitting(false);
     }
@@ -74,6 +151,38 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
 
   const handleEditWorker = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedName = currentWorker.name.trim();
+    const trimmedEmail = currentWorker.email.trim();
+
+    let hasError = false;
+    if (!trimmedName) {
+      setEditNameError('Please enter worker name');
+      hasError = true;
+    } else if (trimmedName.length > 50) {
+      setEditNameError('Full name cannot exceed 50 characters');
+      hasError = true;
+    } else {
+      setEditNameError('');
+    }
+
+    if (!trimmedEmail) {
+      setEditEmailError('Email address is required');
+      hasError = true;
+    } else {
+      const emailErr = validateEmail(trimmedEmail);
+      if (emailErr) {
+        setEditEmailError(emailErr);
+        hasError = true;
+      } else {
+        setEditEmailError('');
+      }
+    }
+
+    if (hasError) {
+      toast.error('Please fix the errors in the form');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const endpoint = moduleType === 'QUICK_SERVICES'
@@ -81,13 +190,19 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
         : moduleType === 'BIKE_RENTAL'
           ? '/bike-rentals/supplier/workers'
           : '/car-rentals/supplier/workers';
-      await apiClient.put(`${endpoint}/${currentWorker.id}`, currentWorker);
+      await apiClient.put(`${endpoint}/${currentWorker.id}`, {
+        name: trimmedName,
+        email: trimmedEmail.toLowerCase(),
+        phone: cleanPhone(currentWorker.phone) || null,
+      });
+      setEditNameError('');
+      setEditEmailError('');
       setIsEditModalOpen(false);
       toast.success('Worker updated successfully');
       fetchWorkers();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Failed to update worker');
+      toast.error(err.response?.data?.message || 'Failed to update worker');
     } finally {
       setIsSubmitting(false);
     }
@@ -95,6 +210,8 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
 
   const openEditModal = (worker: any) => {
     setCurrentWorker({ id: worker.id, name: worker.name, email: worker.email, phone: worker.phone || '' });
+    setEditNameError('');
+    setEditEmailError('');
     setIsEditModalOpen(true);
   };
 
@@ -278,17 +395,29 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
               <ShieldAlert className="h-5 w-5 text-yellow-500 shrink-0 mt-0.5" />
               <p>Workers do NOT need a password to log in. You will assign them tasks, and they will receive a Magic Link via email to complete the task.</p>
             </div>
-            <form onSubmit={handleAddWorker} className="space-y-4">
+            <form onSubmit={handleAddWorker} noValidate className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-400">Full Name</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-sm font-medium text-gray-400">Full Name</label>
+                  <span className="text-xs text-gray-500">{newWorker.name.length}/50</span>
+                </div>
                 <input
                   type="text"
                   required
+                  maxLength={50}
                   value={newWorker.name}
-                  onChange={(e) => setNewWorker({ ...newWorker, name: e.target.value })}
-                  className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none focus:border-[#FACC15]"
+                  onChange={(e) => {
+                    setNewWorker({ ...newWorker, name: e.target.value.slice(0, 50) });
+                    if (addNameError) setAddNameError('');
+                  }}
+                  className={`w-full rounded-lg border ${
+                    addNameError ? 'border-red-500 focus:border-red-500' : 'border-[#27272A] focus:border-[#FACC15]'
+                  } bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none transition-colors`}
                   placeholder="Enter Name"
                 />
+                {addNameError && (
+                  <p className="mt-1 text-xs text-red-500">{addNameError}</p>
+                )}
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-400">Email Address (For Magic Links)</label>
@@ -296,26 +425,46 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
                   type="email"
                   required
                   value={newWorker.email}
-                  onChange={(e) => setNewWorker({ ...newWorker, email: e.target.value })}
-                  className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none focus:border-[#FACC15]"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNewWorker({ ...newWorker, email: val });
+                    if (val.includes('@') || addEmailError) {
+                      setAddEmailError(validateEmail(val));
+                    }
+                  }}
+                  onBlur={() => {
+                    if (newWorker.email.trim()) {
+                      setAddEmailError(validateEmail(newWorker.email));
+                    }
+                  }}
+                  className={`w-full rounded-lg border ${
+                    addEmailError ? 'border-red-500 focus:border-red-500' : 'border-[#27272A] focus:border-[#FACC15]'
+                  } bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none transition-colors`}
                   placeholder="Enter Email Address"
                 />
+                {addEmailError && (
+                  <p className="mt-1 text-xs text-red-500">{addEmailError}</p>
+                )}
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-400">Phone Number (Optional)</label>
-                <input
-                  type="tel"
+                <PhoneInput
                   placeholder="Enter Phone Number"
                   value={newWorker.phone}
-                  onChange={(e) => setNewWorker({ ...newWorker, phone: e.target.value })}
-                  className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none focus:border-[#FACC15]"
+                  onChange={(val) => setNewWorker({ ...newWorker, phone: val })}
+                  className="phone-input-modal"
                 />
               </div>
               <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-[#27272A]">
                 <button
                   type="button"
                   disabled={isSubmitting}
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={() => {
+                    setIsAddModalOpen(false);
+                    setNewWorker({ name: '', email: '', phone: '' });
+                    setAddNameError('');
+                    setAddEmailError('');
+                  }}
                   className="rounded-lg border border-[#27272A] px-4 py-2 text-sm font-medium text-white hover:bg-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
@@ -338,16 +487,28 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-xl border border-[#27272A] bg-[#111111] p-6 shadow-2xl">
             <h3 className="mb-4 text-xl font-bold text-white">Edit Worker</h3>
-            <form onSubmit={handleEditWorker} className="space-y-4">
+            <form onSubmit={handleEditWorker} noValidate className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-400">Full Name</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-sm font-medium text-gray-400">Full Name</label>
+                  <span className="text-xs text-gray-500">{currentWorker.name.length}/50</span>
+                </div>
                 <input
                   type="text"
                   required
+                  maxLength={50}
                   value={currentWorker.name}
-                  onChange={(e) => setCurrentWorker({ ...currentWorker, name: e.target.value })}
-                  className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none focus:border-[#FACC15]"
+                  onChange={(e) => {
+                    setCurrentWorker({ ...currentWorker, name: e.target.value.slice(0, 50) });
+                    if (editNameError) setEditNameError('');
+                  }}
+                  className={`w-full rounded-lg border ${
+                    editNameError ? 'border-red-500 focus:border-red-500' : 'border-[#27272A] focus:border-[#FACC15]'
+                  } bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none transition-colors`}
                 />
+                {editNameError && (
+                  <p className="mt-1 text-xs text-red-500">{editNameError}</p>
+                )}
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-400">Email Address</label>
@@ -355,25 +516,44 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
                   type="email"
                   required
                   value={currentWorker.email}
-                  onChange={(e) => setCurrentWorker({ ...currentWorker, email: e.target.value })}
-                  className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none focus:border-[#FACC15]"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCurrentWorker({ ...currentWorker, email: val });
+                    if (val.includes('@') || editEmailError) {
+                      setEditEmailError(validateEmail(val));
+                    }
+                  }}
+                  onBlur={() => {
+                    if (currentWorker.email.trim()) {
+                      setEditEmailError(validateEmail(currentWorker.email));
+                    }
+                  }}
+                  className={`w-full rounded-lg border ${
+                    editEmailError ? 'border-red-500 focus:border-red-500' : 'border-[#27272A] focus:border-[#FACC15]'
+                  } bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none transition-colors`}
                 />
+                {editEmailError && (
+                  <p className="mt-1 text-xs text-red-500">{editEmailError}</p>
+                )}
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-400">Phone Number (Optional)</label>
-                <input
-                  type="tel"
-                  placeholder="Enter your number"
+                <PhoneInput
+                  placeholder="Enter Phone Number"
                   value={currentWorker.phone}
-                  onChange={(e) => setCurrentWorker({ ...currentWorker, phone: e.target.value })}
-                  className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none focus:border-[#FACC15]"
+                  onChange={(val) => setCurrentWorker({ ...currentWorker, phone: val })}
+                  className="phone-input-modal"
                 />
               </div>
               <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-[#27272A]">
                 <button
                   type="button"
                   disabled={isSubmitting}
-                  onClick={() => setIsEditModalOpen(false)}
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setEditNameError('');
+                    setEditEmailError('');
+                  }}
                   className="rounded-lg border border-[#27272A] px-4 py-2 text-sm font-medium text-white hover:bg-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel

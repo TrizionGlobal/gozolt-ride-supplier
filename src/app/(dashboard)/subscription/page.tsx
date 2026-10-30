@@ -239,10 +239,12 @@ export default function SubscriptionPage() {
   const effectiveSubscription = subscription || user?.subscription;
 
   const isExpired = Boolean(
-    effectiveSubscription?.currentPeriodEnd &&
-      new Date(
-        effectiveSubscription.currentPeriodEnd
-      ) < new Date()
+    effectiveSubscription?.status === 'EXPIRED' ||
+      Boolean(effectiveSubscription?.cancelledAt) ||
+      (effectiveSubscription?.currentPeriodEnd &&
+        new Date(
+          effectiveSubscription.currentPeriodEnd
+        ) < new Date())
   );
 
   /*
@@ -289,14 +291,14 @@ export default function SubscriptionPage() {
     tier: SubscriptionInfo['tier']
   ) => {
     if (
-      subscription &&
+      effectiveSubscription &&
       !isExpired &&
-      tier === subscription.tier
+      tier === effectiveSubscription.tier
     ) {
       return;
     }
 
-    if (!subscription || isExpired) {
+    if (!effectiveSubscription || isExpired) {
       setShowPaymentModal(tier);
       return;
     }
@@ -348,7 +350,7 @@ export default function SubscriptionPage() {
     setIsChanging(tier);
 
     try {
-      if (!subscription || isExpired) {
+      if (!effectiveSubscription || isExpired) {
         await subscriptionService.setupSubscription({
           subscriptionTier: tier,
           paymentMethodId:
@@ -602,10 +604,11 @@ export default function SubscriptionPage() {
       <PlanComparisonCards
         plans={PLAN_CONFIG}
         currentTier={
-          subscription?.tier || null
+          subscription?.tier || effectiveSubscription?.tier || null
         }
         isChanging={isChanging}
         onSelectPlan={handleSelectPlan}
+        isExpired={isExpired}
       />
 
       {/* Cancel subscription dialog */}

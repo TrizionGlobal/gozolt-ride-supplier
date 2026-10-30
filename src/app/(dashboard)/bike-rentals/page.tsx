@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { format, differenceInDays } from 'date-fns';
 import Link from 'next/link';
 
 import { bikeRentalsService } from '@/services/bike-rentals/bike-rentals.service';
@@ -70,7 +70,7 @@ export default function BikeRentalsHistoryPage() {
     }
     switch (b.status) {
       case 'PENDING_APPROVAL': return 'Pending';
-      case 'CONFIRMED': return 'Upcoming';
+      case 'CONFIRMED': return 'Confirmed';
       case 'ACTIVE': return 'Active';
       case 'COMPLETED': return 'Completed';
       default: return b.status;
@@ -190,7 +190,7 @@ export default function BikeRentalsHistoryPage() {
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white">Bike Rentals History</h1>
-        <p className="text-sm text-[#A1A1AA]">Complete all-time history of your fleet's rentals.</p>
+        <p className="text-sm text-[#A1A1AA]">Complete all-time history of your fleet&apos;s rentals.</p>
       </div>
 
       {/* Tabs */}

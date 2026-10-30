@@ -8,9 +8,16 @@ interface PlanComparisonCardsProps {
   currentTier: SubscriptionInfo['tier'] | null;
   isChanging: string | null;
   onSelectPlan: (tier: SubscriptionInfo['tier']) => void;
+  isExpired?: boolean;
 }
 
-export function PlanComparisonCards({ plans, currentTier, isChanging, onSelectPlan }: PlanComparisonCardsProps) {
+export function PlanComparisonCards({
+  plans,
+  currentTier,
+  isChanging,
+  onSelectPlan,
+  isExpired,
+}: PlanComparisonCardsProps) {
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#0A0A0A] p-6">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -54,18 +61,25 @@ export function PlanComparisonCards({ plans, currentTier, isChanging, onSelectPl
 
               {/* Select / Current button */}
               <button
-                onClick={() => !isCurrent && onSelectPlan(plan.tier)}
-                disabled={isCurrent || isChanging === plan.tier}
+                type="button"
+                onClick={() => (!isCurrent || isExpired) && onSelectPlan(plan.tier)}
+                disabled={(!isExpired && isCurrent) || isChanging === plan.tier}
                 className={`mt-4 w-full rounded-lg px-6 py-2.5 text-sm font-semibold transition-colors ${
-                  isCurrent
+                  !isExpired && isCurrent
                     ? 'bg-[#FACC15] text-black cursor-default'
-                    : 'bg-[#3F3F46] text-white hover:bg-[#52525B]'
+                    : isExpired && isCurrent
+                      ? 'bg-[#FACC15] text-black hover:bg-[#EAB308] cursor-pointer shadow-md'
+                      : 'bg-[#3F3F46] text-white hover:bg-[#52525B]'
                 } disabled:opacity-70`}
               >
                 {isChanging === plan.tier
-                  ? 'Switching...'
+                  ? isExpired && isCurrent
+                    ? 'Renewing...'
+                    : 'Switching...'
                   : isCurrent
-                    ? 'Current plan'
+                    ? isExpired
+                      ? 'Renew plan'
+                      : 'Current plan'
                     : 'Select'}
               </button>
             </div>

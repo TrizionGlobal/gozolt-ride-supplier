@@ -165,6 +165,10 @@ nextjs-portal {
   width: 100%;
 }
 
+.react-international-phone-input-container.phone-input-modal {
+  --react-international-phone-height: 46px;
+}
+
 .react-international-phone-input-container.border-custom-driver {
   --react-international-phone-border-color: #3F3F46;
 }
@@ -191,6 +195,10 @@ nextjs-portal {
   outline: none !important;
 }
 
+.react-international-phone-input::placeholder {
+  color: #71717A !important;
+}
+
 .react-international-phone-input:focus {
   border-color: #FACC15 !important;
 }
@@ -213,6 +221,7 @@ nextjs-portal {
   margin-top: 4px !important;
   color: #ffffff !important;
   scrollbar-width: thin !important;
+  z-index: 50 !important;
 }
 
 .react-international-phone-country-selector-dropdown__list-item {

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Pencil, ArrowLeft, Car, Info, Euro, Clock, Package } from 'lucide-react';
+import { formatRentalCategory } from '@/lib/utils';
 
 export default function VehicleDetailsPage() {
   const params = useParams();
@@ -110,7 +111,7 @@ export default function VehicleDetailsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-[#71717A] mb-1">Category</p>
-                  <p className="text-sm font-medium text-white">{vehicle.category}</p>
+                  <p className="text-sm font-medium text-white">{formatRentalCategory(vehicle.category)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-[#71717A] mb-1">Transmission</p>

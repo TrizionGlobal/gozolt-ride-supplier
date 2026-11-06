@@ -65,6 +65,17 @@ export function CompanyProfileTab() {
   }, [user]);
 
   const handleChange = (field: keyof CompanyProfile, value: any) => {
+    if (field === 'companyName' && typeof value === 'string') {
+      value = value.slice(0, 30);
+    } else if (field === 'address' && typeof value === 'string') {
+      value = value.slice(0, 30);
+    } else if (field === 'country' && typeof value === 'string') {
+      value = value.slice(0, 15);
+    } else if (field === 'postalCode' && typeof value === 'string') {
+      value = value.replace(/[^a-zA-Z0-9 -]/g, '').slice(0, 8).toUpperCase();
+    } else if ((field === 'registrationNumber' || field === 'vatNumber') && typeof value === 'string') {
+      value = value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 15).toUpperCase();
+    }
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -191,7 +202,7 @@ export function CompanyProfileTab() {
         <div className="flex flex-col items-center gap-3">
           <Upload
             listType="picture-circle"
-            accept="image/*"
+            accept=".png,.jpeg,.jpg,image/png,image/jpeg"
             fileList={form.logoUrl ? [{ uid: '-1', name: 'logo.png', status: 'done', url: form.logoUrl }] : []}
             onPreview={(file) => {
               setPreviewImage(file.url || file.preview as string);
@@ -201,10 +212,20 @@ export function CompanyProfileTab() {
               handleChange('logoUrl', '');
             }}
             beforeUpload={(file) => {
-              if (!file.type.startsWith('image/')) {
-                toast.error('You can only upload image files!');
+              const allowedMimes = ['image/jpeg', 'image/png', 'image/jpg'];
+              const fileName = file.name.toLowerCase();
+              const hasAllowedExt = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png');
+
+              if (!allowedMimes.includes(file.type) && !hasAllowedExt) {
+                toast.error('Only PNG, JPEG, and JPG images are allowed');
                 return Upload.LIST_IGNORE;
               }
+
+              if (file.size > 15 * 1024 * 1024) {
+                toast.error('Image size must be less than 15MB');
+                return Upload.LIST_IGNORE;
+              }
+
               const reader = new FileReader();
               reader.addEventListener('load', () => {
                 setCropperImageSrc(reader.result?.toString() || null);
@@ -221,6 +242,7 @@ export function CompanyProfileTab() {
               </div>
             )}
           </Upload>
+          <span className="text-[10px] text-[#71717A]">PNG, JPEG, JPG — max 15MB</span>
           
           {previewImage && (
             <Image
@@ -270,6 +292,15 @@ export function CompanyProfileTab() {
                 }`}
                 min={type === 'number' ? 0 : undefined}
                 max={type === 'number' ? 100 : undefined}
+                maxLength={
+                  key === 'companyName' || key === 'address'
+                    ? 30
+                    : key === 'registrationNumber' || key === 'vatNumber' || key === 'country'
+                    ? 15
+                    : key === 'postalCode'
+                    ? 8
+                    : undefined
+                }
               />
             </div>
           );

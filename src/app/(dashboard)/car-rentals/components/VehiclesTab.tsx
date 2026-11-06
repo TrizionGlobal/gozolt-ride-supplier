@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import Swal from 'sweetalert2';
 import withReactContent from 'sweetalert2-react-content';
 import { CarRentalsTable } from './CarRentalsTable';
+import { formatRentalCategory } from '@/lib/utils';
 
 const MySwal = withReactContent(Swal);
 
@@ -83,7 +84,7 @@ export function VehiclesTab() {
             filename="car-rentals-export"
             data={vehicles.map((v) => ({
               'Vehicle': v.name,
-              'Category': v.category.replace('_', ' '),
+              'Category': formatRentalCategory(v.category),
               'Base Price': `€${v.pricePerDay}/day`,
               'Packages': v.protectionPackages?.length || 0,
               'Add-ons': v.addons?.length || 0,

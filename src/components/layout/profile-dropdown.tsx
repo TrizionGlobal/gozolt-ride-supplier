@@ -1,17 +1,15 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, Settings, CreditCard, ChevronDown, Users } from 'lucide-react';
+import { LogOut, Settings, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter, usePathname } from 'next/navigation';
-import { useSidebarStore } from '@/stores/sidebar.store';
 
 export function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const user = useAuthStore((s) => s.user);
-  const { activeModule } = useSidebarStore();
   const { logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -29,25 +27,6 @@ export function ProfileDropdown() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const isAirportTransfer =
-    activeModule === 'AIRPORT_TRANSFER' ||
-    pathname.startsWith('/airport-transfers') ||
-    user?.registeredService === 'AIRPORT_TRANSFER';
-
-  const handleWorkersNavigation = () => {
-    setIsOpen(false);
-    if (activeModule === 'RENTAL') router.push('/car-rentals/workers');
-    else if (activeModule === 'BIKE_RENTAL') router.push('/bike-rentals/workers');
-    else if (isAirportTransfer) router.push('/airport-transfers/workers');
-    else router.push('/workers');
-  };
-
-  const handleSubscriptionNavigation = () => {
-    setIsOpen(false);
-    if (activeModule === 'QUICK_SERVICES') router.push('/quick-services/subscription');
-    else router.push('/subscription');
-  };
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -78,33 +57,13 @@ export function ProfileDropdown() {
 
           <div className="py-1">
             {pathname !== '/module-selection' && (
-              <>
-                {activeModule !== 'QUICK_SERVICES' && activeModule !== 'CAB' && !isAirportTransfer && (
-                  <button
-                    onClick={handleWorkersNavigation}
-                    className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:text-[#FACC15] hover:bg-[#1A1A1A] transition-colors border-b border-[#27272A]"
-                  >
-                    <Users className="h-4 w-4 mr-3 text-[#A1A1AA]" />
-                    Staff & Workers
-                  </button>
-                )}
-                <button
-                  onClick={() => { setIsOpen(false); router.push('/settings'); }}
-                  className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
-                >
-                  <Settings className="h-4 w-4 mr-3 text-[#A1A1AA]" />
-                  Settings
-                </button>
-                {!isAirportTransfer && (
-                  <button
-                    onClick={handleSubscriptionNavigation}
-                    className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
-                  >
-                    <CreditCard className="h-4 w-4 mr-3 text-[#A1A1AA]" />
-                    Billing & Subscription
-                  </button>
-                )}
-              </>
+              <button
+                onClick={() => { setIsOpen(false); router.push('/settings'); }}
+                className="w-full flex items-center px-4 py-2.5 text-sm text-[#D4D4D8] hover:bg-[#1A1A1A] hover:text-white transition-colors"
+              >
+                <Settings className="h-4 w-4 mr-3 text-[#A1A1AA]" />
+                Settings
+              </button>
             )}
           </div>
 

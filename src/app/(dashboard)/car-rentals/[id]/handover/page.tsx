@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Camera, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { carRentalsService } from '@/services/car-rentals/car-rentals.service';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, formatRentalCategory } from '@/lib/utils';
 import { useCarRentalsStore } from '@/stores/car-rentals.store';
 
 export default function VehicleHandoverPage() {
@@ -180,7 +180,7 @@ export default function VehicleHandoverPage() {
           <div className="flex-1">
             <h3 className="font-semibold text-lg text-white">{booking.vehicle?.name}</h3>
             <p className="text-sm text-gray-400">
-              {booking.vehicle?.category} {booking.vehicle?.year ? `• ${booking.vehicle.year}` : ''}
+              {formatRentalCategory(booking.vehicle?.category)} {booking.vehicle?.year ? `• ${booking.vehicle.year}` : ''}
             </p>
             <p className="text-xs text-[#FACC15] mt-1 font-medium">Plate: {booking.vehicle?.registrationNo || 'N/A'}</p>
           </div>

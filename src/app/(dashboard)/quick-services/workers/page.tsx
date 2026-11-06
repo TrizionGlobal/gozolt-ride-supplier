@@ -1,9 +1,15 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { WorkersTab } from '@/components/settings/workers-tab';
+import { useSidebarStore } from '@/stores/sidebar.store';
 
 export default function WorkersPage() {
+  useEffect(() => {
+    useSidebarStore.getState().setActiveModule('QUICK_SERVICES');
+  }, []);
+
   const openAddWorkerModal = () => {
     window.dispatchEvent(new CustomEvent('open-add-worker-modal'));
   };

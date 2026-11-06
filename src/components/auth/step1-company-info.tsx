@@ -22,17 +22,69 @@ const LocationPicker = dynamic(() => import('@/components/settings/location-pick
 const step1Schema = z
   .object({
     logo: z.any().optional(),
-    companyName: z.string().min(1, 'Company name is required'),
-    registrationNo: z.string().min(1, 'Registration Number is required'),
-    vatNumber: z.string().optional(),
-    tinNumber: z.string().min(1, 'TIN Number is required'),
-    ownerName: z.string().min(1, 'Owner name is required'),
+    companyName: z
+      .string()
+      .min(1, 'Company name is required')
+      .max(30, 'Company name cannot exceed 30 characters'),
+    registrationNo: z
+      .string()
+      .min(1, 'Registration Number is required')
+      .max(15, 'Registration Number cannot exceed 15 characters')
+      .regex(/^[a-zA-Z0-9]+$/, 'Special characters are not allowed'),
+    vatNumber: z
+      .string()
+      .max(15, 'VAT Number cannot exceed 15 characters')
+      .regex(/^[a-zA-Z0-9]*$/, 'Special characters are not allowed')
+      .optional()
+      .or(z.literal('')),
+    tinNumber: z
+      .string()
+      .min(1, 'TIN Number is required')
+      .max(15, 'TIN Number cannot exceed 15 characters')
+      .regex(/^[a-zA-Z0-9]+$/, 'Special characters are not allowed'),
+    ownerName: z
+      .string()
+      .min(1, 'Owner name is required')
+      .max(20, 'Owner / Authorized Person Name cannot exceed 20 characters'),
     email: z.string().email('Enter a valid email').min(1, 'Email is required'),
-    contactPhone: z.string().min(1, 'Mobile number is required'),
-    address: z.string().min(1, 'Business address is required'),
+    contactPhone: z
+      .string()
+      .min(1, 'Mobile number is required')
+      .superRefine((val, ctx) => {
+        const cleaned = (val || '').replace(/[\s\-()]/g, '');
+        const match = cleaned.match(/^(\+\d{1,4})(.*)$/);
+        const localNumber = match ? match[2] : '';
+
+        if (!cleaned || cleaned === '+' || !localNumber || localNumber.trim().length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Mobile number is required',
+          });
+          return;
+        }
+
+        if (!/^\+[1-9]\d{6,14}$/.test(cleaned)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Please enter a valid mobile number',
+          });
+          return;
+        }
+      }),
+    address: z
+      .string()
+      .min(1, 'Business address is required')
+      .max(30, 'Business address cannot exceed 30 characters'),
     city: z.string().min(1, 'City is required'),
-    country: z.string().min(1, 'Country is required'),
-    postalCode: z.string().min(1, 'Postal Code is required'),
+    country: z
+      .string()
+      .min(1, 'Country is required')
+      .max(15, 'Country cannot exceed 15 characters'),
+    postalCode: z
+      .string()
+      .min(1, 'Postal Code is required')
+      .max(8, 'Postal Code cannot exceed 8 characters')
+      .regex(/^[a-zA-Z0-9 -]+$/, 'Postal Code can only contain letters, numbers, spaces, and hyphens'),
     defaultDriverCommission: z.preprocess(
       (val) => Number(val),
       z.number().min(0).max(100)
@@ -76,11 +128,12 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
     control,
     watch,
     setValue,
-    formState: { errors },
+    formState: { errors, isSubmitted },
   } = useForm<Step1FormData>({
     resolver: zodResolver(step1Schema) as any,
     defaultValues: defaultValues as any,
-    mode: 'onChange',
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
   });
 
   const passwordValue = watch('password') || '';
@@ -109,17 +162,29 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
     onNext(data);
   };
 
+  const onInvalid = (fieldErrors: any) => {
+    const errorKeys = Object.keys(fieldErrors);
+    if (errorKeys.length > 0) {
+      const firstError = fieldErrors[errorKeys[0]];
+      if (firstError?.message) {
+        toast.error(firstError.message);
+      } else {
+        toast.error('Please fill in all required fields before proceeding');
+      }
+    }
+  };
+
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#0F0F0F] p-6">
       <div className="mb-6 border-b border-[#27272A] pb-4">
         <h2 className="text-lg font-bold text-white">Step 1 : Company Information</h2>
       </div>
 
-      <form onSubmit={handleSubmit(handleNext)} className="space-y-4">
+      <form onSubmit={handleSubmit(handleNext, onInvalid)} className="space-y-4">
         <div className="flex flex-col items-center mb-6">
           <Upload
             listType="picture-circle"
-            accept="image/*"
+            accept=".png,.jpeg,.jpg,image/png,image/jpeg"
             fileList={watch('logo') ? [{ uid: '-1', name: 'logo.png', status: 'done', url: watch('logo') instanceof File ? URL.createObjectURL(watch('logo') as File) : watch('logo') }] : []}
             onPreview={(file) => {
               setPreviewImage(file.url || file.preview as string);
@@ -129,10 +194,20 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
               setValue('logo', undefined, { shouldValidate: true });
             }}
             beforeUpload={(file) => {
-              if (!file.type.startsWith('image/')) {
-                toast.error('You can only upload image files!');
+              const allowedMimes = ['image/jpeg', 'image/png', 'image/jpg'];
+              const fileName = file.name.toLowerCase();
+              const hasAllowedExt = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png');
+
+              if (!allowedMimes.includes(file.type) && !hasAllowedExt) {
+                toast.error('Only PNG, JPEG, and JPG images are allowed');
                 return Upload.LIST_IGNORE;
               }
+
+              if (file.size > 15 * 1024 * 1024) {
+                toast.error('Image size must be less than 15MB');
+                return Upload.LIST_IGNORE;
+              }
+
               const reader = new FileReader();
               reader.addEventListener('load', () => {
                 setCropperImageSrc(reader.result?.toString() || null);
@@ -163,6 +238,7 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
             />
           )}
           <p className="mt-2 text-xs text-[#A1A1AA]">Company Logo (Optional)</p>
+          <span className="text-[10px] text-[#71717A] mt-0.5">PNG, JPEG, JPG — max 15MB</span>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -170,14 +246,28 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
             <label className="mb-1.5 block text-xs text-white">
               Company Name<span className="text-[#FACC15]">*</span>
             </label>
-            <Input placeholder="Enter Company Name" className={`${inputClassName} capitalize`} {...register('companyName')} />
+            <Input
+              placeholder="Enter Company Name"
+              maxLength={30}
+              className={`${inputClassName} capitalize`}
+              {...register('companyName')}
+            />
             {errors.companyName && <p className="mt-1 text-xs text-red-500">{errors.companyName.message}</p>}
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-white">
               Registration Number<span className="text-[#FACC15]">*</span>
             </label>
-            <Input placeholder="Enter Registration Number" className={`${inputClassName} uppercase`} {...register('registrationNo')} />
+            <Input
+              placeholder="Enter Registration Number"
+              maxLength={15}
+              className={`${inputClassName} uppercase`}
+              {...register('registrationNo', {
+                onChange: (e) => {
+                  e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 15).toUpperCase();
+                },
+              })}
+            />
             {errors.registrationNo && <p className="mt-1 text-xs text-red-500">{errors.registrationNo.message}</p>}
           </div>
         </div>
@@ -187,14 +277,32 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
             <label className="mb-1.5 block text-xs text-white">
               VAT Number
             </label>
-            <Input placeholder="Enter VAT Number" className={`${inputClassName} uppercase`} {...register('vatNumber')} />
+            <Input
+              placeholder="Enter VAT Number"
+              maxLength={15}
+              className={`${inputClassName} uppercase`}
+              {...register('vatNumber', {
+                onChange: (e) => {
+                  e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 15).toUpperCase();
+                },
+              })}
+            />
             {errors.vatNumber && <p className="mt-1 text-xs text-red-500">{errors.vatNumber.message}</p>}
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-white">
               TIN Number<span className="text-[#FACC15]">*</span>
             </label>
-            <Input placeholder="Enter TIN Number" className={`${inputClassName} uppercase`} {...register('tinNumber')} />
+            <Input
+              placeholder="Enter TIN Number"
+              maxLength={15}
+              className={`${inputClassName} uppercase`}
+              {...register('tinNumber', {
+                onChange: (e) => {
+                  e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 15).toUpperCase();
+                },
+              })}
+            />
             {errors.tinNumber && <p className="mt-1 text-xs text-red-500">{errors.tinNumber.message}</p>}
           </div>
         </div>
@@ -203,7 +311,12 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
           <label className="mb-1.5 block text-xs text-white">
             Owner / Authorized Person Name<span className="text-[#FACC15]">*</span>
           </label>
-          <Input placeholder="Enter Full Name" className={`${inputClassName} capitalize`} {...register('ownerName')} />
+          <Input
+            placeholder="Enter Full Name"
+            maxLength={20}
+            className={`${inputClassName} capitalize`}
+            {...register('ownerName')}
+          />
           {errors.ownerName && <p className="mt-1 text-xs text-red-500">{errors.ownerName.message}</p>}
         </div>
 
@@ -227,10 +340,11 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
                   value={field.value}
                   onChange={field.onChange}
                   placeholder="Enter Mobile Number"
+                  className={isSubmitted && errors.contactPhone ? '!border-red-500' : ''}
                 />
               )}
             />
-            {errors.contactPhone && <p className="mt-1 text-xs text-red-500">{errors.contactPhone.message}</p>}
+            {isSubmitted && errors.contactPhone && <p className="mt-1 text-xs text-red-500">{errors.contactPhone.message}</p>}
           </div>
         </div>
 
@@ -239,7 +353,7 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
             <label className="mb-1.5 block text-xs text-white">
               Business Address<span className="text-[#FACC15]">*</span>
             </label>
-            <Input placeholder="Enter Full Address" className={`${inputClassName} capitalize`} {...register('address')} />
+            <Input placeholder="Enter Full Address" maxLength={30} className={`${inputClassName} capitalize`} {...register('address')} />
             {errors.address && <p className="mt-1 text-xs text-red-500">{errors.address.message}</p>}
           </div>
           <div>
@@ -256,14 +370,23 @@ export function Step1CompanyInfo({ defaultValues, onNext, selectedService }: Ste
             <label className="mb-1.5 block text-xs text-white">
               Country<span className="text-[#FACC15]">*</span>
             </label>
-            <Input placeholder="Enter Country" className={`${inputClassName} capitalize`} {...register('country')} />
+            <Input placeholder="Enter Country" maxLength={15} className={`${inputClassName} capitalize`} {...register('country')} />
             {errors.country && <p className="mt-1 text-xs text-red-500">{errors.country.message}</p>}
           </div>
           <div>
             <label className="mb-1.5 block text-xs text-white">
               Postal Code<span className="text-[#FACC15]">*</span>
             </label>
-            <Input placeholder="Enter Postal Code" className={`${inputClassName} uppercase`} {...register('postalCode')} />
+            <Input
+              placeholder="Enter Postal Code"
+              maxLength={8}
+              className={`${inputClassName} uppercase`}
+              {...register('postalCode', {
+                onChange: (e) => {
+                  e.target.value = e.target.value.replace(/[^a-zA-Z0-9 -]/g, '').slice(0, 8).toUpperCase();
+                },
+              })}
+            />
             {errors.postalCode && <p className="mt-1 text-xs text-red-500">{errors.postalCode.message}</p>}
           </div>
         </div>

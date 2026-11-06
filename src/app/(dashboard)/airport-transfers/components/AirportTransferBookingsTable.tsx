@@ -86,7 +86,7 @@ export function AirportTransferBookingsTable({
               </span>
             </div>
             <div className="text-[10px] font-mono text-[#52525B] mt-1">
-              Ref: {row.bookingReference}
+              Service ID: {row.bookingReference}
             </div>
           </div>
         );

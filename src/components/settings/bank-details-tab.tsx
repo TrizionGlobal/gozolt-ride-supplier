@@ -63,7 +63,14 @@ export function BankDetailsTab() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    if (name === 'supplierAccountHolder') {
+      value = value.slice(0, 20);
+    } else if (name === 'supplierBankName') {
+      value = value.slice(0, 30);
+    } else if (name === 'supplierAccountNumber' || name === 'supplierSwiftCode') {
+      value = value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 30).toUpperCase();
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -118,6 +125,7 @@ export function BankDetailsTab() {
               value={formData.supplierAccountHolder}
               onChange={handleChange}
               disabled={isLocked}
+              maxLength={20}
               placeholder="Enter Holder Name"
               className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed capitalize placeholder:normal-case"
             />
@@ -132,6 +140,7 @@ export function BankDetailsTab() {
               value={formData.supplierBankName}
               onChange={handleChange}
               disabled={isLocked}
+              maxLength={30}
               placeholder="Enter Bank Name"
               className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors disabled:opacity-50 disabled:cursor-not-allowed capitalize placeholder:normal-case"
             />
@@ -146,6 +155,7 @@ export function BankDetailsTab() {
               value={formData.supplierAccountNumber}
               onChange={handleChange}
               disabled={isLocked}
+              maxLength={30}
               placeholder="MTXX XXXX XXXX XXXX"
               className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors uppercase placeholder:normal-case disabled:opacity-50 disabled:cursor-not-allowed"
             />
@@ -160,6 +170,7 @@ export function BankDetailsTab() {
               value={formData.supplierSwiftCode}
               onChange={handleChange}
               disabled={isLocked}
+              maxLength={30}
               placeholder="XXXXX"
               className="w-full rounded-lg border border-[#27272A] bg-[#0A0A0A] px-3.5 py-2.5 text-sm text-white outline-none focus:border-[#FACC15] transition-colors uppercase placeholder:normal-case disabled:opacity-50 disabled:cursor-not-allowed"
             />

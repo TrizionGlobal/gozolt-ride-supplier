@@ -287,14 +287,15 @@ export function TransferBookingDetailsModal({
             const sign = parseField('Meet & Greet Sign') || parseField('Sign');
             const instructions = parseField('Meet Instructions') || parseField('Meeting Instructions');
             const assistance = parseField('Special Assistance') || parseField('Assistance');
-            const hasMeetGreet = !!(sign || instructions || assistance);
+            const meetField = parseField('Meet & Greet');
+            const hasMeetGreet = (meetField && !meetField.toLowerCase().includes('not')) || !!(sign || instructions);
             const flightRows = [
               ...(booking.flightNumber ? [{ icon: '🛬', label: 'Incoming flight', value: booking.flightNumber, badge: true, badgeColor: 'text-blue-300 bg-blue-500/15 border-blue-500/30' }] : []),
               ...(booking.returnFlightNumber ? [{ icon: '🛫', label: 'Return flight', value: booking.returnFlightNumber, badge: true, badgeColor: 'text-indigo-300 bg-indigo-500/15 border-indigo-500/30' }] : []),
               ...(airline ? [{ icon: '✈️', label: 'Airline', value: airline, badge: false, badgeColor: '' }] : []),
               ...(terminal ? [{ icon: '🏢', label: 'Terminal', value: terminal, badge: false, badgeColor: '' }] : []),
             ];
-            if (!flightRows.length && !hasMeetGreet) return null;
+            if (!flightRows.length && !hasMeetGreet && !assistance) return null;
             return (
               <div className="bg-[#18181B] rounded-xl border border-[#27272A] overflow-hidden">
                 <div className="px-4 py-3 border-b border-[#27272A] flex items-center gap-2">
@@ -302,41 +303,43 @@ export function TransferBookingDetailsModal({
                   <p className="text-xs text-[#FACC15] uppercase font-bold tracking-wider">Flight &amp; Meet Details</p>
                 </div>
                 {/* Flight info rows */}
-                {flightRows.length > 0 && (
-                  <div className="divide-y divide-[#27272A]">
-                    {flightRows.map((row, i) => (
-                      <div key={i} className="flex items-center justify-between px-4 py-2.5 gap-3">
-                        <div className="flex items-center gap-2 text-[#71717A] text-xs shrink-0">
-                          <span className="text-sm">{row.icon}</span>
-                          <span>{row.label}</span>
-                        </div>
-                        {row.badge ? (
-                          <span className={`text-xs font-bold px-2.5 py-0.5 rounded-md border font-mono ${row.badgeColor}`}>
-                            {row.value}
-                          </span>
-                        ) : (
-                          <span className="text-white text-xs font-medium">{row.value}</span>
-                        )}
+                <div className="divide-y divide-[#27272A]">
+                  {flightRows.map((row, i) => (
+                    <div key={i} className="flex items-center justify-between px-4 py-2.5 gap-3">
+                      <div className="flex items-center gap-2 text-[#71717A] text-xs shrink-0">
+                        <span className="text-sm">{row.icon}</span>
+                        <span>{row.label}</span>
                       </div>
-                    ))}
-                    {/* Meet & Greet included row */}
-                    {hasMeetGreet && (
-                      <div className="flex items-center justify-between px-4 py-2.5 gap-3">
-                        <div className="flex items-center gap-2 text-[#71717A] text-xs shrink-0">
-                          <span className="text-sm">🤝</span>
-                          <span>Meet &amp; Greet</span>
-                        </div>
-                        <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                          ✔ Included
+                      {row.badge ? (
+                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-md border font-mono ${row.badgeColor}`}>
+                          {row.value}
                         </span>
-                      </div>
+                      ) : (
+                        <span className="text-white text-xs font-medium">{row.value}</span>
+                      )}
+                    </div>
+                  ))}
+                  {/* Meet & Greet row */}
+                  <div className="flex items-center justify-between px-4 py-2.5 gap-3">
+                    <div className="flex items-center gap-2 text-[#71717A] text-xs shrink-0">
+                      <span className="text-sm">🤝</span>
+                      <span>Meet &amp; Greet</span>
+                    </div>
+                    {hasMeetGreet ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                        ✔ Included
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">
+                        Not requested
+                      </span>
                     )}
                   </div>
-                )}
+                </div>
                 {/* Meet & Greet detail cards */}
-                {hasMeetGreet && (
+                {(hasMeetGreet || assistance) && (
                   <div className="p-3 space-y-2 border-t border-[#27272A]">
-                    {sign && (
+                    {hasMeetGreet && sign && (
                       <div className="bg-[#111111] rounded-lg border border-[#27272A] px-3 py-2.5 flex items-start gap-2.5">
                         <span className="text-xl leading-none mt-0.5">🪧</span>
                         <div>
@@ -345,7 +348,7 @@ export function TransferBookingDetailsModal({
                         </div>
                       </div>
                     )}
-                    {instructions && (
+                    {hasMeetGreet && instructions && (
                       <div className="bg-[#111111] rounded-lg border border-[#27272A] px-3 py-2.5 flex items-start gap-2.5">
                         <span className="text-xl leading-none mt-0.5">🚶</span>
                         <div>

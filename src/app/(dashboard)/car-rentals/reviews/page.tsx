@@ -1,14 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Star } from 'lucide-react';
-import { format } from 'date-fns';
+import { Star, ArrowRight } from 'lucide-react';
+import { formatDateTime } from '@/lib/utils';
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
+
+function getRatingBadge(rating: number) {
+  if (rating >= 5) return { label: 'Excellent', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' };
+  if (rating === 4) return { label: 'Good', color: 'bg-blue-500/15 text-blue-400 border-blue-500/30' };
+  if (rating === 3) return { label: 'Average', color: 'bg-amber-500/15 text-amber-400 border-amber-500/30' };
+  if (rating === 2) return { label: 'Poor', color: 'bg-orange-500/15 text-orange-400 border-orange-500/30' };
+  return { label: 'Very Poor', color: 'bg-rose-500/15 text-rose-400 border-rose-500/30' };
+}
 
 export default function RentalReviewsPage() {
   const [reviews, setReviews] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Pagination & Filtering state
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -16,14 +24,10 @@ export default function RentalReviewsPage() {
   const [averageRating, setAverageRating] = useState(0);
   const [ratingFilter, setRatingFilter] = useState<string>('all');
 
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [replyText, setReplyText] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const fetchReviews = async () => {
     setIsLoading(true);
     try {
-      let url = `/api/car-rentals/supplier/reviews?page=${page}&limit=${pageSize}`;
+      let url = `/api/proxy/car-rentals/supplier/reviews?page=${page}&limit=${pageSize}`;
       if (ratingFilter !== 'all') {
         url += `&rating=${ratingFilter}`;
       }
@@ -35,7 +39,7 @@ export default function RentalReviewsPage() {
         setAverageRating(data.averageRating || 0);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to fetch car rental reviews:', err);
     } finally {
       setIsLoading(false);
     }
@@ -45,161 +49,244 @@ export default function RentalReviewsPage() {
     fetchReviews();
   }, [page, pageSize, ratingFilter]);
 
-  const handleReplySubmit = async (id: string) => {
-    if (!replyText.trim()) return;
-    setIsSubmitting(true);
-    try {
-      const res = await fetch(`/api/car-rentals/supplier/reviews/${id}/reply`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reply: replyText })
-      });
-      if (res.ok) {
-        setReplyingTo(null);
-        setReplyText('');
-        fetchReviews();
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const columns: ColumnDef<any>[] = [
+    // 1. Customer
     {
       key: 'customer',
-      title: 'Customer & Vehicle',
-      dataIndex: 'user',
-      render: (row) => (
-        <div className="flex flex-col gap-1">
-          <p className="font-medium text-white">{row.user?.firstName} {row.user?.lastName}</p>
-          <p className="text-xs text-[#A1A1AA]">{row.vehicle?.name}</p>
-          <p className="text-[10px] text-[#71717A] mt-1">{format(new Date(row.createdAt), 'dd-MMM-yyyy')}</p>
-        </div>
-      )
+      title: 'Customer',
+      className: 'min-w-[160px]',
+      render: (row) => {
+        const first = row.user?.firstName || '';
+        const last = row.user?.lastName || '';
+        const fullName = `${first} ${last}`.trim() || 'Valued Customer';
+        const initials = `${first[0] || ''}${last[0] || ''}`.toUpperCase() || 'U';
+
+        return (
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-[#FACC15]/20 to-[#EAB308]/5 border border-[#FACC15]/30 flex items-center justify-center text-[#FACC15] font-semibold text-xs shrink-0">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-white text-sm truncate">{fullName}</p>
+              <p className="text-xs text-[#71717A] truncate">
+                {row.user?.phone || row.user?.email || 'Registered User'}
+              </p>
+            </div>
+          </div>
+        );
+      },
     },
+
+    // 2. Vehicle (No car icon)
+    {
+      key: 'vehicle',
+      title: 'Vehicle',
+      className: 'min-w-[170px]',
+      render: (row) => {
+        const vehicleName = row.vehicle?.name || 'Rental Car';
+        const category = row.vehicle?.category || 'Standard';
+        const plate = row.vehicle?.registrationNo;
+
+        return (
+          <div className="flex flex-col gap-1">
+            <p className="text-white font-medium text-sm truncate">{vehicleName}</p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="px-1.5 py-0.5 rounded bg-[#27272A] border border-[#3F3F46] text-[10px] font-mono text-[#A1A1AA]">
+                {category}
+              </span>
+              {plate && (
+                <span className="px-1.5 py-0.5 rounded bg-black/60 border border-[#27272A] text-[10px] font-mono text-[#71717A]">
+                  {plate}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      },
+    },
+
+    // 3. Rental Locations
+    {
+      key: 'locations',
+      title: 'Rental Locations',
+      className: 'min-w-[190px]',
+      render: (row) => {
+        const pickup = row.booking?.pickupLocation || 'Office / Branch';
+        const dropoff = row.booking?.dropoffLocation || 'Office / Branch';
+
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5 text-xs text-[#E4E4E7]">
+              <span className="truncate max-w-[90px] text-[#A1A1AA]">{pickup}</span>
+              <ArrowRight className="h-3 w-3 text-[#FACC15] shrink-0" />
+              <span className="truncate max-w-[90px] text-white font-medium">{dropoff}</span>
+            </div>
+            {row.booking?.id && (
+              <span className="text-[10px] font-mono text-[#71717A]">
+                Service ID: GZ-{row.booking.id.substring(0, 8).toUpperCase()}
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+
+    // 4. Assigned Handler
+    {
+      key: 'assignedStaff',
+      title: 'Assigned Handler',
+      className: 'min-w-[150px]',
+      render: (row) => {
+        const returnWorker = row.booking?.return?.worker?.name;
+        const handoverWorker = row.booking?.handover?.worker?.name;
+        const taskWorker = row.booking?.handoverTasks?.[0]?.worker?.name;
+        const workerName = returnWorker || handoverWorker || taskWorker;
+        const isSelf = !workerName;
+
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${isSelf
+                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                  }`}
+              >
+                {isSelf ? 'Self (Supplier)' : 'Assigned Worker'}
+              </span>
+            </div>
+            {!isSelf && workerName && (
+              <p className="text-white text-xs font-medium truncate max-w-[140px]">
+                {workerName}
+              </p>
+            )}
+          </div>
+        );
+      },
+    },
+
+    // 5. Rating
     {
       key: 'rating',
       title: 'Rating',
-      dataIndex: 'rating',
-      className: 'w-[120px]',
-      render: (row) => (
-        <div className="flex text-[#FACC15]">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} className={`h-4 w-4 ${i < row.rating ? 'fill-current' : 'text-[#27272A] fill-none'}`} />
-          ))}
-        </div>
-      )
+      className: 'min-w-[140px]',
+      render: (row) => {
+        const badge = getRatingBadge(row.rating || 0);
+
+        return (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-1 text-[#FACC15]">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-4 w-4 ${i < row.rating ? 'fill-current' : 'text-[#27272A] fill-none'
+                    }`}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className={`text-[10px] px-2 py-0.5 rounded border font-semibold ${badge.color}`}>
+                {row.rating}.0 • {badge.label}
+              </span>
+            </div>
+          </div>
+        );
+      },
     },
+
+    // 6. Customer Feedback
     {
       key: 'review',
-      title: 'Review',
-      dataIndex: 'review',
-      render: (row) => (
-        <div className="max-w-md">
-          <p className="text-white italic">"{row.review || 'No written feedback'}"</p>
-          {row.supplierReply && (
-            <div className="mt-3 rounded-lg border border-[#27272A] bg-[#1A1A1A] p-3 text-xs">
-              <span className="font-semibold text-[#FACC15]">Your Reply: </span>
-              <span className="text-[#A1A1AA]">{row.supplierReply}</span>
-            </div>
-          )}
-          
-          {replyingTo === row.id && (
-            <div className="mt-3 space-y-2">
-              <textarea
-                className="w-full rounded-lg border border-[#27272A] bg-black px-3 py-2 text-sm text-white focus:border-[#FACC15] focus:outline-none"
-                placeholder="Write your response..."
-                rows={3}
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-              />
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => {
-                    setReplyingTo(null);
-                    setReplyText('');
-                  }}
-                  className="text-xs text-[#A1A1AA] hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  disabled={isSubmitting}
-                  onClick={() => handleReplySubmit(row.id)}
-                  className="rounded bg-[#FACC15] px-3 py-1 text-xs font-semibold text-black hover:bg-[#EAB308] disabled:opacity-50"
-                >
-                  Submit Reply
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )
+      title: 'Customer Feedback',
+      className: 'min-w-[220px]',
+      render: (row) => {
+        const hasText = row.review && row.review.trim().length > 0;
+
+        return (
+          <div className="max-w-md">
+            {hasText ? (
+              <p className="text-white text-sm leading-relaxed bg-[#1A1A1A] px-3 py-2 rounded-lg border border-[#27272A]/80 italic">
+                "{row.review}"
+              </p>
+            ) : (
+              <span className="text-xs text-[#71717A] italic">
+                No written feedback provided
+              </span>
+            )}
+          </div>
+        );
+      },
     },
+
+    // 7. Submitted On (Single line, no icon, matches schedule format)
     {
-      key: 'actions',
-      title: 'Actions',
-      dataIndex: 'actions',
-      className: 'text-right',
+      key: 'createdAt',
+      title: 'Submitted On',
+      className: 'min-w-[170px] text-right',
       render: (row) => (
-        <div className="flex justify-end">
-          {!row.supplierReply && replyingTo !== row.id && (
-            <button
-              onClick={() => setReplyingTo(row.id)}
-              className="text-xs font-medium text-blue-500 hover:text-blue-400"
-            >
-              Reply
-            </button>
-          )}
-        </div>
-      )
-    }
+        <span className="text-xs text-[#E4E4E7] font-medium whitespace-nowrap">
+          {row.createdAt ? formatDateTime(row.createdAt) : '—'}
+        </span>
+      ),
+    },
   ];
 
   return (
-    <div>
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6">
+      {/* Top Header & Stats Card */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">Reviews & Ratings</h1>
-          <p className="text-sm text-[#A1A1AA]">Manage customer feedback on your rental vehicles.</p>
+          <p className="text-sm text-[#A1A1AA]">
+            Real-time customer feedback, star ratings, and vehicle reviews on your car rentals.
+          </p>
         </div>
-        
+
         <div className="flex gap-4 items-center">
-          <div className="bg-[#111] border border-[#27272A] rounded-lg p-3 flex gap-6">
+          {/* Average Rating KPI Badge */}
+          <div className="bg-[#111111] border border-[#27272A] rounded-xl px-4 py-2.5 flex items-center gap-6 shadow-sm">
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-[#71717A] mb-1">Average</p>
-              <div className="flex items-center gap-1">
+              <p className="text-[10px] uppercase tracking-wider text-[#71717A] mb-0.5 font-medium">
+                Overall Average
+              </p>
+              <div className="flex items-center gap-1.5">
                 <Star className="h-4 w-4 text-[#FACC15] fill-current" />
-                <span className="text-white font-bold">{averageRating.toFixed(1)}</span>
+                <span className="text-white font-bold text-base">
+                  {averageRating > 0 ? averageRating.toFixed(1) : '—'}
+                </span>
+                <span className="text-xs text-[#71717A]">/ 5.0</span>
               </div>
             </div>
+            <div className="h-8 w-px bg-[#27272A]" />
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-[#71717A] mb-1">Total</p>
-              <p className="text-white font-bold">{total} Reviews</p>
+              <p className="text-[10px] uppercase tracking-wider text-[#71717A] mb-0.5 font-medium">
+                Total Reviews
+              </p>
+              <p className="text-white font-bold text-base">{total}</p>
             </div>
           </div>
-          
+
+          {/* Rating Filter Dropdown */}
           <select
             value={ratingFilter}
             onChange={(e) => {
               setRatingFilter(e.target.value);
-              setPage(1); // Reset to first page on filter change
+              setPage(1);
             }}
-            className="bg-[#111111] border border-[#27272A] text-white text-sm rounded-lg p-2.5 focus:border-[#FACC15] focus:outline-none h-[42px]"
+            className="bg-[#111111] border border-[#27272A] text-white text-sm rounded-xl px-3.5 py-2.5 focus:border-[#FACC15] focus:outline-none h-[44px] cursor-pointer"
           >
-            <option value="all">All Ratings</option>
-            <option value="5">5 Stars</option>
-            <option value="4">4 Stars</option>
-            <option value="3">3 Stars</option>
-            <option value="2">2 Stars</option>
-            <option value="1">1 Star</option>
+            <option value="all">All Star Ratings</option>
+            <option value="5">★ 5 – Excellent</option>
+            <option value="4">★ 4 – Good</option>
+            <option value="3">★ 3 – Average</option>
+            <option value="2">★ 2 – Poor</option>
+            <option value="1">★ 1 – Very Poor</option>
           </select>
         </div>
       </div>
 
-      <div className="rounded-lg border border-[#27272A] bg-[#111111] overflow-hidden">
+      {/* Structured Table */}
+      <div className="rounded-xl border border-[#27272A] bg-[#111111] overflow-hidden shadow-sm">
         <ServerSideTable
           columns={columns}
           data={reviews}
@@ -209,7 +296,7 @@ export default function RentalReviewsPage() {
           total={total}
           onPageChange={setPage}
           onLimitChange={setPageSize}
-          emptyText="No reviews found."
+          emptyText="No customer reviews found."
         />
       </div>
     </div>

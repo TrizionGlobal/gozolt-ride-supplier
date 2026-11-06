@@ -25,18 +25,18 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
     const periodEnd = statement?.periodEnd || payout?.periodEnd || payout?.processedAt || payout?.createdAt || '';
 
     const d = payout?.details || {};
-    
+
     // Extract properties like the admin email logic does
     const cancelFees = Number(d.userCancellationFees || d.totalCancellations || 0);
     const refunds = Number(d.totalRefunds || 0);
     const netEarned = Number(d.totalSettledEarned || payout?.amount || 0);
     const grossEarned = Number(d.totalGrossEarned || netEarned);
-    
+
     const previouslyPaid = Number(d.totalAlreadyPaid || 0);
     const payoutAmount = Number(payout?.amount || 0);
     const totalPaidOut = previouslyPaid + payoutAmount;
     const remainingBalance = Number(d.remainingPendingAfterThis || 0);
-    
+
     const commission = grossEarned - netEarned;
     const status = payout?.status || 'COMPLETED';
 
@@ -93,10 +93,10 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
               From
             </h3>
             <div className="text-gray-800 font-medium leading-relaxed">
-              <p className="text-lg font-bold">Gozolt Technologies Ltd.</p>
-              <p>123 Innovation Drive</p>
-              <p>Tech District, 10001</p>
-              <p>support@gozolt.com</p>
+              <p className="text-lg font-bold">Primooo Global Ltd.</p>
+              <p>No 270 Carmel Street</p>
+              <p>Ħal Luqa, Malta</p>
+              <p>support@gozolt.com.mt</p>
             </div>
           </div>
         </div>
@@ -218,7 +218,7 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
         {/* Footer */}
         <div className="mt-4 pt-4 border-t border-gray-200 text-center text-xs text-gray-400 font-medium">
           <p>Thank you for partnering with Gozolt.</p>
-          <p className="mt-1">If you have any questions about this invoice, please contact support@gozolt.com.</p>
+          <p className="mt-1">If you have any questions about this invoice, please contact support@gozolt.com.mt.</p>
         </div>
       </div>
     );

@@ -8,8 +8,7 @@ const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod
 import { QuickServiceTask } from '@/components/quick-services/quick-service-task';
 import { AirportTransferTask } from '@/components/airport-transfers/airport-transfer-task';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { formatDateTime } from '@/lib/utils';
-
+import { formatDateTime, formatRentalCategory } from '@/lib/utils';
 
 function HandoverTaskContent({ token }: { token: string }) {
   const searchParams = useSearchParams();
@@ -278,7 +277,7 @@ function HandoverTaskContent({ token }: { token: string }) {
               <div className="flex-1">
                 <h3 className="font-semibold text-lg text-white">{task.booking.vehicle?.name}</h3>
                 <p className="text-sm text-gray-400">
-                  {task.booking.vehicle?.category} {task.booking.vehicle?.year ? `• ${task.booking.vehicle.year}` : ''}
+                  {formatRentalCategory(task.booking.vehicle?.category)} {task.booking.vehicle?.year ? `• ${task.booking.vehicle.year}` : ''}
                 </p>
                 <p className="text-xs text-[#FACC15] mt-1 font-medium">Plate: {task.booking.vehicle?.registrationNo || 'N/A'}</p>
               </div>

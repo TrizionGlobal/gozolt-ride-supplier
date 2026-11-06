@@ -56,14 +56,24 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
     return '';
   };
 
+  const getEndpoint = () => {
+    switch (moduleType) {
+      case 'QUICK_SERVICES':
+        return '/quick-services/supplier/workers';
+      case 'BIKE_RENTAL':
+        return '/bike-rentals/supplier/workers';
+      case 'AIRPORT_TRANSFER':
+        return '/airport-transfers/supplier/workers';
+      case 'RENTAL':
+      default:
+        return '/car-rentals/supplier/workers';
+    }
+  };
+
   const fetchWorkers = useCallback(async () => {
     setLoading(true);
     try {
-      const endpoint = moduleType === 'QUICK_SERVICES'
-        ? '/quick-services/supplier/workers'
-        : moduleType === 'BIKE_RENTAL'
-          ? '/bike-rentals/supplier/workers'
-          : '/car-rentals/supplier/workers';
+      const endpoint = getEndpoint();
       const res = await apiClient.get(`${endpoint}?page=${page}&limit=${limit}`);
       const items = res.data?.data || res.data || [];
       const newTotal = res.data?.meta?.total || items.length;
@@ -76,7 +86,7 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
     } finally {
       setLoading(false);
     }
-  }, [page, limit]);
+  }, [page, limit, moduleType]);
 
   useEffect(() => {
     fetchWorkers();
@@ -125,11 +135,7 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
 
     setIsSubmitting(true);
     try {
-      const endpoint = moduleType === 'QUICK_SERVICES'
-        ? '/quick-services/supplier/workers'
-        : moduleType === 'BIKE_RENTAL'
-          ? '/bike-rentals/supplier/workers'
-          : '/car-rentals/supplier/workers';
+      const endpoint = getEndpoint();
       await apiClient.post(endpoint, {
         name: trimmedName,
         email: trimmedEmail.toLowerCase(),
@@ -185,11 +191,7 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
 
     setIsSubmitting(true);
     try {
-      const endpoint = moduleType === 'QUICK_SERVICES'
-        ? '/quick-services/supplier/workers'
-        : moduleType === 'BIKE_RENTAL'
-          ? '/bike-rentals/supplier/workers'
-          : '/car-rentals/supplier/workers';
+      const endpoint = getEndpoint();
       await apiClient.put(`${endpoint}/${currentWorker.id}`, {
         name: trimmedName,
         email: trimmedEmail.toLowerCase(),
@@ -261,11 +263,7 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const endpoint = moduleType === 'QUICK_SERVICES'
-            ? '/quick-services/supplier/workers'
-            : moduleType === 'BIKE_RENTAL'
-              ? '/bike-rentals/supplier/workers'
-              : '/car-rentals/supplier/workers';
+          const endpoint = getEndpoint();
           await apiClient.delete(`${endpoint}/${id}`);
           toast.success('Worker removed successfully');
           if (workers.length === 1 && page > 1) {
@@ -279,6 +277,36 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
         }
       }
     });
+  };
+
+  const getWorkerTasks = (worker: any) => {
+    const carTasks = (worker.tasks || []).map((t: any) => ({
+      id: t.id,
+      title: `Car ${t.taskType === 'HANDOVER' ? 'Handover' : 'Return'} - ${t.booking?.vehicle?.name || 'Vehicle'}`,
+      expiresAt: t.expiresAt,
+    }));
+
+    const bikeTasks = (worker.bikeTasks || []).map((t: any) => ({
+      id: t.id,
+      title: `Bike ${t.taskType === 'HANDOVER' ? 'Handover' : 'Return'} - ${t.booking?.vehicle?.name || 'Vehicle'}`,
+      expiresAt: t.expiresAt,
+    }));
+
+    const airportTasks = (worker.airportTransferTasks || []).map((t: any) => ({
+      id: t.id,
+      title: `Airport Transfer (${t.tripLeg === 'RETURN' ? 'Return Leg' : 'First Leg'}) - ${
+        t.booking?.vehicle?.make ? `${t.booking.vehicle.make} ${t.booking.vehicle.model}` : 'Vehicle'
+      }`,
+      expiresAt: t.expiresAt,
+    }));
+
+    const quickTasks = (worker.quickServiceTasks || []).map((t: any) => ({
+      id: t.id,
+      title: `Quick Service: ${t.booking?.serviceTitle || t.booking?.serviceCategory || 'Service Task'}`,
+      expiresAt: t.expiresAt,
+    }));
+
+    return [...carTasks, ...bikeTasks, ...airportTasks, ...quickTasks];
   };
 
   const columns: ColumnDef<any>[] = [
@@ -302,9 +330,7 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
       title: 'Current Tasks',
       className: 'text-center',
       render: (worker) => {
-        const carTasks = (worker.tasks || []).map((t: any) => ({ ...t, _category: 'Car' }));
-        const bikeTasks = (worker.bikeTasks || []).map((t: any) => ({ ...t, _category: 'Bike' }));
-        const allTasks = [...carTasks, ...bikeTasks];
+        const allTasks = getWorkerTasks(worker);
 
         if (allTasks.length === 0) {
           return <span className="text-gray-500 text-xs italic">No pending tasks</span>;
@@ -312,15 +338,17 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
         return (
           <div className="flex flex-col gap-2">
             {allTasks.map((task: any) => (
-              <div key={task.id} className="bg-[#1A1A1A] p-2 rounded border border-[#27272A] text-xs">
+              <div key={task.id} className="bg-[#1A1A1A] p-2 rounded border border-[#27272A] text-xs text-left">
                 <div className="font-medium text-[#FACC15] mb-1">
-                  {task._category} {task.taskType === 'HANDOVER' ? 'Handover' : 'Return'} - {task.booking?.vehicle?.name || 'Vehicle'}
+                  {task.title}
                 </div>
-                <div className="text-[#A1A1AA]">
-                  Due: {new Date(task.expiresAt).toLocaleString(undefined, {
-                    month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                  })}
-                </div>
+                {task.expiresAt && (
+                  <div className="text-[#A1A1AA]">
+                    Due: {new Date(task.expiresAt).toLocaleString(undefined, {
+                      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    })}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -331,7 +359,7 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
       key: 'status',
       title: 'Status',
       render: (worker) => {
-        const hasTasks = (worker.tasks?.length > 0) || (worker.bikeTasks?.length > 0);
+        const hasTasks = getWorkerTasks(worker).length > 0;
 
         if (hasTasks) {
           return (
@@ -352,7 +380,7 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
       title: 'Actions',
       className: 'text-center',
       render: (worker) => {
-        const hasTasks = (worker.tasks?.length > 0) || (worker.bikeTasks?.length > 0);
+        const hasTasks = getWorkerTasks(worker).length > 0;
         return (
           <div className="flex items-center justify-center gap-2">
             <button onClick={() => openEditModal(worker)} className="text-[#FACC15] hover:text-yellow-400 p-2 rounded-lg hover:bg-[#FACC15]/10 transition-colors" title="Edit">

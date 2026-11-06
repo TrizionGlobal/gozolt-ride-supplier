@@ -62,6 +62,7 @@ function parseSpecialRequests(specialRequests?: string | null) {
     terminal: findVal(['Terminal', 'Arrival Terminal', 'Gate']),
     nationality: findVal(['Nationality', 'Country']),
     whatsApp: findVal(['WhatsApp', 'Whatsapp Number', 'WhatsApp Phone']),
+    meetAndGreet: findVal(['Meet & Greet', 'Meet and Greet', 'Meet & Greet Service']),
     welcomeSign: findVal([
       'Meet & Greet Sign',
       'Welcome Sign',
@@ -313,7 +314,7 @@ export function AirportTransferTask({ token }: Props) {
                 )}
               </div>
               <h1 className="text-sm sm:text-base font-bold text-white">
-                Ref: {booking?.bookingReference}
+                Service ID: {booking?.bookingReference}
               </h1>
             </div>
           </div>
@@ -608,11 +609,18 @@ export function AirportTransferTask({ token }: Props) {
           <h2 className="text-xs uppercase font-bold tracking-wider text-gray-400 flex items-center gap-1.5">
             <Plane className="w-3.5 h-3.5 text-[#FACC15]" /> Flight & Meet Details
           </h2>
-          {vehicle?.isMeetAndGreetIncluded !== false && (
-            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-              ✓ Meet & Greet Included
-            </span>
-          )}
+          {(() => {
+            const hasMeetGreet = (special.meetAndGreet && !special.meetAndGreet.toLowerCase().includes('not')) || !!(special.welcomeSign || special.meetInstructions);
+            return hasMeetGreet ? (
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                ✓ Meet & Greet Included
+              </span>
+            ) : (
+              <span className="text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">
+                Meet & Greet Not Requested
+              </span>
+            );
+          })()}
         </div>
 
         <div className="space-y-2 text-xs">

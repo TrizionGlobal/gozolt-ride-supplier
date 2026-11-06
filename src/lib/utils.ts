@@ -92,3 +92,15 @@ export function formatDateTime(value: string | Date | null | undefined): string 
   if (!d) return 'N/A';
   return `${formatDate(d)}, ${formatTime(d)}`;
 }
+
+export function formatRentalCategory(category?: string | null): string {
+  if (!category) return '-';
+  const map: Record<string, string> = {
+    GO_5P: 'GO - 5P',
+    PREMIUM_5P: 'PREMIUM - 5P',
+    SUV_7P: 'SUV - 7P',
+    VAN_8P: 'VAN - 8P & ABOVE',
+    ELECTRIC_5P: 'ELECTRIC - 5P',
+  };
+  return map[category] || category.replace(/_/g, ' ').toUpperCase();
+}

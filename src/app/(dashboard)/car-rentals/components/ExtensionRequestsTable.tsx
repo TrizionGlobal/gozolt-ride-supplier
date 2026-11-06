@@ -5,7 +5,7 @@ import { carRentalsService } from '@/services/car-rentals/car-rentals.service';
 
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
 import { format, differenceInDays } from 'date-fns';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, formatRentalCategory } from '@/lib/utils';
 import { CheckCircle2, XCircle } from 'lucide-react';
 
 interface ExtensionRequestsTableProps {
@@ -60,7 +60,7 @@ export function ExtensionRequestsTable({
       render: (row) => (
         <div>
           <div className="text-white font-medium">{row.booking?.vehicle?.name || 'Unknown'}</div>
-          <div className="text-xs text-[#71717A] mt-1">{row.booking?.vehicle?.category || 'No category'}</div>
+          <div className="text-xs text-[#71717A] mt-1">{formatRentalCategory(row.booking?.vehicle?.category)}</div>
         </div>
       ),
     },
@@ -201,7 +201,7 @@ export function ExtensionRequestsTable({
                   <h5 className="text-xs uppercase text-[#FACC15] font-bold tracking-wider">Vehicle Details</h5>
                   <div className="space-y-1">
                     <p className="text-sm"><span className="text-gray-500 block text-xs">Name</span> <span className="text-gray-200 font-medium">{selectedRequest.booking?.vehicle?.name}</span></p>
-                    <p className="text-sm"><span className="text-gray-500 block text-xs">Category</span> <span className="text-gray-200">{selectedRequest.booking?.vehicle?.category}</span></p>
+                    <p className="text-sm"><span className="text-gray-500 block text-xs">Category</span> <span className="text-gray-200">{formatRentalCategory(selectedRequest.booking?.vehicle?.category)}</span></p>
                     <p className="text-sm"><span className="text-gray-500 block text-xs">Plate</span> <span className="text-gray-200">{selectedRequest.booking?.vehicle?.registrationNo || 'N/A'}</span></p>
                   </div>
                 </div>

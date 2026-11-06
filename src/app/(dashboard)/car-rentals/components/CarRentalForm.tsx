@@ -410,9 +410,9 @@ export function CarRentalForm({ initialData }: Props) {
     { name: 'Booster Seat', icon: 'event_seat', emoji: '💺' },
     { name: 'Phone Holder', icon: 'phone_android', emoji: '📱' },
     { name: 'Wi-Fi Hotspot', icon: 'wifi', emoji: '📶' },
-    { name: 'Additional Driver', icon: 'group_add', emoji: '👥' },
-    { name: 'Snow Chains', icon: 'ac_unit', emoji: '❄️' },
-    { name: 'Ski Rack', icon: 'downhill_skiing', emoji: '🎿' },
+    // { name: 'Additional Driver', icon: 'group_add', emoji: '👥' },
+    // { name: 'Snow Chains', icon: 'ac_unit', emoji: '❄️' },
+    // { name: 'Ski Rack', icon: 'downhill_skiing', emoji: '🎿' },
   ];
 
   const addAddon = () => {
@@ -480,12 +480,12 @@ export function CarRentalForm({ initialData }: Props) {
                 onChange={e => setCategory(e.target.value)}
                 className={`w-full rounded-lg border border-[#3F3F46] bg-[#0A0A0A] px-3 py-2 pr-9 text-xs focus:border-[#FACC15] focus:outline-none appearance-none cursor-pointer transition-colors ${!category ? 'text-[#71717A]' : 'text-white'}`}
               >
-                <option value="" disabled className="bg-[#18181B] text-[#71717A]">Select Category</option>
-                <option value="GO_5P" className="bg-[#18181B] text-white">Go - 5P</option>
-                <option value="PREMIUM_5P" className="bg-[#18181B] text-white">Premium - 5P</option>
+                <option value="" disabled className="bg-[#18181B] text-[#71717A]">SELECT CATEGORY</option>
+                <option value="GO_5P" className="bg-[#18181B] text-white">GO - 5P</option>
+                <option value="PREMIUM_5P" className="bg-[#18181B] text-white">PREMIUM - 5P</option>
                 <option value="SUV_7P" className="bg-[#18181B] text-white">SUV - 7P</option>
-                <option value="VAN_8P" className="bg-[#18181B] text-white">Van - 8P & Above</option>
-                <option value="ELECTRIC_5P" className="bg-[#18181B] text-white">Electric - 5P</option>
+                <option value="VAN_8P" className="bg-[#18181B] text-white">VAN - 8P & ABOVE</option>
+                <option value="ELECTRIC_5P" className="bg-[#18181B] text-white">ELECTRIC - 5P</option>
               </select>
               <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
             </div>

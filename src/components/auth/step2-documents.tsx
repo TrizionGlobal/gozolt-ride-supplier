@@ -31,8 +31,8 @@ export function Step2Documents({ documents, onDocumentsChange, onNext, onPreviou
   const getDocForType = (type: string) => documents.find((d) => d.type === type);
 
   const handleFileSelect = (type: string, file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error(`File "${file.name}" exceeds 5MB limit`);
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error(`File "${file.name}" exceeds 15MB limit`);
       return;
     }
 
@@ -100,7 +100,7 @@ export function Step2Documents({ documents, onDocumentsChange, onNext, onPreviou
                     {doc.label} {doc.required && <span className="text-[#FACC15]">*</span>}
                   </span>
                   <span className="text-xs text-[#71717A]">
-                    {uploaded?.fileName || 'PDF, JPG, PNG — max 5MB'}
+                    {uploaded?.fileName || 'PDF, JPG, PNG — max 15MB'}
                   </span>
                 </div>
               </button>

@@ -87,6 +87,7 @@ export default function QuickServicesSubscriptionPage() {
   );
 
   useEffect(() => {
+    useSidebarStore.getState().setActiveModule('QUICK_SERVICES');
     const mode = localStorage.getItem('quick-services-access-mode') as AccessChoice;
     const storedTier = localStorage.getItem('quick-services-subscription-tier');
     setCurrentMode(mode);

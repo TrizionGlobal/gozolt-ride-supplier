@@ -69,8 +69,17 @@ export default function AddDriverPage() {
 
   const handlePhotoChange = (file: File | null) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File must be under 5MB');
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/jpg'];
+    const fileName = file.name.toLowerCase();
+    const hasAllowedExt = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png');
+
+    if (!allowedMimes.includes(file.type) && !hasAllowedExt) {
+      toast.error('Only PNG, JPEG, and JPG images are allowed');
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('File must be under 15MB');
       return;
     }
     setPhoto({ file, preview: URL.createObjectURL(file) });
@@ -78,8 +87,8 @@ export default function AddDriverPage() {
 
   const handleDocChange = (index: number, file: File | null) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File must be under 5MB');
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('File must be under 15MB');
       return;
     }
     const updated = [...docs];
@@ -105,8 +114,8 @@ export default function AddDriverPage() {
 
   const handleExtraDocChange = (index: number, file: File | null) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File must be under 5MB');
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('File must be under 15MB');
       return;
     }
     setExtraDocs((prev) => {
@@ -284,7 +293,7 @@ export default function AddDriverPage() {
             <input
               ref={photoRef}
               type="file"
-              accept="image/*"
+              accept=".png,.jpeg,.jpg,image/png,image/jpeg"
               className="hidden"
               onChange={(e) => handlePhotoChange(e.target.files?.[0] ?? null)}
             />
@@ -549,7 +558,7 @@ export default function AddDriverPage() {
                   </span>
                 ) : (
                   <span className="text-[10px] text-[#52525B]">
-                    PDF, JPG, PNG — max 5MB
+                    PDF, JPG, PNG — max 15MB
                   </span>
                 )}
                 <input

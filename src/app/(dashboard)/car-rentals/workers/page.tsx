@@ -1,9 +1,15 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { WorkersTab } from '@/components/settings/workers-tab';
+import { useSidebarStore } from '@/stores/sidebar.store';
 
 export default function WorkersPage() {
+  useEffect(() => {
+    useSidebarStore.getState().setActiveModule('RENTAL');
+  }, []);
+
   const openAddWorkerModal = () => {
     window.dispatchEvent(new CustomEvent('open-add-worker-modal'));
   };
@@ -25,7 +31,7 @@ export default function WorkersPage() {
       </div>
 
       <div className="rounded-xl border border-[#27272A] bg-[#111111] overflow-hidden">
-        <WorkersTab />
+        <WorkersTab moduleType="RENTAL" />
       </div>
     </div>
   );

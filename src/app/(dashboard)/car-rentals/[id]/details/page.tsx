@@ -4,7 +4,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, User, UserCheck } from 'lucide-react';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, formatRentalCategory } from '@/lib/utils';
 import { toast } from 'sonner';
 import { carRentalsService } from '@/services/car-rentals/car-rentals.service';
 import Link from 'next/link';
@@ -174,7 +174,7 @@ export default function BookingDetailsPage() {
         <div className="flex justify-between items-start bg-[#111111] p-6 rounded-xl border border-[#27272A]">
           <div>
             <h3 className="text-xl font-semibold text-white">{booking.vehicle?.name}</h3>
-            <p className="text-sm text-gray-400 mt-1">Vehicle ID: CR-{booking.vehicle?.id.substring(0, 8).toUpperCase()} | Category: {booking.vehicle?.category?.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}</p>
+            <p className="text-sm text-gray-400 mt-1">Vehicle ID: CR-{booking.vehicle?.id.substring(0, 8).toUpperCase()} | Category: {formatRentalCategory(booking.vehicle?.category)}</p>
           </div>
           <div className="text-right">
             <span className={`px-4 py-1.5 rounded-full text-sm font-medium border ${getStatusColor(booking.status)}`}>

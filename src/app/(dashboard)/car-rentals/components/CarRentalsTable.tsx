@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Edit, Trash2, Eye } from 'lucide-react';
 import { CarRentalVehicle } from '@/services/car-rentals/car-rentals.service';
 import { ServerSideTable, type ColumnDef } from '@/components/ui/server-side-table';
+import { formatRentalCategory } from '@/lib/utils';
 
 interface CarRentalsTableProps {
   vehicles: CarRentalVehicle[];
@@ -66,7 +67,7 @@ export function CarRentalsTable({
       dataIndex: 'category',
       render: (row) => (
         <span className="inline-flex items-center rounded-full border border-[#27272A] bg-[#1A1A1A] px-2.5 py-0.5 text-xs font-semibold text-[#A1A1AA]">
-          {row.category?.replace(/_/g, ' ')}
+          {formatRentalCategory(row.category)}
         </span>
       ),
     },

@@ -92,10 +92,10 @@ export const AirportTransferInvoiceDocument = forwardRef<HTMLDivElement, Airport
               From
             </h3>
             <div className="text-gray-800 font-medium leading-relaxed">
-              <p className="text-lg font-bold">Gozolt Technologies Ltd.</p>
-              <p>123 Innovation Drive</p>
-              <p>Tech District, 10001</p>
-              <p>support@gozolt.com</p>
+              <p className="text-lg font-bold">Primooo Global Ltd.</p>
+              <p>No 270 Carmel Street</p>
+              <p>Ħal Luqa, Malta</p>
+              <p>support@gozolt.com.mt</p>
             </div>
           </div>
         </div>
@@ -215,7 +215,7 @@ export const AirportTransferInvoiceDocument = forwardRef<HTMLDivElement, Airport
         {/* Footer */}
         <div className="mt-4 pt-4 border-t border-gray-200 text-center text-xs text-gray-400 font-medium">
           <p>Thank you for partnering with Gozolt.</p>
-          <p className="mt-1">If you have any questions about this invoice, please contact support@gozolt.com.</p>
+          <p className="mt-1">If you have any questions about this invoice, please contact support@gozolt.com.mt.</p>
         </div>
       </div>
     );

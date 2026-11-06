@@ -88,8 +88,8 @@ export default function AddVehiclePage() {
 
   const handleDocChange = (index: number, file: File | null) => {
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File must be under 5MB');
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('File must be under 15MB');
       return;
     }
     const updated = [...docs];
@@ -397,7 +397,7 @@ export default function AddVehiclePage() {
                 <span className="text-xs font-medium text-[#D4D4D8]">
                   {doc.fileName || doc.label}
                 </span>
-                <span className="text-[10px] text-[#52525B]">PDF, JPG, PNG — max 5MB</span>
+                <span className="text-[10px] text-[#52525B]">PDF, JPG, PNG — max 15MB</span>
                 <input
                   ref={(el) => { docRefs.current[i] = el; }}
                   type="file"

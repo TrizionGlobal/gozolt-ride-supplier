@@ -15,6 +15,7 @@ import { useFleetTracking } from '@/hooks/use-fleet-tracking';
 const { RangePicker } = DatePicker;
 
 const periodOptions = [
+  'All Time',
   'Today',
   'This Month',
   'Last Month',
@@ -27,7 +28,7 @@ type ActiveTab = 'settlements' | 'history';
 export default function DriverSettlementsPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('settlements');
   const [isLoading, setIsLoading] = useState(true);
-  const [period, setPeriod] = useState('Today');
+  const [period, setPeriod] = useState('All Time');
   const [kpis, setKpis] = useState({ totalOwed: 0, totalCash: 0, totalCard: 0, totalPaid: 0 });
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
@@ -37,7 +38,9 @@ export default function DriverSettlementsPage() {
     try {
       let fromDate: Date | undefined;
       const today = new Date();
-      if (period === 'Today') {
+      if (period === 'All Time') {
+        fromDate = undefined;
+      } else if (period === 'Today') {
         fromDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       } else if (period === 'This Month') {
         fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -50,7 +53,9 @@ export default function DriverSettlementsPage() {
       }
       
       let toDate: Date | undefined;
-      if (period === 'Today') {
+      if (period === 'All Time') {
+        toDate = undefined;
+      } else if (period === 'Today') {
         toDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
       } else if (period === 'Last Month') {
         toDate = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59);

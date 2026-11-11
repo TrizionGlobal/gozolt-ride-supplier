@@ -52,13 +52,44 @@ export function PayDriverModal({
   const numDeductions = parseFloat(deductions) || 0;
   const numTotalRides = parseInt(totalRides) || undefined;
   const totalDeducted = numAmount + numDeductions;
-  const remainingBalance = combinedTotal - totalDeducted;
+  const remainingBalance = Math.round((combinedTotal - totalDeducted) * 100) / 100;
+
+  const handleAmountChange = (val: string) => {
+    setAmount(val);
+    const parsed = parseFloat(val) || 0;
+    if (parsed + numDeductions > combinedTotal + 0.01) {
+      setErrorMsg(`Total payout + deductions exceeds available balance (${formatCurrency(combinedTotal)})`);
+    } else {
+      setErrorMsg(null);
+    }
+  };
+
+  const handleDeductionsChange = (val: string) => {
+    setDeductions(val);
+    const parsed = parseFloat(val) || 0;
+    if (numAmount + parsed > combinedTotal + 0.01) {
+      setErrorMsg(`Total payout + deductions exceeds available balance (${formatCurrency(combinedTotal)})`);
+    } else {
+      setErrorMsg(null);
+    }
+  };
+
+  const handlePayFullBalance = () => {
+    setAmount(defaultAmount > 0 ? defaultAmount.toFixed(2) : combinedTotal.toFixed(2));
+    setDeductions(defaultDeduction > 0 ? defaultDeduction.toFixed(2) : '0.00');
+    setErrorMsg(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     if (numAmount <= 0 && numDeductions <= 0) {
       setErrorMsg('Total payout and deductions cannot both be zero.');
+      return;
+    }
+
+    if (totalDeducted > combinedTotal + 0.01) {
+      setErrorMsg(`Total payout + deductions (${formatCurrency(totalDeducted)}) cannot exceed available balance (${formatCurrency(combinedTotal)}).`);
       return;
     }
 
@@ -142,25 +173,36 @@ export function PayDriverModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-[#A1A1AA]">
-              Payment Amount (To Driver)
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-sm font-medium text-[#A1A1AA]">
+                Payment Amount (To Driver)
+              </label>
+              <button
+                type="button"
+                onClick={handlePayFullBalance}
+                className="text-xs font-semibold text-[#FACC15] hover:text-[#EAB308] hover:underline"
+              >
+                Pay Full Balance
+              </button>
+            </div>
             <div className="relative">
               <Euro className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#71717A]" />
               <input
                 type="number"
                 step="0.01"
                 min="0"
+                max={combinedTotal}
                 value={amount}
-                readOnly
-                className="w-full rounded-lg border border-[#27272A] bg-[#1A1A1A]/50 pl-9 py-2 text-[#A1A1AA] cursor-not-allowed focus:outline-none"
+                onChange={(e) => handleAmountChange(e.target.value)}
+                className="w-full rounded-lg border border-[#27272A] bg-[#141414] pl-9 py-2 text-white placeholder:text-[#52525B] focus:border-[#FACC15] focus:outline-none"
+                placeholder="0.00"
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-[#A1A1AA]">
-              Supplier Commission / Deductions (To You)
+            <label className="mb-1.5 flex items-center justify-between text-sm font-medium text-[#A1A1AA]">
+              <span>Supplier Commission / Deductions (To You)</span>
               {defaultCommRate > 0 && (
                 <span className="rounded-full px-2 py-0.5 text-xs bg-[#FACC15]/20 text-[#FACC15]">
                   {defaultCommRate}% Default
@@ -174,19 +216,25 @@ export function PayDriverModal({
                 step="0.01"
                 min="0"
                 value={deductions}
-                readOnly
-                className="w-full rounded-lg border border-[#27272A] bg-[#1A1A1A]/50 pl-9 py-2 text-[#A1A1AA] cursor-not-allowed focus:outline-none"
+                onChange={(e) => handleDeductionsChange(e.target.value)}
+                className="w-full rounded-lg border border-[#27272A] bg-[#141414] pl-9 py-2 text-white placeholder:text-[#52525B] focus:border-[#FACC15] focus:outline-none"
+                placeholder="0.00"
               />
             </div>
           </div>
 
-
-
-          {remainingBalance > 0 && totalDeducted <= combinedTotal && (
-            <div className="text-xs text-[#71717A] italic text-right">
-              {formatCurrency(remainingBalance)} will remain in Owed Balance
+          <div className="rounded-lg border border-[#27272A] bg-[#141414] p-3 text-xs space-y-1">
+            <div className="flex justify-between text-[#A1A1AA]">
+              <span>Total Deducted from Balance:</span>
+              <span className="font-semibold text-white">{formatCurrency(totalDeducted)}</span>
             </div>
-          )}
+            <div className="flex justify-between">
+              <span className="text-[#A1A1AA]">Remaining Owed Balance:</span>
+              <span className={`font-semibold ${remainingBalance < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                {remainingBalance < 0 ? `-€${Math.abs(remainingBalance).toFixed(2)}` : formatCurrency(remainingBalance)}
+              </span>
+            </div>
+          </div>
 
           <div className="mb-4">
             <label className="mb-1.5 block text-sm font-medium text-[#A1A1AA]">
@@ -224,8 +272,8 @@ export function PayDriverModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="rounded-lg bg-[#FACC15] px-4 py-2 text-sm font-medium text-black hover:bg-[#EAB308] disabled:opacity-50 transition-colors flex items-center"
+              disabled={isSubmitting || totalDeducted > combinedTotal + 0.01 || (numAmount <= 0 && numDeductions <= 0)}
+              className="rounded-lg bg-[#FACC15] px-4 py-2 text-sm font-semibold text-black hover:bg-[#EAB308] disabled:opacity-50 transition-colors flex items-center"
             >
               {isSubmitting ? 'Processing...' : 'Confirm Payout'}
             </button>

@@ -136,7 +136,7 @@ export function PerDriverEarningsTable({ onRefresh }: PerDriverEarningsTableProp
               totalRides: row.totalRides || 0,
             })}
             className="rounded bg-[#FACC15] px-4 py-1.5 text-xs font-semibold text-black hover:bg-[#EAB308] disabled:bg-[#27272A] disabled:text-[#71717A] disabled:cursor-not-allowed transition-all shadow-sm"
-            disabled={row.availableBalance === 0}
+            disabled={((row.availableBalance || 0) + (row.userCancellationFees || 0)) <= 0}
           >
             Pay Driver
           </button>

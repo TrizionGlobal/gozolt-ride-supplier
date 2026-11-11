@@ -39,7 +39,14 @@ async function proxyRequest(request: NextRequest, { params }: { params: Promise<
     const contentType = request.headers.get('content-type') || '';
     if (contentType.includes('multipart/form-data')) {
       delete headers['Content-Type'];
-      fetchOptions.body = (await request.formData()) as any;
+      try {
+        fetchOptions.body = (await request.formData()) as any;
+      } catch (err) {
+        console.warn('Failed to parse formData, falling back to raw body stream:', err);
+        headers['Content-Type'] = contentType;
+        fetchOptions.body = request.body;
+        (fetchOptions as any).duplex = 'half';
+      }
     } else {
       try {
         const body = await request.text();

@@ -120,7 +120,7 @@ export default function BookingDetailsPage() {
               }
               return (
                 <>
-                  <button 
+                  <button
                     onClick={() => setAssignModal({ isOpen: true, taskType: 'HANDOVER' })}
                     className="px-4 py-2 rounded-lg text-sm font-medium bg-[#27272A] text-white hover:bg-[#3F3F46] border border-[#3F3F46]"
                   >
@@ -150,7 +150,7 @@ export default function BookingDetailsPage() {
               }
               return (
                 <>
-                  <button 
+                  <button
                     onClick={() => setAssignModal({ isOpen: true, taskType: 'RETURN' })}
                     className="px-4 py-2 rounded-lg text-sm font-medium bg-[#27272A] text-white hover:bg-[#3F3F46] border border-[#3F3F46]"
                   >
@@ -185,7 +185,7 @@ export default function BookingDetailsPage() {
 
         {/* Grid Details */}
         <div className="grid grid-cols-2 gap-6">
-          
+
           {/* Customer Details */}
           <div className="space-y-4">
             <h4 className="font-semibold text-white text-lg">Customer Details</h4>
@@ -231,7 +231,7 @@ export default function BookingDetailsPage() {
                 return (
                   <>
                     <div className="flex justify-between"><span className="text-gray-400">Vehicle Rate:</span> <span className="font-medium">€{vehicleRate.toFixed(2)}</span></div>
-                    
+
                     {booking.isFlexible && (
                       <div className="flex justify-between"><span className="text-gray-400">Stay Flexible:</span> <span className="font-medium">€{Number(booking.flexibleTotal || 0).toFixed(2)}</span></div>
                     )}
@@ -239,7 +239,7 @@ export default function BookingDetailsPage() {
                     {/* Protection Package */}
                     {booking.selectedPackage ? (
                       <div className="flex justify-between">
-                        <span className="text-gray-400">{booking.selectedPackage.title || 'Protection Package'}:</span> 
+                        <span className="text-gray-400">{booking.selectedPackage.title || 'Protection Package'}:</span>
                         <span className="font-medium">€{Number((booking.selectedPackage.pricePerDay || booking.selectedPackage.price || 0) * d).toFixed(2)}</span>
                       </div>
                     ) : booking.protectionPackageId && booking.vehicle?.protectionPackages && (() => {
@@ -280,13 +280,13 @@ export default function BookingDetailsPage() {
                     {(() => {
                       const fee = Number(booking.deliveryFee || 0);
                       if (fee <= 0) return null;
-                      
+
                       const pickup = booking.pickupLocation || 'Self Pickup';
                       const dropoff = booking.dropoffLocation || pickup;
-                      
+
                       const hasCustomPickup = pickup !== 'Self Pickup';
                       const hasCustomDropoff = dropoff !== 'Self Pickup' && dropoff !== pickup;
-                      
+
                       if (hasCustomPickup && hasCustomDropoff) {
                         return (
                           <>
@@ -303,16 +303,19 @@ export default function BookingDetailsPage() {
                       }
                     })()}
                     {Number(booking.taxes) > 0 && (
-                      <div className="flex justify-between"><span className="text-gray-400">Taxes:</span> <span className="font-medium">€{Number(booking.taxes || 0).toFixed(2)}</span></div>
+                      <>
+                        <div className="flex justify-between"><span className="text-gray-400">VAT Charges:</span> <span className="font-medium text-[#FACC15]">€{Number(booking.taxes || 0).toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-400">Supplier Net Fare:</span> <span className="font-medium text-emerald-400">€{Math.max(0, Number(booking.grandTotal || 0) - Number(booking.taxes || 0)).toFixed(2)}</span></div>
+                      </>
                     )}
 
                     <div className="flex justify-between font-bold pt-3 border-t border-[#27272A]">
-                      <span className="text-white">Grand Total:</span> 
+                      <span className="text-white">Grand Total:</span>
                       <span className="text-[#FACC15]">€{Number(booking.grandTotal || 0).toFixed(2)}</span>
                     </div>
-                    
+
                     <div className="flex justify-between pt-2">
-                      <span className="text-gray-400">Payment Status:</span> 
+                      <span className="text-gray-400">Payment Status:</span>
                       <span className="font-medium text-emerald-400">Paid</span>
                     </div>
                   </>
@@ -320,7 +323,7 @@ export default function BookingDetailsPage() {
               })()}
             </div>
           </div>
-          
+
           {/* Documents */}
           <div className="col-span-2 space-y-4">
             <h4 className="font-semibold text-white text-lg">Documents</h4>
@@ -512,11 +515,10 @@ export default function BookingDetailsPage() {
                 {booking.extensionRequests.map((ext: any, idx: number) => (
                   <div key={ext.id || idx} className="p-4 rounded border border-[#3F3F46] space-y-2 relative">
                     <div className="absolute top-4 right-4">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${
-                        ext.status === 'APPROVED' ? 'text-teal-400 bg-teal-500/10 border-teal-500/20' :
-                        ext.status === 'REJECTED' ? 'text-red-500 bg-red-500/10 border-red-500/20' :
-                        'text-yellow-500 bg-yellow-500/10 border-yellow-500/20'
-                      }`}>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full border ${ext.status === 'APPROVED' ? 'text-teal-400 bg-teal-500/10 border-teal-500/20' :
+                          ext.status === 'REJECTED' ? 'text-red-500 bg-red-500/10 border-red-500/20' :
+                            'text-yellow-500 bg-yellow-500/10 border-yellow-500/20'
+                        }`}>
                         {ext.status}
                       </span>
                     </div>

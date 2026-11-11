@@ -126,6 +126,16 @@ export function TransferBookingDetailsModal({
               <div className="mt-1 text-lg font-bold text-emerald-400">
                 {booking.currency === 'EUR' || !booking.currency ? '€' : booking.currency} {Number(booking.grandTotal || 0).toFixed(2)}
               </div>
+              {Number(booking.extrasFee || 0) > 0 && (
+                <>
+                  <p className="text-[11px] text-[#FCD223] font-medium mt-0.5">
+                    VAT (Platform): {booking.currency === 'EUR' || !booking.currency ? '€' : booking.currency} {Number(booking.extrasFee).toFixed(2)}
+                  </p>
+                  <p className="text-[11px] text-emerald-400 font-medium">
+                    Supplier Net: {booking.currency === 'EUR' || !booking.currency ? '€' : booking.currency} {Math.max(0, Number(booking.grandTotal || 0) - Number(booking.extrasFee)).toFixed(2)}
+                  </p>
+                </>
+              )}
               {isRound && (
                 <span className="inline-block mt-2 text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                   Round Trip (First & Return)

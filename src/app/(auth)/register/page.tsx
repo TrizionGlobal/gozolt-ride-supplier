@@ -92,36 +92,23 @@ export default function RegisterPage() {
       );
 
       if (service === 'AIRPORT_TRANSFER') {
-        if (!hasActiveSub) {
-          router.push('/airport-transfers/subscription');
-        } else {
-          router.push('/airport-transfers/dashboard');
-        }
+        router.push('/airport-transfers/dashboard');
       } else if (service === 'QUICK_SERVICES') {
-        const quickServicesMode = typeof window !== 'undefined' ? localStorage.getItem('quick-services-access-mode') : null;
-        if (!hasActiveSub && quickServicesMode !== 'WITH_SUBSCRIPTION' && quickServicesMode !== 'WITHOUT_SUBSCRIPTION') {
-          router.push('/quick-services/subscription');
-        } else {
-          router.push('/quick-services/dashboard');
-        }
+        router.push('/quick-services/dashboard');
       } else if (service === 'CAB') {
-        if (!hasActiveSub) {
+        const cabAccessMode =
+          typeof window !== 'undefined'
+            ? localStorage.getItem('cab-access-mode')
+            : null;
+        if (!hasActiveSub && cabAccessMode !== 'COMMISSION') {
           router.push('/subscription?service=CAB');
         } else {
           router.push('/dashboard');
         }
       } else if (service === 'CAR_RENTAL' || service === 'RENTAL') {
-        if (!hasActiveSub) {
-          router.push('/subscription?service=CAR_RENTAL');
-        } else {
-          router.push('/car-rentals/dashboard');
-        }
+        router.push('/car-rentals/dashboard');
       } else if (service === 'BIKE_RENTAL') {
-        if (!hasActiveSub) {
-          router.push('/subscription?service=BIKE_RENTAL');
-        } else {
-          router.push('/bike-rentals/dashboard');
-        }
+        router.push('/bike-rentals/dashboard');
       }
     }
   }, [isAuthenticated, isAuthLoading, user, router]);

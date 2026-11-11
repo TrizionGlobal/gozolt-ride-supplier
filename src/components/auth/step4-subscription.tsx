@@ -14,11 +14,11 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'STARTER',
     name: 'Starter Fleet',
-    price: 49,
+    price: 99,
     features: [
-      'Up to 5 Vehicles',
-      'Up to 10 Drivers',
-      'Up to 100 Rides / Month',
+      'Up to 10 Vehicles',
+      'Up to 20 Drivers',
+      'Up to 500 Rides / Month',
       'All Platform Modules Included',
       'Standard Support',
     ],
@@ -26,12 +26,12 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'GROWTH',
     name: 'Growth Fleet',
-    price: 99,
+    price: 149,
     isRecommended: true,
     features: [
-      'Up to 20 Vehicles',
-      'Up to 40 Drivers',
-      'Up to 500 Rides / Month',
+      'Up to 30 Vehicles',
+      'Up to 60 Drivers',
+      'Up to 1,500 Rides / Month',
       'All Platform Modules Included',
       'Priority Support',
     ],
@@ -39,11 +39,11 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'PROFESSIONAL',
     name: 'Professional Fleet',
-    price: 149,
+    price: 199,
     features: [
-      'Up to 50 Vehicles',
-      'Up to 100 Drivers',
-      'Up to 1,500 Rides / Month',
+      'Up to 75 Vehicles',
+      'Up to 150 Drivers',
+      'Up to 3,500 Rides / Month',
       'All Platform Modules Included',
       'Priority Support',
     ],
@@ -51,7 +51,7 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'ENTERPRISE',
     name: 'Enterprise Fleet',
-    price: 199,
+    price: 499,
     features: [
       'Unlimited Vehicles',
       'Unlimited Drivers',

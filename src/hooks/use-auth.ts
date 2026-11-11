@@ -122,6 +122,8 @@ export function useAuth() {
         }
 
         // 6. Check whether the supplier has an active subscription
+        // Note: Subscription for CAR_RENTAL, BIKE_RENTAL, AIRPORT_TRANSFER,
+        // and QUICK_SERVICES is temporarily bypassed as requested.
         const subscription = supplier.subscription;
 
         const hasActiveSubscription =
@@ -129,27 +131,18 @@ export function useAuth() {
           subscription.currentPeriodEnd &&
           new Date(subscription.currentPeriodEnd) > new Date();
 
-        if (!hasActiveSubscription) {
-          if (selectedService === 'QUICK_SERVICES') {
-            const quickServicesMode = localStorage.getItem(
-              'quick-services-access-mode'  
-            );
-            if (
-              quickServicesMode !== 'WITH_SUBSCRIPTION' &&
-              quickServicesMode !== 'WITHOUT_SUBSCRIPTION'
-            ) {
-              router.push('/quick-services/subscription');
-              return;
-            }
-          } else if (selectedService === 'AIRPORT_TRANSFER') {
-            router.push('/airport-transfers/subscription');
-            return;
-          } else {
-            router.push(
-              `/subscription?service=${encodeURIComponent(selectedService)}`
-            );
-            return;
-          }
+        const cabAccessMode =
+          typeof window !== 'undefined'
+            ? localStorage.getItem('cab-access-mode')
+            : null;
+
+        if (
+          !hasActiveSubscription &&
+          selectedService === 'CAB' &&
+          cabAccessMode !== 'COMMISSION'
+        ) {
+          router.push('/subscription?service=CAB');
+          return;
         }
 
         // 7. Open the selected service dashboard
@@ -180,6 +173,8 @@ export function useAuth() {
       await fetch('/api/auth/logout', {
         method: 'POST',
       });
+    } catch {
+      // Silently ignore 401 or network errors if session is already expired
     } finally {
       localStorage.removeItem('supplier_token');
       localStorage.removeItem('gozolt-selected-service');

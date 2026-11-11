@@ -6,7 +6,7 @@ import {
   useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, ArrowLeft, Crown, Percent, Check, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Step5Payment } from '@/components/auth/step5-payment';
@@ -27,18 +27,30 @@ import type {
   SubscriptionInfo,
 } from '@/types';
 
+type CabAccessChoice = 'WITH_SUBSCRIPTION' | 'COMMISSION' | null;
+
+const CAB_COMMISSION_FEATURES = [
+  'Zero upfront cost — €0 / month subscription fee',
+  'Pay standard 9% platform commission per completed ride',
+  'Add unlimited vehicles and drivers to your fleet',
+  'Real-time ride dispatch & tracking access',
+  'Automatic payouts & transparent settlement tracking',
+  'Standard supplier portal features & dedicated support',
+  'Flexible: Switch to a fixed monthly subscription plan anytime',
+];
+
 const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'STARTER',
     name: 'Starter Fleet',
-    price: 49,
-    maxVehicles: 5,
-    maxDrivers: 10,
-    maxRides: 100,
+    price: 99,
+    maxVehicles: 10,
+    maxDrivers: 20,
+    maxRides: 500,
     features: [
-      'Up to 5 Vehicles',
-      'Up to 10 Drivers',
-      'Up to 100 Rides / Month',
+      'Up to 10 Vehicles',
+      'Up to 20 Drivers',
+      'Up to 500 Rides / Month',
       'All Platform Modules Included',
       'Standard Support',
     ],
@@ -46,15 +58,15 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'GROWTH',
     name: 'Growth Fleet',
-    price: 99,
-    maxVehicles: 20,
-    maxDrivers: 40,
-    maxRides: 500,
+    price: 149,
+    maxVehicles: 30,
+    maxDrivers: 60,
+    maxRides: 1500,
     isRecommended: true,
     features: [
-      'Up to 20 Vehicles',
-      'Up to 40 Drivers',
-      'Up to 500 Rides / Month',
+      'Up to 30 Vehicles',
+      'Up to 60 Drivers',
+      'Up to 1,500 Rides / Month',
       'All Platform Modules Included',
       'Priority Support',
     ],
@@ -62,14 +74,14 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'PROFESSIONAL',
     name: 'Professional Fleet',
-    price: 149,
-    maxVehicles: 50,
-    maxDrivers: 100,
-    maxRides: 1500,
+    price: 199,
+    maxVehicles: 75,
+    maxDrivers: 150,
+    maxRides: 3500,
     features: [
-      'Up to 50 Vehicles',
-      'Up to 100 Drivers',
-      'Up to 1,500 Rides / Month',
+      'Up to 75 Vehicles',
+      'Up to 150 Drivers',
+      'Up to 3,500 Rides / Month',
       'All Platform Modules Included',
       'Priority Support',
     ],
@@ -77,7 +89,7 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'ENTERPRISE',
     name: 'Enterprise Fleet',
-    price: 199,
+    price: 499,
     maxVehicles: 9999,
     maxDrivers: 9999,
     maxRides: 999999,
@@ -159,6 +171,12 @@ export default function SubscriptionPage() {
     last4: '',
     brand: '',
   });
+
+  const [cabChoice, setCabChoice] =
+    useState<CabAccessChoice>(null);
+
+  const [currentCabMode, setCurrentCabMode] =
+    useState<CabAccessChoice>(null);
 
   /*
    * Read the service selected on the landing page.
@@ -246,6 +264,32 @@ export default function SubscriptionPage() {
           effectiveSubscription.currentPeriodEnd
         ) < new Date())
   );
+
+  useEffect(() => {
+    const storedCabMode =
+      typeof window !== 'undefined'
+        ? (localStorage.getItem('cab-access-mode') as CabAccessChoice)
+        : null;
+
+    if (storedCabMode) {
+      setCurrentCabMode(storedCabMode);
+      setCabChoice((prev) => prev ?? storedCabMode);
+    } else if (effectiveSubscription && !isExpired) {
+      setCurrentCabMode('WITH_SUBSCRIPTION');
+      setCabChoice((prev) => prev ?? 'WITH_SUBSCRIPTION');
+    }
+  }, [effectiveSubscription, isExpired]);
+
+  const handleContinueWithCommission = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cab-access-mode', 'COMMISSION');
+    }
+    setCurrentCabMode('COMMISSION');
+    setCabChoice('COMMISSION');
+    toast.success('Commission model activated successfully!');
+    useSidebarStore.getState().setActiveModule('CAB');
+    router.push('/dashboard');
+  };
 
   /*
    * Redirect to the dashboard selected before login.
@@ -361,6 +405,13 @@ export default function SubscriptionPage() {
           'Subscription setup successful!'
         );
 
+        if (selectedService === 'CAB') {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('cab-access-mode', 'SUBSCRIPTION');
+          }
+          setCurrentCabMode('WITH_SUBSCRIPTION');
+        }
+
         await hydrateFromSession();
         await fetchData(false);
 
@@ -376,6 +427,13 @@ export default function SubscriptionPage() {
         setSubscription(
           updatedSubscription
         );
+
+        if (selectedService === 'CAB') {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('cab-access-mode', 'SUBSCRIPTION');
+          }
+          setCurrentCabMode('WITH_SUBSCRIPTION');
+        }
 
         setShowPaymentModal(null);
 
@@ -429,6 +487,14 @@ export default function SubscriptionPage() {
 
       try {
         await subscriptionService.cancelSubscription();
+
+        if (selectedService === 'CAB') {
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('cab-access-mode');
+          }
+          setCurrentCabMode(null);
+          setCabChoice(null);
+        }
 
         await hydrateFromSession();
 
@@ -523,33 +589,31 @@ export default function SubscriptionPage() {
       {/* Subscription header */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-start gap-4">
-          {subscription && !isExpired && (
+          {((subscription && !isExpired) || currentCabMode === 'COMMISSION') && (
             <button
               type="button"
-              onClick={() => router.back()}
+              onClick={() => router.push(selectedService === 'CAB' ? '/dashboard' : '/')}
               className="mt-1 flex shrink-0 items-center justify-center rounded-full bg-white/5 p-2 text-[#A1A1AA] transition-colors hover:bg-white/10 hover:text-white"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
           )}
           <div>
-          <h1 className="text-2xl font-bold text-white">
-            {selectedService
-              ? `${SUPPLIER_SERVICE_NAMES[selectedService]} Subscription`
-              : 'Subscription'}
-          </h1>
+            <h1 className="text-2xl font-bold text-white">
+              {selectedService === 'CAB'
+                ? 'Cab Booking Pricing & Access Model'
+                : selectedService
+                ? `${SUPPLIER_SERVICE_NAMES[selectedService]} Subscription`
+                : 'Subscription'}
+            </h1>
 
-          {selectedService && (
-            <p className="mt-1 text-sm text-[#A1A1AA]">
-              Select a subscription plan for{' '}
-              {
-                SUPPLIER_SERVICE_NAMES[
-                  selectedService
-                ]
-              }
-              .
-            </p>
-          )}
+            {selectedService && (
+              <p className="mt-1 text-sm text-[#A1A1AA]">
+                {selectedService === 'CAB'
+                  ? 'Choose between a fixed monthly subscription (0% commission) or pay-as-you-go commission model (9% per ride).'
+                  : `Select a subscription plan for ${SUPPLIER_SERVICE_NAMES[selectedService]}.`}
+              </p>
+            )}
           </div>
         </div>
 
@@ -565,6 +629,43 @@ export default function SubscriptionPage() {
           </button>
         )}
       </div>
+
+      {/* Active Commission Model Notice */}
+      {selectedService === 'CAB' && currentCabMode === 'COMMISSION' && (
+        <div className="rounded-xl border border-[#27272A] bg-[#111111] p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#FACC15]/10 text-[#FACC15]">
+                <Percent className="h-6 w-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-white">
+                    Commission Model (9% Per Ride)
+                  </h3>
+                  <span className="rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-semibold text-green-400">
+                    Active
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-[#A1A1AA]">
+                  You are currently operating on the pay-as-you-earn commission model with €0 monthly fee.
+                  Standard 9% platform commission applies per completed passenger ride.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard')}
+                className="rounded-lg bg-[#FACC15] px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-[#EAB308]"
+              >
+                Go to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Current subscription information */}
       {subscription && !isExpired && (
@@ -585,8 +686,134 @@ export default function SubscriptionPage() {
         />
       )}
 
-      {/* First time Welcome message (no subscription ever) */}
-      {!effectiveSubscription && !isExpired && (
+      {/* CAB Options: Subscription vs Commission */}
+      {selectedService === 'CAB' && (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-bold text-white">
+              {currentCabMode ? 'Switch or Review Pricing Model' : 'Select Your Operating Model'}
+            </h2>
+            <p className="mt-1 text-sm text-[#A1A1AA]">
+              Choose how you want to partner with GOZOLT for your cab fleet. You can switch models anytime.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Subscription Option Card */}
+            <button
+              type="button"
+              onClick={() => setCabChoice('WITH_SUBSCRIPTION')}
+              className={`rounded-2xl border p-6 text-left transition-all ${
+                cabChoice === 'WITH_SUBSCRIPTION'
+                  ? 'border-[#FACC15] bg-[#FACC15]/10 shadow-lg shadow-[#FACC15]/5'
+                  : 'border-[#27272A] bg-[#111111] hover:border-[#FACC15]/60'
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FACC15]/10 text-[#FACC15]">
+                  <Crown className="h-6 w-6" />
+                </div>
+                {cabChoice === 'WITH_SUBSCRIPTION' && (
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FACC15] text-black">
+                    <Check className="h-4 w-4 stroke-[3]" />
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4">
+                <div className="flex items-baseline gap-2">
+                  <h3 className="text-xl font-bold text-white">Subscription Model</h3>
+                  <span className="rounded-full bg-[#FACC15]/20 px-2.5 py-0.5 text-xs font-semibold text-[#FACC15]">
+                    0% Commission
+                  </span>
+                </div>
+                <p className="mt-1 text-2xl font-black text-white">
+                  From €99 <span className="text-xs font-normal text-[#A1A1AA]">/ month</span>
+                </p>
+                <p className="mt-2 text-sm text-[#A1A1AA]">
+                  Pay a fixed monthly fee based on your fleet size. Keep 100% of your ride fares with 0% platform commission.
+                </p>
+              </div>
+            </button>
+
+            {/* Commission Option Card */}
+            <button
+              type="button"
+              onClick={() => setCabChoice('COMMISSION')}
+              className={`rounded-2xl border p-6 text-left transition-all ${
+                cabChoice === 'COMMISSION'
+                  ? 'border-[#FACC15] bg-[#FACC15]/10 shadow-lg shadow-[#FACC15]/5'
+                  : 'border-[#27272A] bg-[#111111] hover:border-[#FACC15]/60'
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/5 text-[#FACC15]">
+                  <Percent className="h-6 w-6" />
+                </div>
+                {cabChoice === 'COMMISSION' && (
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FACC15] text-black">
+                    <Check className="h-4 w-4 stroke-[3]" />
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4">
+                <div className="flex items-baseline gap-2">
+                  <h3 className="text-xl font-bold text-white">Commission Model</h3>
+                  <span className="rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs font-semibold text-green-400">
+                    No Upfront Fee
+                  </span>
+                </div>
+                <p className="mt-1 text-2xl font-black text-white">
+                  €0 <span className="text-xs font-normal text-[#A1A1AA]">/ month + 9% per ride</span>
+                </p>
+                <p className="mt-2 text-sm text-[#A1A1AA]">
+                  No upfront subscription required. Pay only a standard 9% platform commission per completed passenger ride.
+                </p>
+              </div>
+            </button>
+          </div>
+
+          {/* Details for Commission Model */}
+          {cabChoice === 'COMMISSION' && (
+            <div className="rounded-2xl border border-[#27272A] bg-[#111111] p-6 space-y-6">
+              <div>
+                <h3 className="text-lg font-bold text-white">Commission Model Benefits</h3>
+                <p className="text-sm text-[#A1A1AA] mt-1">
+                  Start operating and receiving ride requests right away with zero upfront cost.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {CAB_COMMISSION_FEATURES.map((feature, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FACC15]/10 text-[#FACC15]">
+                      <Check className="h-3.5 w-3.5 stroke-[3]" />
+                    </div>
+                    <span className="text-sm text-[#D4D4D8]">{feature}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-4 border-t border-[#27272A] flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-[#A1A1AA]">
+                  Ready to proceed? No credit card required for the commission model.
+                </div>
+                <button
+                  type="button"
+                  onClick={handleContinueWithCommission}
+                  className="w-full sm:w-auto rounded-full bg-[#FACC15] px-8 py-3 text-sm font-bold text-black transition-colors hover:bg-[#EAB308] shadow-lg shadow-[#FACC15]/20"
+                >
+                  Continue with Commission Model
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* First time Welcome message for non-CAB services */}
+      {!effectiveSubscription && !isExpired && selectedService !== 'CAB' && (
         <div className="mb-4 space-y-2 py-8 text-center">
           <h2 className="text-3xl font-bold text-white">
             Welcome to GOZOLT
@@ -601,15 +828,27 @@ export default function SubscriptionPage() {
       )}
 
       {/* Subscription plans */}
-      <PlanComparisonCards
-        plans={PLAN_CONFIG}
-        currentTier={
-          subscription?.tier || effectiveSubscription?.tier || null
-        }
-        isChanging={isChanging}
-        onSelectPlan={handleSelectPlan}
-        isExpired={isExpired}
-      />
+      {(selectedService !== 'CAB' || cabChoice === 'WITH_SUBSCRIPTION') && (
+        <div className="space-y-4">
+          {selectedService === 'CAB' && (
+            <div>
+              <h3 className="text-lg font-bold text-white">Choose Your Fleet Tier</h3>
+              <p className="text-sm text-[#A1A1AA]">
+                Select the plan that fits your vehicle and driver fleet size.
+              </p>
+            </div>
+          )}
+          <PlanComparisonCards
+            plans={PLAN_CONFIG}
+            currentTier={
+              subscription?.tier || effectiveSubscription?.tier || null
+            }
+            isChanging={isChanging}
+            onSelectPlan={handleSelectPlan}
+            isExpired={isExpired}
+          />
+        </div>
+      )}
 
       {/* Cancel subscription dialog */}
       {showCancelDialog && (

@@ -73,7 +73,7 @@ export const SIDEBAR_ITEMS = [
   { label: 'Payments & Settlements', href: '/airport-transfers/payouts', icon: Wallet, module: 'AIRPORT_TRANSFER' },
   { label: 'Staff & Workers', href: '/airport-transfers/workers', icon: Users, module: 'AIRPORT_TRANSFER' },
   { label: 'Reviews & Ratings', href: '/airport-transfers/reviews', icon: Star, module: 'AIRPORT_TRANSFER' },
-  { label: 'Subscription Plan', href: '/airport-transfers/subscription', icon: Crown, module: 'AIRPORT_TRANSFER' },
+  // { label: 'Subscription Plan', href: '/airport-transfers/subscription', icon: Crown, module: 'AIRPORT_TRANSFER' },
 
   { label: 'Dashboard', href: ROUTES.QUICK_SERVICES_DASHBOARD, icon: LayoutDashboard, module: 'QUICK_SERVICES' },
   { label: 'Booking Management', href: ROUTES.QUICK_SERVICES_BOOKING_MANAGEMENT, icon: CalendarCheck, module: 'QUICK_SERVICES' },
@@ -81,7 +81,7 @@ export const SIDEBAR_ITEMS = [
   { label: 'Analytics', href: ROUTES.QUICK_SERVICES_ANALYTICS, icon: BarChart3, module: 'QUICK_SERVICES' },
   { label: 'Staff & Workers', href: ROUTES.QUICK_SERVICES_WORKERS, icon: Users, module: 'QUICK_SERVICES' },
   { label: 'Reviews & Ratings', href: '/quick-services/reviews', icon: Star, module: 'QUICK_SERVICES' },
-  { label: 'Subscription Plan', href: ROUTES.QUICK_SERVICES_SUBSCRIPTION, icon: Crown, module: 'QUICK_SERVICES' },
+  // { label: 'Subscription Plan', href: ROUTES.QUICK_SERVICES_SUBSCRIPTION, icon: Crown, module: 'QUICK_SERVICES' },
 
   { label: 'Dashboard', href: ROUTES.DASHBOARD, icon: LayoutDashboard, module: 'CAB' },
   { label: 'Dashboard', href: '/car-rentals/dashboard', icon: LayoutDashboard, module: 'RENTAL' },
@@ -91,7 +91,7 @@ export const SIDEBAR_ITEMS = [
   { label: 'Payments & Settlements', href: '/car-rentals/payouts', icon: Wallet, module: 'RENTAL' },
   { label: 'Staff & Workers', href: ROUTES.CAR_RENTALS_WORKERS, icon: Users, module: 'RENTAL' },
   { label: 'Reviews & Ratings', href: ROUTES.CAR_RENTALS_REVIEWS, icon: Star, module: 'RENTAL' },
-  { label: 'Subscription Plan', href: ROUTES.SUBSCRIPTION, icon: Crown, module: 'RENTAL' },
+  // { label: 'Subscription Plan', href: ROUTES.SUBSCRIPTION, icon: Crown, module: 'RENTAL' },
 
   { label: 'Dashboard', href: '/bike-rentals/dashboard', icon: LayoutDashboard, module: 'BIKE_RENTAL' },
   { label: 'Bike rentals history', href: ROUTES.BIKE_RENTALS, icon: Key, module: 'BIKE_RENTAL' },
@@ -100,7 +100,7 @@ export const SIDEBAR_ITEMS = [
   { label: 'Payments & Settlements', href: '/bike-rentals/payouts', icon: Wallet, module: 'BIKE_RENTAL' },
   { label: 'Staff & Workers', href: ROUTES.BIKE_RENTALS_WORKERS, icon: Users, module: 'BIKE_RENTAL' },
   { label: 'Reviews & Ratings', href: ROUTES.BIKE_RENTALS_REVIEWS, icon: Star, module: 'BIKE_RENTAL' },
-  { label: 'Subscription Plan', href: ROUTES.SUBSCRIPTION, icon: Crown, module: 'BIKE_RENTAL' },
+  // { label: 'Subscription Plan', href: ROUTES.SUBSCRIPTION, icon: Crown, module: 'BIKE_RENTAL' },
 
   { label: 'Fleet', href: ROUTES.FLEET, icon: Truck, module: 'CAB' },
   { label: 'My Fleet Drivers', href: ROUTES.DRIVERS, icon: Users, module: 'CAB' },
@@ -114,7 +114,7 @@ export const SIDEBAR_ITEMS = [
   { label: 'Invoices', href: ROUTES.INVOICES, icon: Receipt, module: 'CAB' },
   { label: 'Maintenance & Fuel', href: ROUTES.MAINTENANCE, icon: Wrench, module: 'CAB' },
   { label: 'Analytics', href: ROUTES.ANALYTICS, icon: BarChart3, module: 'CAB' },
-  { label: 'Subscription Plan', href: ROUTES.SUBSCRIPTION, icon: Crown, module: 'CAB' },
+  // { label: 'Subscription Plan', href: ROUTES.SUBSCRIPTION, icon: Crown, module: 'CAB' },
 ] as const;
 
 export const SIGNOUT_ITEM = {

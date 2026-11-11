@@ -90,59 +90,27 @@ export default function DashboardLayout({
     }
 
     /*
-     * QUICK SERVICES
+     * SUBSCRIPTION ROUTING
      *
-     * Quick Services supports:
-     * 1. With Subscription
-     * 2. Without Subscription
+     * Note: Subscription for CAR_RENTAL, BIKE_RENTAL, AIRPORT_TRANSFER,
+     * and QUICK_SERVICES is temporarily bypassed as requested.
+     * Only Cab booking requires subscription for now.
+     * All subscription pages and functionality remain intact for future use.
      */
-    if (selectedService === 'QUICK_SERVICES') {
-      const qsAccessMode = user.quickServiceAccessMode || localStorage.getItem('quick-services-access-mode');
-      const hasChosenWithoutSub = qsAccessMode === 'WITHOUT_SUBSCRIPTION';
+    const cabAccessMode =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('cab-access-mode')
+        : null;
 
-      if (
-        !hasActiveSubscription &&
-        !hasChosenWithoutSub &&
-        !isQuickServicesSubscriptionPage
-      ) {
-        router.replace('/quick-services/subscription');
-        return;
-      }
-    }
-
-    /*
-     * AIRPORT TRANSPORT
-     *
-     * Dedicated airport transfers subscription page.
-     */
-    if (selectedService === 'AIRPORT_TRANSFER') {
-      if (!hasActiveSubscription && !isAirportTransfersSubscriptionPage) {
-        router.replace('/airport-transfers/subscription');
-        return;
-      }
-    }
-
-    /*
-     * CAB, CAR RENTAL AND BIKE RENTAL
-     *
-     * These services require the common subscription.
-     */
     if (
-      selectedService !== 'QUICK_SERVICES' &&
-      selectedService !== 'AIRPORT_TRANSFER' &&
+      selectedService === 'CAB' &&
       !hasActiveSubscription &&
+      cabAccessMode !== 'COMMISSION' &&
       !isCommonSubscriptionPage
     ) {
-      router.replace(
-        `/subscription?service=${encodeURIComponent(
-          selectedService
-        )}`
-      );
-
+      router.replace('/subscription?service=CAB');
       return;
     }
-
-
 
     // If the sidebar module was lost, restore it
     // from the selected service.
@@ -155,6 +123,7 @@ export default function DashboardLayout({
           break;
 
         case 'CAR_RENTAL':
+        case 'RENTAL':
           useSidebarStore
             .getState()
             .setActiveModule('RENTAL');

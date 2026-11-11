@@ -294,9 +294,8 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
 
     const airportTasks = (worker.airportTransferTasks || []).map((t: any) => ({
       id: t.id,
-      title: `Airport Transfer (${t.tripLeg === 'RETURN' ? 'Return Leg' : 'First Leg'}) - ${
-        t.booking?.vehicle?.make ? `${t.booking.vehicle.make} ${t.booking.vehicle.model}` : 'Vehicle'
-      }`,
+      title: `Airport Transfer (${t.tripLeg === 'RETURN' ? 'Return trip' : 'First trip'}) - ${t.booking?.vehicle?.make ? `${t.booking.vehicle.make} ${t.booking.vehicle.model}` : 'Vehicle'
+        }`,
       expiresAt: t.expiresAt,
     }));
 
@@ -438,9 +437,8 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
                     setNewWorker({ ...newWorker, name: e.target.value.slice(0, 50) });
                     if (addNameError) setAddNameError('');
                   }}
-                  className={`w-full rounded-lg border ${
-                    addNameError ? 'border-red-500 focus:border-red-500' : 'border-[#27272A] focus:border-[#FACC15]'
-                  } bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none transition-colors`}
+                  className={`w-full rounded-lg border ${addNameError ? 'border-red-500 focus:border-red-500' : 'border-[#27272A] focus:border-[#FACC15]'
+                    } bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none transition-colors`}
                   placeholder="Enter Name"
                 />
                 {addNameError && (
@@ -465,9 +463,8 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
                       setAddEmailError(validateEmail(newWorker.email));
                     }
                   }}
-                  className={`w-full rounded-lg border ${
-                    addEmailError ? 'border-red-500 focus:border-red-500' : 'border-[#27272A] focus:border-[#FACC15]'
-                  } bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none transition-colors`}
+                  className={`w-full rounded-lg border ${addEmailError ? 'border-red-500 focus:border-red-500' : 'border-[#27272A] focus:border-[#FACC15]'
+                    } bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none transition-colors`}
                   placeholder="Enter Email Address"
                 />
                 {addEmailError && (
@@ -530,9 +527,8 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
                     setCurrentWorker({ ...currentWorker, name: e.target.value.slice(0, 50) });
                     if (editNameError) setEditNameError('');
                   }}
-                  className={`w-full rounded-lg border ${
-                    editNameError ? 'border-red-500 focus:border-red-500' : 'border-[#27272A] focus:border-[#FACC15]'
-                  } bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none transition-colors`}
+                  className={`w-full rounded-lg border ${editNameError ? 'border-red-500 focus:border-red-500' : 'border-[#27272A] focus:border-[#FACC15]'
+                    } bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none transition-colors`}
                 />
                 {editNameError && (
                   <p className="mt-1 text-xs text-red-500">{editNameError}</p>
@@ -556,9 +552,8 @@ export function WorkersTab({ moduleType = 'RENTAL' }: { moduleType?: string }) {
                       setEditEmailError(validateEmail(currentWorker.email));
                     }
                   }}
-                  className={`w-full rounded-lg border ${
-                    editEmailError ? 'border-red-500 focus:border-red-500' : 'border-[#27272A] focus:border-[#FACC15]'
-                  } bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none transition-colors`}
+                  className={`w-full rounded-lg border ${editEmailError ? 'border-red-500 focus:border-red-500' : 'border-[#27272A] focus:border-[#FACC15]'
+                    } bg-[#0A0A0A] p-3 text-white placeholder-gray-500 outline-none transition-colors`}
                 />
                 {editEmailError && (
                   <p className="mt-1 text-xs text-red-500">{editEmailError}</p>

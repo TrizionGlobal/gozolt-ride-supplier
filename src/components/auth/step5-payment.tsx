@@ -25,10 +25,10 @@ interface Step5PaymentProps {
 }
 
 const PLAN_INFO: Record<string, { name: string; price: number }> = {
-  STARTER: { name: 'Starter Fleet', price: 49 },
-  GROWTH: { name: 'Growth Fleet', price: 99 },
-  PROFESSIONAL: { name: 'Professional Fleet', price: 149 },
-  ENTERPRISE: { name: 'Enterprise Fleet', price: 199 },
+  STARTER: { name: 'Starter Fleet', price: 99 },
+  GROWTH: { name: 'Growth Fleet', price: 149 },
+  PROFESSIONAL: { name: 'Professional Fleet', price: 199 },
+  ENTERPRISE: { name: 'Enterprise Fleet', price: 499 },
   QUICK_BASIC: { name: 'Quick Services Basic', price: 100 },
   QUICK_ADVANCED: { name: 'Quick Services Advanced', price: 250 },
 };

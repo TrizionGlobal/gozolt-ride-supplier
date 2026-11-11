@@ -703,6 +703,8 @@ export interface SupplierRideListItem {
   status: string;
   estimatedFare: number;
   actualFare: number | null;
+  platformFee?: number | null;
+  supplierAmount?: number | null;
   baseFare: number | null;
   distanceFare: number | null;
   timeFare: number | null;

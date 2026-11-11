@@ -18,7 +18,9 @@ export function RideDetailDrawer({ ride, onClose }: RideDetailDrawerProps) {
     { label: 'Time Fare', value: ride.timeFare },
     { label: 'Booking Fee', value: ride.bookingFee },
     { label: 'Surge', value: ride.surgeMultiplier > 1 ? `${ride.surgeMultiplier}x` : null },
+    ...(ride.platformFee != null && Number(ride.platformFee) > 0 ? [{ label: 'VAT Charges:', value: ride.platformFee }] : []),
     { label: 'Total Fare', value: ride.actualFare, bold: true },
+    ...(ride.supplierAmount != null && Number(ride.supplierAmount) > 0 ? [{ label: 'Supplier Net Fare', value: ride.supplierAmount, green: true }] : []),
     { label: 'Tip', value: ride.tipAmount, green: true },
   ];
 

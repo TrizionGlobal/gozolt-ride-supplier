@@ -44,13 +44,10 @@ const PLAN_CONFIG: PlanDetails[] = [
     tier: 'STARTER',
     name: 'Starter Fleet',
     price: 99,
-    maxVehicles: 10,
-    maxDrivers: 20,
-    maxRides: 500,
+    maxRides: 100,
     features: [
-      'Up to 10 Vehicles',
-      'Up to 20 Drivers',
-      'Up to 500 Rides / Month',
+      '100 Rides / Month',
+      '0% Platform Commission',
       'All Platform Modules Included',
       'Standard Support',
     ],
@@ -58,15 +55,12 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'GROWTH',
     name: 'Growth Fleet',
-    price: 149,
-    maxVehicles: 30,
-    maxDrivers: 60,
-    maxRides: 1500,
+    price: 199,
+    maxRides: 250,
     isRecommended: true,
     features: [
-      'Up to 30 Vehicles',
-      'Up to 60 Drivers',
-      'Up to 1,500 Rides / Month',
+      '250 Rides / Month',
+      '0% Platform Commission',
       'All Platform Modules Included',
       'Priority Support',
     ],
@@ -74,14 +68,11 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'PROFESSIONAL',
     name: 'Professional Fleet',
-    price: 199,
-    maxVehicles: 75,
-    maxDrivers: 150,
-    maxRides: 3500,
+    price: 299,
+    maxRides: 400,
     features: [
-      'Up to 75 Vehicles',
-      'Up to 150 Drivers',
-      'Up to 3,500 Rides / Month',
+      '400 Rides / Month',
+      '0% Platform Commission',
       'All Platform Modules Included',
       'Priority Support',
     ],
@@ -90,13 +81,10 @@ const PLAN_CONFIG: PlanDetails[] = [
     tier: 'ENTERPRISE',
     name: 'Enterprise Fleet',
     price: 499,
-    maxVehicles: 9999,
-    maxDrivers: 9999,
     maxRides: 999999,
     features: [
-      'Unlimited Vehicles',
-      'Unlimited Drivers',
       'Unlimited Rides',
+      '0% Platform Commission',
       'All Platform Modules Included',
       'Dedicated Account Manager',
     ],
@@ -601,7 +589,7 @@ export default function SubscriptionPage() {
           <div>
             <h1 className="text-2xl font-bold text-white">
               {selectedService === 'CAB'
-                ? 'Cab Booking Pricing & Access Model'
+                ? (currentCabMode ? 'Switch or Review Pricing Model' : 'Select Your Operating Model')
                 : selectedService
                 ? `${SUPPLIER_SERVICE_NAMES[selectedService]} Subscription`
                 : 'Subscription'}
@@ -610,7 +598,7 @@ export default function SubscriptionPage() {
             {selectedService && (
               <p className="mt-1 text-sm text-[#A1A1AA]">
                 {selectedService === 'CAB'
-                  ? 'Choose between a fixed monthly subscription (0% commission) or pay-as-you-go commission model (9% per ride).'
+                  ? 'Choose how you want to partner with GOZOLT for your cab fleet. You can switch models anytime.'
                   : `Select a subscription plan for ${SUPPLIER_SERVICE_NAMES[selectedService]}.`}
               </p>
             )}
@@ -689,15 +677,6 @@ export default function SubscriptionPage() {
       {/* CAB Options: Subscription vs Commission */}
       {selectedService === 'CAB' && (
         <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-bold text-white">
-              {currentCabMode ? 'Switch or Review Pricing Model' : 'Select Your Operating Model'}
-            </h2>
-            <p className="mt-1 text-sm text-[#A1A1AA]">
-              Choose how you want to partner with GOZOLT for your cab fleet. You can switch models anytime.
-            </p>
-          </div>
-
           <div className="grid gap-6 md:grid-cols-2">
             {/* Subscription Option Card */}
             <button
@@ -731,7 +710,7 @@ export default function SubscriptionPage() {
                   From €99 <span className="text-xs font-normal text-[#A1A1AA]">/ month</span>
                 </p>
                 <p className="mt-2 text-sm text-[#A1A1AA]">
-                  Pay a fixed monthly fee based on your fleet size. Keep 100% of your ride fares with 0% platform commission.
+                  Pay a fixed monthly fee based on your ride volume. Keep 100% of your ride fares with 0% platform commission.
                 </p>
               </div>
             </button>
@@ -812,29 +791,14 @@ export default function SubscriptionPage() {
         </div>
       )}
 
-      {/* First time Welcome message for non-CAB services */}
-      {!effectiveSubscription && !isExpired && selectedService !== 'CAB' && (
-        <div className="mb-4 space-y-2 py-8 text-center">
-          <h2 className="text-3xl font-bold text-white">
-            Welcome to GOZOLT
-          </h2>
-
-          <p className="text-[#A1A1AA]">
-            Your account does not have an
-            active subscription. Please select
-            a plan to continue.
-          </p>
-        </div>
-      )}
-
       {/* Subscription plans */}
       {(selectedService !== 'CAB' || cabChoice === 'WITH_SUBSCRIPTION') && (
         <div className="space-y-4">
           {selectedService === 'CAB' && (
             <div>
-              <h3 className="text-lg font-bold text-white">Choose Your Fleet Tier</h3>
+              <h3 className="text-lg font-bold text-white">Choose Your Subscription Plan</h3>
               <p className="text-sm text-[#A1A1AA]">
-                Select the plan that fits your vehicle and driver fleet size.
+                Select the plan that fits your monthly ride volume.
               </p>
             </div>
           )}

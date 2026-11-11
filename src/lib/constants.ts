@@ -114,7 +114,7 @@ export const SIDEBAR_ITEMS = [
   { label: 'Invoices', href: ROUTES.INVOICES, icon: Receipt, module: 'CAB' },
   { label: 'Maintenance & Fuel', href: ROUTES.MAINTENANCE, icon: Wrench, module: 'CAB' },
   { label: 'Analytics', href: ROUTES.ANALYTICS, icon: BarChart3, module: 'CAB' },
-  // { label: 'Subscription Plan', href: ROUTES.SUBSCRIPTION, icon: Crown, module: 'CAB' },
+  { label: 'Subscription', href: ROUTES.SUBSCRIPTION, icon: Crown, module: 'CAB' },
 ] as const;
 
 export const SIGNOUT_ITEM = {

@@ -207,8 +207,8 @@ export interface SupplierSubscription {
   id: string;
   tier: SubscriptionTier;
   status: string;
-  maxDrivers: number;
-  maxVehicles: number;
+  maxDrivers?: number;
+  maxVehicles?: number;
   maxRides: number;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
@@ -528,8 +528,8 @@ export interface RevenueTrendPoint {
 // Subscription interfaces
 export interface SubscriptionInfo {
   tier: 'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE';
-  maxVehicles: number;
-  maxDrivers: number;
+  maxVehicles?: number;
+  maxDrivers?: number;
   maxRides: number;
   currentPeriodEnd: string | null;
   createdAt?: string | null;
@@ -541,8 +541,8 @@ export interface PlanDetails {
   tier: 'STARTER' | 'GROWTH' | 'PROFESSIONAL' | 'ENTERPRISE';
   name: string;
   price: number;
-  maxVehicles: number;
-  maxDrivers: number;
+  maxVehicles?: number;
+  maxDrivers?: number;
   maxRides: number;
   features: string[];
   isRecommended?: boolean;

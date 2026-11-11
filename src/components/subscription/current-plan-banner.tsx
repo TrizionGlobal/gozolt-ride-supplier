@@ -34,11 +34,19 @@ export function CurrentPlanBanner({ subscription, usage, plans, isLoading }: Cur
       })
     : 'N/A';
 
-  const vehiclePercent = Math.min((usage.totalVehicles / (currentPlan?.maxVehicles || 9999)) * 100, 100);
-  const driverPercent = Math.min((usage.totalDrivers / (currentPlan?.maxDrivers || 9999)) * 100, 100);
-  const ridePercent = currentPlan?.maxRides
-    ? Math.min(((usage.totalRides || 0) / currentPlan.maxRides) * 100, 100)
+  const hasVehicleLimits = Boolean(currentPlan?.maxVehicles && currentPlan.maxVehicles < 9000);
+  const hasDriverLimits = Boolean(currentPlan?.maxDrivers && currentPlan.maxDrivers < 9000);
+
+  const vehiclePercent = hasVehicleLimits && currentPlan?.maxVehicles
+    ? Math.min((usage.totalVehicles / currentPlan.maxVehicles) * 100, 100)
     : 0;
+  const driverPercent = hasDriverLimits && currentPlan?.maxDrivers
+    ? Math.min((usage.totalDrivers / currentPlan.maxDrivers) * 100, 100)
+    : 0;
+  const isUnlimitedRides = !currentPlan?.maxRides || currentPlan.maxRides > 900000;
+  const ridePercent = isUnlimitedRides
+    ? 0
+    : Math.min(((usage.totalRides || 0) / currentPlan.maxRides) * 100, 100);
 
   return (
     <div className="rounded-lg border border-[#27272A] bg-[#111111] p-6">
@@ -50,7 +58,7 @@ export function CurrentPlanBanner({ subscription, usage, plans, isLoading }: Cur
             <h3 className="text-lg font-bold text-white">{currentPlan?.name || subscription.tier} plan</h3>
           </div>
           <p className="mt-1 text-sm text-[#A1A1AA]">
-            € {currentPlan?.price || 0}/month . Next billing: {nextBilling}
+            € {currentPlan?.price || 0}/month • Next billing: {nextBilling}
           </p>
         </div>
         <span className="rounded-full bg-green-500/20 px-3 py-1 text-xs font-medium text-green-400">
@@ -58,45 +66,76 @@ export function CurrentPlanBanner({ subscription, usage, plans, isLoading }: Cur
         </span>
       </div>
 
-      {/* Usage bars */}
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Vehicles */}
-        <div className="flex-1">
-          <p className="mb-2 text-sm text-[#D4D4D8]">
-            Vehicles: {usage.totalVehicles} / {(currentPlan?.maxVehicles || 9999) > 9000 ? 'Unlimited' : currentPlan?.maxVehicles}
-          </p>
-          <div className="h-2 w-full rounded-full bg-[#3F3F46]">
-            <div
-              className="h-2 rounded-full bg-[#3B82F6] transition-all"
-              style={{ width: `${vehiclePercent}%` }}
-            />
+      {/* Usage section */}
+      {hasVehicleLimits || hasDriverLimits ? (
+        <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Vehicles */}
+          <div className="flex-1">
+            <p className="mb-2 text-sm text-[#D4D4D8]">
+              Vehicles: {usage.totalVehicles} / {currentPlan?.maxVehicles}
+            </p>
+            <div className="h-2 w-full rounded-full bg-[#3F3F46]">
+              <div
+                className="h-2 rounded-full bg-[#3B82F6] transition-all"
+                style={{ width: `${vehiclePercent}%` }}
+              />
+            </div>
+          </div>
+          {/* Drivers */}
+          <div className="flex-1">
+            <p className="mb-2 text-sm text-[#D4D4D8]">
+              Drivers: {usage.totalDrivers} / {currentPlan?.maxDrivers}
+            </p>
+            <div className="h-2 w-full rounded-full bg-[#3F3F46]">
+              <div
+                className="h-2 rounded-full bg-[#FACC15] transition-all"
+                style={{ width: `${driverPercent}%` }}
+              />
+            </div>
+          </div>
+          {/* Rides */}
+          <div className="flex-1">
+            <p className="mb-2 text-sm text-[#D4D4D8]">
+              Rides: {usage.totalRides || 0} / {isUnlimitedRides ? 'Unlimited' : currentPlan?.maxRides}
+            </p>
+            <div className="h-2 w-full rounded-full bg-[#3F3F46]">
+              <div
+                className="h-2 rounded-full bg-[#10B981] transition-all"
+                style={{ width: `${ridePercent}%` }}
+              />
+            </div>
           </div>
         </div>
-        {/* Drivers */}
-        <div className="flex-1">
-          <p className="mb-2 text-sm text-[#D4D4D8]">
-            Drivers: {usage.totalDrivers} / {(currentPlan?.maxDrivers || 9999) > 9000 ? 'Unlimited' : currentPlan?.maxDrivers}
-          </p>
-          <div className="h-2 w-full rounded-full bg-[#3F3F46]">
-            <div
-              className="h-2 rounded-full bg-[#FACC15] transition-all"
-              style={{ width: `${driverPercent}%` }}
-            />
+      ) : (
+        <div className="mt-5 space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm text-[#D4D4D8]">
+                Monthly Rides: <span className="font-semibold text-white">{usage.totalRides || 0}</span> / {isUnlimitedRides ? 'Unlimited' : currentPlan?.maxRides}
+              </p>
+              {!isUnlimitedRides && currentPlan?.maxRides && (
+                <span className="text-xs text-[#A1A1AA]">
+                  {Math.max(0, currentPlan.maxRides - (usage.totalRides || 0))} rides remaining
+                </span>
+              )}
+            </div>
+            {!isUnlimitedRides && (
+              <div className="h-2.5 w-full rounded-full bg-[#3F3F46]">
+                <div
+                  className="h-2.5 rounded-full bg-[#10B981] transition-all"
+                  style={{ width: `${ridePercent}%` }}
+                />
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-6 pt-2 text-xs text-[#A1A1AA]">
+            <span>Active Fleet: <strong className="text-white">{usage.totalVehicles}</strong> Vehicles</span>
+            <span>•</span>
+            <span><strong className="text-white">{usage.totalDrivers}</strong> Drivers</span>
+            <span className="rounded-full bg-[#27272A] px-2 py-0.5 text-[11px] text-[#A1A1AA]">No vehicle or driver limits</span>
           </div>
         </div>
-        {/* Rides */}
-        <div className="flex-1">
-          <p className="mb-2 text-sm text-[#D4D4D8]">
-            Rides: {usage.totalRides || 0} / {(currentPlan?.maxRides || 999999) > 900000 ? 'Unlimited' : currentPlan?.maxRides}
-          </p>
-          <div className="h-2 w-full rounded-full bg-[#3F3F46]">
-            <div
-              className="h-2 rounded-full bg-[#10B981] transition-all"
-              style={{ width: `${ridePercent}%` }}
-            />
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

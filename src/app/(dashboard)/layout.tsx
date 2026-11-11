@@ -206,7 +206,7 @@ export default function DashboardLayout({
    * - Airport Transport subscription (when supplier has no active subscription)
    */
   const isSubscriptionSetupPage =
-    pathname === '/subscription' ||
+    (pathname === '/subscription' && !hasActiveSubscription) ||
     pathname.startsWith('/quick-services/subscription') ||
     (pathname.startsWith('/airport-transfers/subscription') && !hasActiveSubscription);
 

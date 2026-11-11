@@ -40,6 +40,13 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
     const commission = grossEarned - netEarned;
     const status = payout?.status || 'COMPLETED';
 
+    const isCab = payout?.details?.module === 'CAB' || (payout as any)?.module === 'CAB' || serviceName === 'Cab Bookings' || supplier?.registeredService === 'CAB';
+    const operatingModel = d.operatingModel || (supplier?.cabAccessMode === 'COMMISSION' ? 'COMMISSION' : (supplier?.subscription ? 'SUBSCRIPTION' : 'COMMISSION'));
+    const isSubscribed = operatingModel === 'SUBSCRIPTION';
+    const commissionDeducted = Number(d.commissionDeducted || 0);
+    const commissionRate = Number(d.commissionRate ?? (supplier?.commissionRate ?? 9));
+    const totalCustomerAmountSettled = Number(d.totalCustomerAmountSettled || grossEarned);
+
     return (
       <div
         ref={ref}
@@ -144,6 +151,18 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
               </td>
             </tr>
 
+            {/* Cab Operating Model */}
+            {isCab && (
+              <tr className="border-b border-gray-100">
+                <td className="py-2 font-medium">Operating Model</td>
+                <td className="py-2 text-right font-bold text-gray-900">
+                  {isSubscribed
+                    ? 'Subscription Model (0% Platform Commission)'
+                    : `Commission Model (${commissionRate}% Platform Commission)`}
+                </td>
+              </tr>
+            )}
+
             {/* Total Earned Amount */}
             <tr className="border-b border-gray-100">
               <td className="py-2 font-medium">Total Earned Amount</td>
@@ -151,6 +170,24 @@ export const InvoiceDocument = forwardRef<HTMLDivElement, InvoiceDocumentProps>(
                 {formatCurrency(grossEarned)}
               </td>
             </tr>
+
+            {/* Cab Commission Deducted (Only if Commission Model) */}
+            {isCab && !isSubscribed && commissionDeducted > 0 && (
+              <>
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 font-medium">Customer Total Paid (Fare + VAT)</td>
+                  <td className="py-2 text-right font-medium text-gray-900">
+                    {formatCurrency(totalCustomerAmountSettled)}
+                  </td>
+                </tr>
+                <tr className="border-b border-gray-100">
+                  <td className="py-2 font-medium">Platform Commission Deducted ({commissionRate}%)</td>
+                  <td className="py-2 text-right font-medium text-amber-600">
+                    -{formatCurrency(commissionDeducted)}
+                  </td>
+                </tr>
+              </>
+            )}
 
             {/* Cancellation Fee */}
             {cancelFees > 0 && (

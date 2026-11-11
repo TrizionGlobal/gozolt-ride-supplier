@@ -92,4 +92,22 @@ export const subscriptionService = {
       '/suppliers/subscription/cancel'
     );
   },
+
+  async chooseCommissionModel(): Promise<{ success: boolean; mode: string }> {
+    const response = await apiClient.post(
+      '/suppliers/operating-model/commission'
+    );
+    return response.data;
+  },
+
+  async getCommissionRate(): Promise<{ commissionPercentage: number }> {
+    try {
+      const response = await apiClient.get(
+        '/suppliers/commission-rate'
+      );
+      return response.data;
+    } catch {
+      return { commissionPercentage: 9.0 };
+    }
+  },
 };

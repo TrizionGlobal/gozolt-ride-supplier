@@ -29,9 +29,9 @@ import type {
 
 type CabAccessChoice = 'WITH_SUBSCRIPTION' | 'COMMISSION' | null;
 
-const CAB_COMMISSION_FEATURES = [
+const getCabCommissionFeatures = (rate: number) => [
   'Zero upfront cost — €0 / month subscription fee',
-  'Pay standard 9% platform commission per completed ride',
+  `Pay standard ${rate}% platform commission per completed ride`,
   'Add unlimited vehicles and drivers to your fleet',
   'Real-time ride dispatch & tracking access',
   'Automatic payouts & transparent settlement tracking',
@@ -44,13 +44,10 @@ const PLAN_CONFIG: PlanDetails[] = [
     tier: 'STARTER',
     name: 'Starter Fleet',
     price: 99,
-    maxVehicles: 10,
-    maxDrivers: 20,
-    maxRides: 500,
+    maxRides: 100,
     features: [
-      'Up to 10 Vehicles',
-      'Up to 20 Drivers',
-      'Up to 500 Rides / Month',
+      '100 Rides / Month',
+      '0% Platform Commission',
       'All Platform Modules Included',
       'Standard Support',
     ],
@@ -58,15 +55,12 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'GROWTH',
     name: 'Growth Fleet',
-    price: 149,
-    maxVehicles: 30,
-    maxDrivers: 60,
-    maxRides: 1500,
+    price: 199,
+    maxRides: 250,
     isRecommended: true,
     features: [
-      'Up to 30 Vehicles',
-      'Up to 60 Drivers',
-      'Up to 1,500 Rides / Month',
+      '250 Rides / Month',
+      '0% Platform Commission',
       'All Platform Modules Included',
       'Priority Support',
     ],
@@ -74,14 +68,11 @@ const PLAN_CONFIG: PlanDetails[] = [
   {
     tier: 'PROFESSIONAL',
     name: 'Professional Fleet',
-    price: 199,
-    maxVehicles: 75,
-    maxDrivers: 150,
-    maxRides: 3500,
+    price: 299,
+    maxRides: 400,
     features: [
-      'Up to 75 Vehicles',
-      'Up to 150 Drivers',
-      'Up to 3,500 Rides / Month',
+      '400 Rides / Month',
+      '0% Platform Commission',
       'All Platform Modules Included',
       'Priority Support',
     ],
@@ -90,13 +81,10 @@ const PLAN_CONFIG: PlanDetails[] = [
     tier: 'ENTERPRISE',
     name: 'Enterprise Fleet',
     price: 499,
-    maxVehicles: 9999,
-    maxDrivers: 9999,
     maxRides: 999999,
     features: [
-      'Unlimited Vehicles',
-      'Unlimited Drivers',
       'Unlimited Rides',
+      '0% Platform Commission',
       'All Platform Modules Included',
       'Dedicated Account Manager',
     ],
@@ -178,6 +166,9 @@ export default function SubscriptionPage() {
   const [currentCabMode, setCurrentCabMode] =
     useState<CabAccessChoice>(null);
 
+  const [commissionRate, setCommissionRate] =
+    useState<number>(9.0);
+
   /*
    * Read the service selected on the landing page.
    *
@@ -224,14 +215,18 @@ export default function SubscriptionPage() {
       }
 
       try {
-        const [sub, usg] =
+        const [sub, usg, commRes] =
           await Promise.all([
             subscriptionService.getSubscription(),
             subscriptionService.getUsage(),
+            subscriptionService.getCommissionRate(),
           ]);
 
         setSubscription(sub);
         setUsage(usg);
+        if (commRes?.commissionPercentage !== undefined) {
+          setCommissionRate(Number(commRes.commissionPercentage));
+        }
       } catch (error) {
         console.error(
           'Failed to fetch subscription information:',
@@ -271,24 +266,43 @@ export default function SubscriptionPage() {
         ? (localStorage.getItem('cab-access-mode') as CabAccessChoice)
         : null;
 
-    if (storedCabMode) {
+    const backendMode = (user as any)?.cabAccessMode as CabAccessChoice;
+
+    if (backendMode) {
+      setCurrentCabMode(backendMode);
+      setCabChoice((prev) => prev ?? backendMode);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cab-access-mode', backendMode);
+      }
+    } else if (storedCabMode) {
       setCurrentCabMode(storedCabMode);
       setCabChoice((prev) => prev ?? storedCabMode);
     } else if (effectiveSubscription && !isExpired) {
       setCurrentCabMode('WITH_SUBSCRIPTION');
       setCabChoice((prev) => prev ?? 'WITH_SUBSCRIPTION');
     }
-  }, [effectiveSubscription, isExpired]);
+  }, [user, effectiveSubscription, isExpired]);
 
-  const handleContinueWithCommission = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('cab-access-mode', 'COMMISSION');
+  const handleContinueWithCommission = async () => {
+    setIsSubmitting(true);
+    try {
+      await subscriptionService.chooseCommissionModel();
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cab-access-mode', 'COMMISSION');
+      }
+      setCurrentCabMode('COMMISSION');
+      setCabChoice('COMMISSION');
+      await hydrateFromSession();
+      toast.success('Commission model activated successfully!');
+      useSidebarStore.getState().setActiveModule('CAB');
+      router.push('/dashboard');
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || err?.message || 'Failed to activate commission model'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-    setCurrentCabMode('COMMISSION');
-    setCabChoice('COMMISSION');
-    toast.success('Commission model activated successfully!');
-    useSidebarStore.getState().setActiveModule('CAB');
-    router.push('/dashboard');
   };
 
   /*
@@ -601,7 +615,7 @@ export default function SubscriptionPage() {
           <div>
             <h1 className="text-2xl font-bold text-white">
               {selectedService === 'CAB'
-                ? 'Cab Booking Pricing & Access Model'
+                ? (currentCabMode ? 'Switch or Review Pricing Model' : 'Select Your Operating Model')
                 : selectedService
                 ? `${SUPPLIER_SERVICE_NAMES[selectedService]} Subscription`
                 : 'Subscription'}
@@ -610,7 +624,7 @@ export default function SubscriptionPage() {
             {selectedService && (
               <p className="mt-1 text-sm text-[#A1A1AA]">
                 {selectedService === 'CAB'
-                  ? 'Choose between a fixed monthly subscription (0% commission) or pay-as-you-go commission model (9% per ride).'
+                  ? 'Choose how you want to partner with GOZOLT for your cab fleet. You can switch models anytime.'
                   : `Select a subscription plan for ${SUPPLIER_SERVICE_NAMES[selectedService]}.`}
               </p>
             )}
@@ -641,7 +655,7 @@ export default function SubscriptionPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold text-white">
-                    Commission Model (9% Per Ride)
+                    Commission Model ({commissionRate}% Per Ride)
                   </h3>
                   <span className="rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-semibold text-green-400">
                     Active
@@ -649,7 +663,7 @@ export default function SubscriptionPage() {
                 </div>
                 <p className="mt-1 text-sm text-[#A1A1AA]">
                   You are currently operating on the pay-as-you-earn commission model with €0 monthly fee.
-                  Standard 9% platform commission applies per completed passenger ride.
+                  Standard {commissionRate}% platform commission applies per completed passenger ride.
                 </p>
               </div>
             </div>
@@ -689,15 +703,6 @@ export default function SubscriptionPage() {
       {/* CAB Options: Subscription vs Commission */}
       {selectedService === 'CAB' && (
         <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-bold text-white">
-              {currentCabMode ? 'Switch or Review Pricing Model' : 'Select Your Operating Model'}
-            </h2>
-            <p className="mt-1 text-sm text-[#A1A1AA]">
-              Choose how you want to partner with GOZOLT for your cab fleet. You can switch models anytime.
-            </p>
-          </div>
-
           <div className="grid gap-6 md:grid-cols-2">
             {/* Subscription Option Card */}
             <button
@@ -731,7 +736,7 @@ export default function SubscriptionPage() {
                   From €99 <span className="text-xs font-normal text-[#A1A1AA]">/ month</span>
                 </p>
                 <p className="mt-2 text-sm text-[#A1A1AA]">
-                  Pay a fixed monthly fee based on your fleet size. Keep 100% of your ride fares with 0% platform commission.
+                  Pay a fixed monthly fee based on your ride volume. Keep 100% of your ride fares with 0% platform commission.
                 </p>
               </div>
             </button>
@@ -765,10 +770,10 @@ export default function SubscriptionPage() {
                   </span>
                 </div>
                 <p className="mt-1 text-2xl font-black text-white">
-                  €0 <span className="text-xs font-normal text-[#A1A1AA]">/ month + 9% per ride</span>
+                  €0 <span className="text-xs font-normal text-[#A1A1AA]">/ month + {commissionRate}% per ride</span>
                 </p>
                 <p className="mt-2 text-sm text-[#A1A1AA]">
-                  No upfront subscription required. Pay only a standard 9% platform commission per completed passenger ride.
+                  No upfront subscription required. Pay only a standard {commissionRate}% platform commission per completed passenger ride.
                 </p>
               </div>
             </button>
@@ -785,7 +790,7 @@ export default function SubscriptionPage() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                {CAB_COMMISSION_FEATURES.map((feature, idx) => (
+                {getCabCommissionFeatures(commissionRate).map((feature, idx) => (
                   <div key={idx} className="flex items-start gap-3">
                     <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FACC15]/10 text-[#FACC15]">
                       <Check className="h-3.5 w-3.5 stroke-[3]" />
@@ -802,28 +807,14 @@ export default function SubscriptionPage() {
                 <button
                   type="button"
                   onClick={handleContinueWithCommission}
-                  className="w-full sm:w-auto rounded-full bg-[#FACC15] px-8 py-3 text-sm font-bold text-black transition-colors hover:bg-[#EAB308] shadow-lg shadow-[#FACC15]/20"
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto rounded-full bg-[#FACC15] px-8 py-3 text-sm font-bold text-black transition-colors hover:bg-[#EAB308] shadow-lg shadow-[#FACC15]/20 disabled:opacity-50"
                 >
-                  Continue with Commission Model
+                  {isSubmitting ? 'Activating...' : 'Continue with Commission Model'}
                 </button>
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* First time Welcome message for non-CAB services */}
-      {!effectiveSubscription && !isExpired && selectedService !== 'CAB' && (
-        <div className="mb-4 space-y-2 py-8 text-center">
-          <h2 className="text-3xl font-bold text-white">
-            Welcome to GOZOLT
-          </h2>
-
-          <p className="text-[#A1A1AA]">
-            Your account does not have an
-            active subscription. Please select
-            a plan to continue.
-          </p>
         </div>
       )}
 
@@ -832,9 +823,9 @@ export default function SubscriptionPage() {
         <div className="space-y-4">
           {selectedService === 'CAB' && (
             <div>
-              <h3 className="text-lg font-bold text-white">Choose Your Fleet Tier</h3>
+              <h3 className="text-lg font-bold text-white">Choose Your Subscription Plan</h3>
               <p className="text-sm text-[#A1A1AA]">
-                Select the plan that fits your vehicle and driver fleet size.
+                Select the plan that fits your monthly ride volume.
               </p>
             </div>
           )}

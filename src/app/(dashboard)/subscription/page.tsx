@@ -29,9 +29,9 @@ import type {
 
 type CabAccessChoice = 'WITH_SUBSCRIPTION' | 'COMMISSION' | null;
 
-const CAB_COMMISSION_FEATURES = [
+const getCabCommissionFeatures = (rate: number) => [
   'Zero upfront cost — €0 / month subscription fee',
-  'Pay standard 9% platform commission per completed ride',
+  `Pay standard ${rate}% platform commission per completed ride`,
   'Add unlimited vehicles and drivers to your fleet',
   'Real-time ride dispatch & tracking access',
   'Automatic payouts & transparent settlement tracking',
@@ -166,6 +166,9 @@ export default function SubscriptionPage() {
   const [currentCabMode, setCurrentCabMode] =
     useState<CabAccessChoice>(null);
 
+  const [commissionRate, setCommissionRate] =
+    useState<number>(9.0);
+
   /*
    * Read the service selected on the landing page.
    *
@@ -212,14 +215,18 @@ export default function SubscriptionPage() {
       }
 
       try {
-        const [sub, usg] =
+        const [sub, usg, commRes] =
           await Promise.all([
             subscriptionService.getSubscription(),
             subscriptionService.getUsage(),
+            subscriptionService.getCommissionRate(),
           ]);
 
         setSubscription(sub);
         setUsage(usg);
+        if (commRes?.commissionPercentage !== undefined) {
+          setCommissionRate(Number(commRes.commissionPercentage));
+        }
       } catch (error) {
         console.error(
           'Failed to fetch subscription information:',
@@ -259,24 +266,43 @@ export default function SubscriptionPage() {
         ? (localStorage.getItem('cab-access-mode') as CabAccessChoice)
         : null;
 
-    if (storedCabMode) {
+    const backendMode = (user as any)?.cabAccessMode as CabAccessChoice;
+
+    if (backendMode) {
+      setCurrentCabMode(backendMode);
+      setCabChoice((prev) => prev ?? backendMode);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cab-access-mode', backendMode);
+      }
+    } else if (storedCabMode) {
       setCurrentCabMode(storedCabMode);
       setCabChoice((prev) => prev ?? storedCabMode);
     } else if (effectiveSubscription && !isExpired) {
       setCurrentCabMode('WITH_SUBSCRIPTION');
       setCabChoice((prev) => prev ?? 'WITH_SUBSCRIPTION');
     }
-  }, [effectiveSubscription, isExpired]);
+  }, [user, effectiveSubscription, isExpired]);
 
-  const handleContinueWithCommission = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('cab-access-mode', 'COMMISSION');
+  const handleContinueWithCommission = async () => {
+    setIsSubmitting(true);
+    try {
+      await subscriptionService.chooseCommissionModel();
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cab-access-mode', 'COMMISSION');
+      }
+      setCurrentCabMode('COMMISSION');
+      setCabChoice('COMMISSION');
+      await hydrateFromSession();
+      toast.success('Commission model activated successfully!');
+      useSidebarStore.getState().setActiveModule('CAB');
+      router.push('/dashboard');
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.message || err?.message || 'Failed to activate commission model'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-    setCurrentCabMode('COMMISSION');
-    setCabChoice('COMMISSION');
-    toast.success('Commission model activated successfully!');
-    useSidebarStore.getState().setActiveModule('CAB');
-    router.push('/dashboard');
   };
 
   /*
@@ -629,7 +655,7 @@ export default function SubscriptionPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold text-white">
-                    Commission Model (9% Per Ride)
+                    Commission Model ({commissionRate}% Per Ride)
                   </h3>
                   <span className="rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-semibold text-green-400">
                     Active
@@ -637,7 +663,7 @@ export default function SubscriptionPage() {
                 </div>
                 <p className="mt-1 text-sm text-[#A1A1AA]">
                   You are currently operating on the pay-as-you-earn commission model with €0 monthly fee.
-                  Standard 9% platform commission applies per completed passenger ride.
+                  Standard {commissionRate}% platform commission applies per completed passenger ride.
                 </p>
               </div>
             </div>
@@ -744,10 +770,10 @@ export default function SubscriptionPage() {
                   </span>
                 </div>
                 <p className="mt-1 text-2xl font-black text-white">
-                  €0 <span className="text-xs font-normal text-[#A1A1AA]">/ month + 9% per ride</span>
+                  €0 <span className="text-xs font-normal text-[#A1A1AA]">/ month + {commissionRate}% per ride</span>
                 </p>
                 <p className="mt-2 text-sm text-[#A1A1AA]">
-                  No upfront subscription required. Pay only a standard 9% platform commission per completed passenger ride.
+                  No upfront subscription required. Pay only a standard {commissionRate}% platform commission per completed passenger ride.
                 </p>
               </div>
             </button>
@@ -764,7 +790,7 @@ export default function SubscriptionPage() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                {CAB_COMMISSION_FEATURES.map((feature, idx) => (
+                {getCabCommissionFeatures(commissionRate).map((feature, idx) => (
                   <div key={idx} className="flex items-start gap-3">
                     <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FACC15]/10 text-[#FACC15]">
                       <Check className="h-3.5 w-3.5 stroke-[3]" />
@@ -781,9 +807,10 @@ export default function SubscriptionPage() {
                 <button
                   type="button"
                   onClick={handleContinueWithCommission}
-                  className="w-full sm:w-auto rounded-full bg-[#FACC15] px-8 py-3 text-sm font-bold text-black transition-colors hover:bg-[#EAB308] shadow-lg shadow-[#FACC15]/20"
+                  disabled={isSubmitting}
+                  className="w-full sm:w-auto rounded-full bg-[#FACC15] px-8 py-3 text-sm font-bold text-black transition-colors hover:bg-[#EAB308] shadow-lg shadow-[#FACC15]/20 disabled:opacity-50"
                 >
-                  Continue with Commission Model
+                  {isSubmitting ? 'Activating...' : 'Continue with Commission Model'}
                 </button>
               </div>
             </div>

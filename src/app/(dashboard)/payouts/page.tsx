@@ -3,12 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   TrendingUp, TrendingDown, Landmark, Banknote, CreditCard,
-  AlertCircle, Car, Bike, CheckCircle2, Clock, ArrowUpRight, ArrowDownRight, Wrench
+  AlertCircle, Car, Bike, CheckCircle2, Clock, ArrowUpRight, ArrowDownRight, Wrench, Crown, Percent
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { financialService } from '@/services/financials/financial.service';
 import { PayoutHistoryTable } from '@/components/financials/payout-history-table';
 import type { PayoutRecord } from '@/types';
+import { useAuthStore } from '@/stores/auth.store';
 
 const Shimmer = ({ className = '' }: { className?: string }) => (
   <div className={`animate-pulse rounded-md bg-[#1F1F1F] ${className}`} />
@@ -43,6 +44,11 @@ export default function PayoutsPage() {
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const { activeModule } = useSidebarStore();
+  const { user } = useAuthStore();
+
+  const cabMode = user?.cabAccessMode || (user?.subscription ? 'WITH_SUBSCRIPTION' : 'COMMISSION');
+  const isSubscription = cabMode === 'WITH_SUBSCRIPTION';
+  const commissionRate = user?.commissionRate ?? kpis?.breakdown?.cab?.commissionRate ?? 9;
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -109,6 +115,28 @@ export default function PayoutsPage() {
         >
           {isLoading ? 'Loading…' : 'Refresh'}
         </button>
+      </div>
+
+      {/* Operating Model Pill */}
+      <div className="flex items-center gap-3.5 p-4 rounded-xl border border-[#27272A] bg-[#111111]">
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isSubscription ? 'bg-emerald-500/10 text-emerald-400' : 'bg-[#FACC15]/10 text-[#FACC15]'}`}>
+          {isSubscription ? <Crown className="h-5 w-5" /> : <Percent className="h-5 w-5" />}
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-white">
+              {isSubscription ? 'Subscription Model Active' : `Commission Model (${commissionRate}% Per Ride)`}
+            </span>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${isSubscription ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-[#FACC15]/10 text-[#FACC15] border border-[#FACC15]/20'}`}>
+              {isSubscription ? '0% Commission' : 'Pay As You Earn'}
+            </span>
+          </div>
+          <p className="text-xs text-[#71717A] mt-0.5">
+            {isSubscription
+              ? 'You keep 100% of your completed ride fares. Zero platform commission deducted during 9-day settlements.'
+              : `Platform commission (${commissionRate}%) is automatically deducted from customer total paid (Ride Fare + VAT) during 9-day settlements.`}
+          </p>
+        </div>
       </div>
 
       {/* Body */}

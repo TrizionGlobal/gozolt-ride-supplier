@@ -113,10 +113,46 @@ export function PayoutHistoryTable({
         ),
       }
     ] : []),
+    ...(serviceName === 'Cab Bookings' ? [
+      {
+        key: 'operatingModel',
+        title: 'MODEL / COMM.',
+        render: (row: PayoutRecord) => {
+          const isSub = row.details?.operatingModel === 'SUBSCRIPTION';
+          const commDeducted = Number(row.details?.commissionDeducted || 0);
+          const commRate = row.details?.commissionRate ?? 9;
+          return isSub ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              Subscription (0%)
+            </span>
+          ) : (
+            <div className="flex flex-col">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#FACC15]/10 text-[#FACC15] border border-[#FACC15]/20 w-fit">
+                Commission ({commRate}%)
+              </span>
+              {commDeducted > 0 && (
+                <span className="text-[11px] text-[#A1A1AA] mt-0.5">
+                  -€{commDeducted.toFixed(2)} comm.
+                </span>
+              )}
+            </div>
+          );
+        },
+      }
+    ] : []),
     {
       key: 'amount',
       title: 'TOTAL (NET)',
-      render: (row) => <span className="font-semibold text-[#22C55E]">{formatCurrency(row.amount)}</span>,
+      render: (row) => (
+        <div className="flex flex-col">
+          <span className="font-semibold text-[#22C55E]">{formatCurrency(row.amount)}</span>
+          {serviceName === 'Cab Bookings' && Number(row.details?.commissionDeducted || 0) > 0 && (
+            <span className="text-[10px] text-[#71717A]">
+              after €{Number(row.details?.commissionDeducted).toFixed(2)} comm.
+            </span>
+          )}
+        </div>
+      ),
     },
     {
       key: 'status',

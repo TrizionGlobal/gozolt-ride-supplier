@@ -486,6 +486,7 @@ export interface PerDriverEarning {
   tipCount?: number;
   ridesCompleted?: number;
   totalRides?: number;
+  hasStripeAccount?: boolean;
 }
 
 export interface PayoutRecord {

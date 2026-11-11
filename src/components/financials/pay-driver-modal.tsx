@@ -14,6 +14,7 @@ interface PayDriverModalProps {
   availableBalance: number;
   userCancellationFees: number;
   totalRides: number;
+  hasStripeAccount?: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -25,14 +26,15 @@ export function PayDriverModal({
   availableBalance,
   userCancellationFees,
   totalRides: initialTotalRides,
+  hasStripeAccount,
   onClose,
   onSuccess,
 }: PayDriverModalProps) {
   const { user } = useAuthStore();
   const globalCommRate = user?.defaultDriverCommission || 0;
-  
+
   const defaultCommRate = globalCommRate;
-  
+
   // Calculate combined total: Owed Balance + User Cancellation Fees
   const combinedTotal = availableBalance + userCancellationFees;
 
@@ -46,7 +48,11 @@ export function PayDriverModal({
   const [notes, setNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successDetails, setSuccessDetails] = useState<{ amount: number, remaining: number } | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(
+    hasStripeAccount === false
+      ? 'Driver has no connected Stripe account. Please ask them to update their Bank Details in the app first.'
+      : null
+  );
 
   const numAmount = parseFloat(amount) || 0;
   const numDeductions = parseFloat(deductions) || 0;
@@ -83,6 +89,11 @@ export function PayDriverModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+    if (hasStripeAccount === false) {
+      setErrorMsg('Driver has no connected Stripe account. Please ask them to update their Bank Details in the app first.');
+      return;
+    }
+
     if (numAmount <= 0 && numDeductions <= 0) {
       setErrorMsg('Total payout and deductions cannot both be zero.');
       return;
@@ -272,7 +283,7 @@ export function PayDriverModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || totalDeducted > combinedTotal + 0.01 || (numAmount <= 0 && numDeductions <= 0)}
+              disabled={isSubmitting || totalDeducted > combinedTotal + 0.01 || (numAmount <= 0 && numDeductions <= 0) || hasStripeAccount === false}
               className="rounded-lg bg-[#FACC15] px-4 py-2 text-sm font-semibold text-black hover:bg-[#EAB308] disabled:opacity-50 transition-colors flex items-center"
             >
               {isSubmitting ? 'Processing...' : 'Confirm Payout'}

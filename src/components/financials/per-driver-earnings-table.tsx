@@ -27,6 +27,7 @@ export function PerDriverEarningsTable({ onRefresh }: PerDriverEarningsTableProp
     vehicleType?: string | null;
     userCancellationFees: number;
     totalRides: number;
+    hasStripeAccount?: boolean;
   } | null>(null);
   const [selectedDebtDriver, setSelectedDebtDriver] = useState<{ id: string; name: string; balance: number } | null>(null);
   const [page, setPage] = useState(1);
@@ -134,6 +135,7 @@ export function PerDriverEarningsTable({ onRefresh }: PerDriverEarningsTableProp
               vehicleType: row.vehicleType,
               userCancellationFees: row.userCancellationFees || 0,
               totalRides: row.totalRides || 0,
+              hasStripeAccount: row.hasStripeAccount,
             })}
             className="rounded bg-[#FACC15] px-4 py-1.5 text-xs font-semibold text-black hover:bg-[#EAB308] disabled:bg-[#27272A] disabled:text-[#71717A] disabled:cursor-not-allowed transition-all shadow-sm"
             disabled={((row.availableBalance || 0) + (row.userCancellationFees || 0)) <= 0}
@@ -233,6 +235,7 @@ export function PerDriverEarningsTable({ onRefresh }: PerDriverEarningsTableProp
           availableBalance={selectedDriver.balance}
           userCancellationFees={selectedDriver.userCancellationFees}
           totalRides={selectedDriver.totalRides}
+          hasStripeAccount={selectedDriver.hasStripeAccount}
           onClose={() => setSelectedDriver(null)}
           onSuccess={() => {
             setSelectedDriver(null);

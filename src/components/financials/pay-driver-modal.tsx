@@ -32,9 +32,9 @@ export function PayDriverModal({
 }: PayDriverModalProps) {
   const { user } = useAuthStore();
   const globalCommRate = user?.defaultDriverCommission || 0;
-
+  
   const defaultCommRate = globalCommRate;
-
+  
   // Calculate combined total: Owed Balance + User Cancellation Fees
   const combinedTotal = availableBalance + userCancellationFees;
 

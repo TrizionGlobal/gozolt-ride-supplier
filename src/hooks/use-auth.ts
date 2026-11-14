@@ -115,6 +115,16 @@ export function useAuth() {
             dashboardPath = '/airport-transfers/dashboard';
             break;
 
+          case 'RESTAURANT':
+            sidebarStore.setActiveModule('RESTAURANT');
+            dashboardPath = '/restaurants/dashboard';
+            break;
+
+          case 'GROCERY_STORE':
+            sidebarStore.setActiveModule('GROCERY_STORE');
+            dashboardPath = '/grocery-stores/dashboard';
+            break;
+
           default:
             sidebarStore.setActiveModule(null);
             router.push('/welcome');

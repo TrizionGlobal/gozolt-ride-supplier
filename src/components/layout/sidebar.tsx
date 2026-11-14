@@ -28,6 +28,14 @@ export function Sidebar() {
     setSource(urlParams.get('source'));
   }, [pathname]);
 
+  useEffect(() => {
+    if (pathname.startsWith('/restaurants') && activeModule !== 'RESTAURANT') {
+      setActiveModule('RESTAURANT');
+    } else if (pathname.startsWith('/grocery-stores') && activeModule !== 'GROCERY_STORE') {
+      setActiveModule('GROCERY_STORE');
+    }
+  }, [pathname, activeModule, setActiveModule]);
+
   if (!isMounted) {
     return (
       <aside
@@ -83,15 +91,42 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-        {SIDEBAR_ITEMS.filter((item) => item.module === activeModule || !activeModule).map((item) => {
-          const Icon = item.icon;
-          let isActive = pathname === item.href || pathname.startsWith(item.href + '/');
-          const isBookingSubPage = pathname.match(/^\/(car-rentals|bike-rentals)\/[a-zA-Z0-9-]+\/(details|handover|return)$/);
+        {(() => {
+          const effectiveModule = pathname.startsWith('/restaurants')
+            ? 'RESTAURANT'
+            : pathname.startsWith('/grocery-stores')
+            ? 'GROCERY_STORE'
+            : pathname.startsWith('/car-rentals')
+            ? 'RENTAL'
+            : pathname.startsWith('/bike-rentals')
+            ? 'BIKE_RENTAL'
+            : pathname.startsWith('/airport-transfers')
+            ? 'AIRPORT_TRANSFER'
+            : pathname.startsWith('/quick-services')
+            ? 'QUICK_SERVICES'
+            : activeModule;
 
-          // Prevent "Drivers" from being active when in "Driver Settlements"
-          if (item.href === ROUTES.DRIVERS && pathname.startsWith(ROUTES.DRIVER_SETTLEMENTS)) {
-            isActive = false;
-          }
+          return SIDEBAR_ITEMS.filter(
+            (item) => item.module === effectiveModule || (!effectiveModule && !item.module)
+          ).map((item) => {
+            const Icon = item.icon;
+            let isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+            const isBookingSubPage = pathname.match(/^\/(car-rentals|bike-rentals)\/[a-zA-Z0-9-]+\/(details|handover|return)$/);
+
+            // Prevent "Drivers" from being active when in "Driver Settlements"
+            if (item.href === ROUTES.DRIVERS && pathname.startsWith(ROUTES.DRIVER_SETTLEMENTS)) {
+              isActive = false;
+            }
+
+            // Prevent "Food Items" (/restaurants/menu) from being active when in Categories, Addons, Variants
+            if (
+              item.href === '/restaurants/menu' &&
+              (pathname.startsWith('/restaurants/menu/categories') ||
+                pathname.startsWith('/restaurants/menu/addons') ||
+                pathname.startsWith('/restaurants/menu/variants'))
+            ) {
+              isActive = false;
+            }
 
           // Prevent "Car Rentals" or "Bike Rentals" from being active when in its distinct sub-modules
           if (
@@ -158,7 +193,7 @@ export function Sidebar() {
               {!isCollapsed && <span>{item.label}</span>}
             </Link>
           );
-        })}
+        })})()}
       </nav>
 
 

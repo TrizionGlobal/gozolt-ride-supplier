@@ -147,6 +147,18 @@ export default function DashboardLayout({
             .setActiveModule('AIRPORT_TRANSFER');
           break;
 
+        case 'RESTAURANT':
+          useSidebarStore
+            .getState()
+            .setActiveModule('RESTAURANT');
+          break;
+
+        case 'GROCERY_STORE':
+          useSidebarStore
+            .getState()
+            .setActiveModule('GROCERY_STORE');
+          break;
+
         default:
           router.replace('/');
       }

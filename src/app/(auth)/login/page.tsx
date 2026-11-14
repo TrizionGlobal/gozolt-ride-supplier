@@ -202,6 +202,10 @@ export default function LoginPage() {
         router.push('/car-rentals/dashboard');
       } else if (service === 'BIKE_RENTAL') {
         router.push('/bike-rentals/dashboard');
+      } else if (service === 'RESTAURANT') {
+        router.push('/restaurants/dashboard');
+      } else if (service === 'GROCERY_STORE') {
+        router.push('/grocery-stores/dashboard');
       }
     }
   }, [isAuthenticated, isLoading, user, router]);

@@ -17,7 +17,9 @@ type SupplierService =
   | 'CAR_RENTAL'
   | 'BIKE_RENTAL'
   | 'QUICK_SERVICES'
-  | 'AIRPORT_TRANSFER';
+  | 'AIRPORT_TRANSFER'
+  | 'RESTAURANT'
+  | 'GROCERY_STORE';
 
 const services = [
   {
@@ -55,6 +57,20 @@ const services = [
       'Manage airport transfers, chauffeurs, flight schedules and bookings.',
     image: '/airport-transfers-icon.png',
   },
+  {
+    type: 'RESTAURANT' as SupplierService,
+    title: 'Restaurants',
+    description:
+      'Manage restaurant profile, menus, dishes, variants and incoming food orders.',
+    image: '/restaurant-icon.png',
+  },
+  {
+    type: 'GROCERY_STORE' as SupplierService,
+    title: 'Grocery Stores',
+    description:
+      'Manage grocery catalogue, item substitutions, stock and customer orders.',
+    image: '/grocery-store-icon.png',
+  },
 ];
 
 export default function HomePage() {
@@ -78,6 +94,8 @@ export default function HomePage() {
       else if (service === 'BIKE_RENTAL') router.push('/bike-rentals/dashboard');
       else if (service === 'QUICK_SERVICES') router.push('/quick-services/dashboard');
       else if (service === 'AIRPORT_TRANSFER') router.push('/airport-transfers/dashboard');
+      else if (service === 'RESTAURANT') router.push('/restaurants/dashboard');
+      else if (service === 'GROCERY_STORE') router.push('/grocery-stores/dashboard');
     }
   }, [isAuthenticated, isLoading, user, router]);
 
@@ -126,13 +144,13 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
           {services.map((service) => (
             <button
               key={service.type}
               type="button"
               onClick={() => selectService(service.type)}
-              className="group relative rounded-3xl border border-[#27272A] bg-[#111111] p-7 text-center transition-all hover:-translate-y-1 hover:border-[#FCD223] hover:shadow-[0_0_30px_rgba(252,210,35,0.15)]"
+              className="group relative rounded-3xl border border-[#27272A] bg-[#111111] p-5 text-center transition-all hover:-translate-y-1 hover:border-[#FCD223] hover:shadow-[0_0_30px_rgba(252,210,35,0.15)]"
             >
               <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border border-[#27272A] bg-white">
                 <Image

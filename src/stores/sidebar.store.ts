@@ -4,10 +4,10 @@ import { create } from 'zustand';
 
 interface SidebarState {
   isCollapsed: boolean;
-  activeModule: 'CAB' | 'RENTAL' | 'BIKE_RENTAL' | 'QUICK_SERVICES' | 'AIRPORT_TRANSFER' | null;
+  activeModule: 'CAB' | 'RENTAL' | 'BIKE_RENTAL' | 'QUICK_SERVICES' | 'AIRPORT_TRANSFER' | 'RESTAURANT' | 'GROCERY_STORE' | null;
   toggle: () => void;
   setCollapsed: (collapsed: boolean) => void;
-  setActiveModule: (module: 'CAB' | 'RENTAL' | 'BIKE_RENTAL' | 'QUICK_SERVICES' | 'AIRPORT_TRANSFER' | null) => void;
+  setActiveModule: (module: 'CAB' | 'RENTAL' | 'BIKE_RENTAL' | 'QUICK_SERVICES' | 'AIRPORT_TRANSFER' | 'RESTAURANT' | 'GROCERY_STORE' | null) => void;
 }
 
 export const useSidebarStore = create<SidebarState>((set) => ({
@@ -17,7 +17,7 @@ export const useSidebarStore = create<SidebarState>((set) => ({
       : false,
   activeModule: 
     typeof window !== 'undefined'
-      ? (localStorage.getItem('gozolt-supplier-active-module') as 'CAB' | 'RENTAL' | 'BIKE_RENTAL' | 'QUICK_SERVICES' | 'AIRPORT_TRANSFER' | null)
+      ? (localStorage.getItem('gozolt-supplier-active-module') as 'CAB' | 'RENTAL' | 'BIKE_RENTAL' | 'QUICK_SERVICES' | 'AIRPORT_TRANSFER' | 'RESTAURANT' | 'GROCERY_STORE' | null)
       : null,
 
   toggle: () =>

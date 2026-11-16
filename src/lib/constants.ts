@@ -28,6 +28,7 @@ import {
   FolderPlus,
   ShieldAlert,
   Layers,
+  ShoppingBag,
 } from 'lucide-react';
 
 export const ROUTES = {
@@ -85,10 +86,15 @@ export const ROUTES = {
   RESTAURANTS_ANALYTICS: '/restaurants/analytics',
   RESTAURANTS_SETTINGS: '/restaurants/settings',
   GROCERY_STORES_DASHBOARD: '/grocery-stores/dashboard',
+  GROCERY_STORES_PROFILE: '/grocery-stores/profile',
+  GROCERY_STORES_CATEGORIES: '/grocery-stores/categories',
+  GROCERY_STORES_PRODUCTS: '/grocery-stores/products',
+  GROCERY_STORES_VARIANTS: '/grocery-stores/variants',
   GROCERY_STORES_ORDERS: '/grocery-stores/orders',
-  GROCERY_STORES_CATALOGUE: '/grocery-stores/catalogue',
+  GROCERY_STORES_OPERATING_HOURS: '/grocery-stores/operating-hours',
+  GROCERY_STORES_DELIVERY: '/grocery-stores/delivery',
   GROCERY_STORES_REVIEWS: '/grocery-stores/reviews',
-  GROCERY_STORES_PAYOUTS: '/grocery-stores/payouts',
+  GROCERY_STORES_ANALYTICS: '/grocery-stores/analytics',
 } as const;
 
 export const SIDEBAR_ITEMS = [
@@ -105,10 +111,15 @@ export const SIDEBAR_ITEMS = [
   { label: 'Reports & Analytics', href: '/restaurants/analytics', icon: BarChart3, module: 'RESTAURANT' },
 
   { label: 'Dashboard', href: '/grocery-stores/dashboard', icon: LayoutDashboard, module: 'GROCERY_STORE' },
-  { label: 'Live Orders', href: '/grocery-stores/orders', icon: ClipboardList, module: 'GROCERY_STORE' },
-  { label: 'Catalogue & Stock', href: '/grocery-stores/catalogue', icon: Store, module: 'GROCERY_STORE' },
-  { label: 'Reviews & Ratings', href: '/grocery-stores/reviews', icon: Star, module: 'GROCERY_STORE' },
-  { label: 'Payments & Payouts', href: '/grocery-stores/payouts', icon: Wallet, module: 'GROCERY_STORE' },
+  { label: 'Store Profile', href: '/grocery-stores/profile', icon: Store, module: 'GROCERY_STORE' },
+  { label: 'Aisles & Categories', href: '/grocery-stores/categories', icon: FolderPlus, module: 'GROCERY_STORE' },
+  { label: 'Grocery Products', href: '/grocery-stores/products', icon: ShoppingBag, module: 'GROCERY_STORE' },
+  { label: 'Product Variants', href: '/grocery-stores/variants', icon: Layers, module: 'GROCERY_STORE' },
+  { label: 'Orders', href: '/grocery-stores/orders', icon: ClipboardList, module: 'GROCERY_STORE' },
+  { label: 'Operating Hours', href: '/grocery-stores/operating-hours', icon: Clock, module: 'GROCERY_STORE' },
+  { label: 'Delivery Management', href: '/grocery-stores/delivery', icon: Truck, module: 'GROCERY_STORE' },
+  { label: 'Ratings & Reviews', href: '/grocery-stores/reviews', icon: Star, module: 'GROCERY_STORE' },
+  { label: 'Reports & Analytics', href: '/grocery-stores/analytics', icon: BarChart3, module: 'GROCERY_STORE' },
 
   { label: 'Dashboard', href: '/airport-transfers/dashboard', icon: LayoutDashboard, module: 'AIRPORT_TRANSFER' },
   { label: 'Transfer Fleet', href: '/airport-transfers/fleet', icon: Truck, module: 'AIRPORT_TRANSFER' },

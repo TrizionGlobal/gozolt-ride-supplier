@@ -220,6 +220,9 @@ export default function RestaurantDeliveryPage() {
   const [enteredPin, setEnteredPin] = useState('');
   const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
 
+  // View Full Products Modal State
+  const [viewingProductsOrder, setViewingProductsOrder] = useState<DeliveryOrder | null>(null);
+
   // Toggle reveal phone contact
   const toggleContactReveal = (orderId: string) => {
     setRevealedContacts((prev) => ({
@@ -560,8 +563,8 @@ export default function RestaurantDeliveryPage() {
                           </p>
                         </div>
 
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {order.items.map((item, idx) => (
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                          {order.items.slice(0, 2).map((item, idx) => (
                             <span
                               key={idx}
                               className="rounded-md border border-white/5 bg-[#18181B] px-2 py-0.5 text-[11px] text-zinc-300"
@@ -569,6 +572,19 @@ export default function RestaurantDeliveryPage() {
                               {item}
                             </span>
                           ))}
+                          {order.items.length > 2 && (
+                            <button
+                              type="button"
+                              onClick={() => setViewingProductsOrder(order)}
+                              className="inline-flex items-center gap-1 rounded-md border border-[#FCD223]/30 bg-[#FCD223]/10 px-2 py-0.5 text-[11px] font-bold text-[#FCD223] hover:bg-[#FCD223]/20 transition-all cursor-pointer shadow-sm"
+                            >
+                              <span>+{order.items.length - 2} more</span>
+                              <span className="text-zinc-500">•</span>
+                              <span className="underline decoration-[#FCD223]/40 hover:decoration-[#FCD223]">
+                                View Full Products
+                              </span>
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -900,6 +916,79 @@ export default function RestaurantDeliveryPage() {
               className="bg-[#FCD223] text-black font-bold text-xs hover:bg-[#FCD223]/90 shadow-md shadow-[#FCD223]/10"
             >
               Confirm Handover &amp; Release
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ──────────────────────────────────────────────────────────────────────────
+          MODAL: VIEW FULL PRODUCTS LIST
+          ────────────────────────────────────────────────────────────────────────── */}
+      <Dialog open={!!viewingProductsOrder} onOpenChange={() => setViewingProductsOrder(null)}>
+        <DialogContent className="max-w-md rounded-2xl border border-white/10 bg-[#121214] text-white p-6 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-black text-white flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-[#FCD223]" />
+                All Ordered Items
+              </span>
+              <span className="font-mono text-sm text-[#FCD223]">
+                {viewingProductsOrder?.orderNumber}
+              </span>
+            </DialogTitle>
+            <DialogDescription className="text-xs text-zinc-400">
+              Complete itemized manifest for customer {viewingProductsOrder?.customerName} ({viewingProductsOrder?.items.length} items total)
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingProductsOrder && (
+            <div className="space-y-4 py-2 text-xs">
+              <div className="rounded-xl border border-white/5 bg-[#18181B] p-3 space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Customer</span>
+                  <span className="text-white font-semibold">{viewingProductsOrder.customerName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-400">Delivery Address</span>
+                  <span className="text-white text-right max-w-[220px] truncate">{viewingProductsOrder.customerAddress}</span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-white/5">
+                  <span className="text-zinc-400">Total Order Value</span>
+                  <span className="text-emerald-400 font-mono font-bold">€{viewingProductsOrder.totalAmount.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-zinc-400">
+                  Ordered Dishes &amp; Drinks ({viewingProductsOrder.items.length})
+                </p>
+                <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1 divide-y divide-white/5">
+                  {viewingProductsOrder.items.map((item, idx) => (
+                    <div key={idx} className="pt-1.5 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-md bg-white/5 font-mono text-[10px] font-bold text-[#FCD223]">
+                          {idx + 1}
+                        </span>
+                        <span className="font-medium text-white">{item}</span>
+                      </div>
+                      <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] py-0 px-1.5 font-semibold">
+                        Prepared
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setViewingProductsOrder(null)}
+              className="rounded-xl border-white/10 text-zinc-300 hover:text-white text-xs"
+            >
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

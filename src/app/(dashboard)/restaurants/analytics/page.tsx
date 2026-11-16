@@ -16,7 +16,7 @@ import {
   ArrowRight,
   Download,
   Filter,
-  DollarSign,
+  Euro,
   ShoppingBag,
   Percent,
   XCircle,
@@ -66,50 +66,31 @@ export default function RestaurantAnalyticsPage() {
   // ── Financial Data Model (Accurate Gross vs Net Calculations) ──
   const financialTotals = {
     grossSales: 38620.0,
-    subsidizedPromos: 1420.0,
-    netBilledToCustomers: 37200.0,
     platformCommissionRate: 0.15, // 15%
-    platformCommission: 5580.0,
-    vatOnCommission: 1004.4, // 18% VAT on service fee
-    netRestaurantPayout: 30615.6,
+    platformCommission: 5793.0,
+    netRestaurantPayout: 32827.0,
     totalOrders: 1482,
     completedOrders: 1460,
     cancelledOrders: 22,
     cancellationRate: '1.5%',
-    averageOrderValue: 26.06,
+    averageOrderValue: 26.45,
     avgPrepTimeMins: 15.2,
     avgAcceptanceSeconds: 42,
     delayedOrdersCount: 18,
     delayedOrdersRate: '1.2%',
   };
 
-  // Fulfillment Breakdown (Delivery vs Pickup)
-  const fulfillmentBreakdown = [
-    {
-      id: 'delivery',
-      name: 'Gozolt Platform Delivery',
-      channel: 'Orders dispatched via Gozolt Fleet',
-      grossRevenue: 31240.0,
-      netPayout: 24748.2,
-      orders: 1180,
-      aov: 26.47,
-      completedRate: 98.6,
-      avgPrepTime: '15.0 min',
-      sharePct: 80.9,
-    },
-    {
-      id: 'pickup',
-      name: 'Direct Store Pickup',
-      channel: 'Customer self-collection / takeaway',
-      grossRevenue: 7380.0,
-      netPayout: 5867.4,
-      orders: 302,
-      aov: 24.44,
-      completedRate: 99.3,
-      avgPrepTime: '12.4 min',
-      sharePct: 19.1,
-    },
-  ];
+  // User App Delivery Fulfillment (100% Mobile App Orders)
+  const userAppFulfillment = {
+    name: 'Gozolt User App Delivery',
+    channel: 'Orders dispatched via Gozolt Fleet',
+    grossRevenue: 38620.0,
+    netPayout: 32827.0,
+    orders: 1482,
+    aov: 26.06,
+    completedRate: 98.5,
+    avgPrepTime: '15.2 min',
+  };
 
   // Category Breakdown
   const categoryBreakdown = [
@@ -195,7 +176,7 @@ export default function RestaurantAnalyticsPage() {
       grossRevenue: 270.0,
       price: 15.0,
       marginPct: 58,
-      action: 'Promote in healthy & special collections',
+      action: 'Feature in healthy & special collections',
     },
     {
       rank: 3,
@@ -267,10 +248,7 @@ export default function RestaurantAnalyticsPage() {
       [],
       ['FINANCIAL SUMMARY'],
       ['Gross Sales (EUR)', financialTotals.grossSales.toFixed(2)],
-      ['Promotions Subsidized (EUR)', financialTotals.subsidizedPromos.toFixed(2)],
-      ['Net Billed to Customers (EUR)', financialTotals.netBilledToCustomers.toFixed(2)],
       ['Platform Commission 15% (EUR)', financialTotals.platformCommission.toFixed(2)],
-      ['VAT on Commission 18% (EUR)', financialTotals.vatOnCommission.toFixed(2)],
       ['Net Restaurant Payout (EUR)', financialTotals.netRestaurantPayout.toFixed(2)],
       [],
       ['OPERATIONAL METRICS'],
@@ -294,15 +272,13 @@ export default function RestaurantAnalyticsPage() {
         `${item.marginPct}%`,
       ]),
       [],
-      ['FULFILLMENT CHANNELS'],
-      ['Channel Name', 'Gross Revenue EUR', 'Net Payout EUR', 'Orders', 'AOV EUR', 'Avg Prep Time'],
-      ...fulfillmentBreakdown.map((f) => [
-        f.name,
-        f.grossRevenue.toFixed(2),
-        f.netPayout.toFixed(2),
-        f.orders,
-        f.aov.toFixed(2),
-        f.avgPrepTime,
+      ['PEAK ORDERING TIMINGS (USER APP DEMAND)'],
+      ['Hour Slot', 'Intensity Level', 'Demand Window', 'Average Orders'],
+      ...peakHours.map((slot) => [
+        slot.hour,
+        slot.intensity.toUpperCase(),
+        slot.label,
+        slot.orders,
       ]),
     ];
 
@@ -423,7 +399,7 @@ export default function RestaurantAnalyticsPage() {
       <div className="rounded-2xl border border-white/10 bg-[#121214] p-5 shadow-xl space-y-4 print:border-zinc-300">
         <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-[#FCD223]" />
+            <Euro className="h-5 w-5 text-[#FCD223]" />
             <div>
               <h2 className="text-sm font-bold text-white">
                 Audited Financial Accounting (Gross vs Net)
@@ -438,58 +414,38 @@ export default function RestaurantAnalyticsPage() {
           </Badge>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-1">
-          <div className="rounded-xl border border-white/5 bg-[#18181B] p-3 space-y-1">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+          <div className="rounded-xl border border-white/5 bg-[#18181B] p-4 space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
               Total Gross Sales
             </span>
-            <p className="text-lg font-black text-white font-mono">
+            <p className="text-xl font-black text-white font-mono">
               €{financialTotals.grossSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}
             </p>
             <p className="text-[10px] text-zinc-500">Customer checkout value</p>
           </div>
 
-          <div className="rounded-xl border border-white/5 bg-[#18181B] p-3 space-y-1">
+          <div className="rounded-xl border border-white/5 bg-[#18181B] p-4 space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-              Promo Discounts
+              Total Orders Fulfilled
             </span>
-            <p className="text-lg font-black text-amber-400 font-mono">
-              -€{financialTotals.subsidizedPromos.toFixed(2)}
+            <p className="text-xl font-black text-amber-400 font-mono">
+              {financialTotals.completedOrders.toLocaleString()}
             </p>
-            <p className="text-[10px] text-zinc-500">Campaign vouchers applied</p>
+            <p className="text-[10px] text-zinc-500">Avg. ticket: €{financialTotals.averageOrderValue.toFixed(2)}</p>
           </div>
 
-          <div className="rounded-xl border border-white/5 bg-[#18181B] p-3 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-              Net Billed Orders
-            </span>
-            <p className="text-lg font-black text-white font-mono">
-              €{financialTotals.netBilledToCustomers.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-            </p>
-            <p className="text-[10px] text-zinc-500">Gross minus promo discounts</p>
-          </div>
-
-          <div className="rounded-xl border border-white/5 bg-[#18181B] p-3 space-y-1">
+          <div className="rounded-xl border border-white/5 bg-[#18181B] p-4 space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
               Platform Fee (15%)
             </span>
-            <p className="text-lg font-black text-blue-400 font-mono">
+            <p className="text-xl font-black text-blue-400 font-mono">
               -€{financialTotals.platformCommission.toFixed(2)}
             </p>
             <p className="text-[10px] text-zinc-500">Gozolt marketplace service</p>
           </div>
 
-          <div className="rounded-xl border border-white/5 bg-[#18181B] p-3 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-              VAT on Fee (18%)
-            </span>
-            <p className="text-lg font-black text-zinc-400 font-mono">
-              -€{financialTotals.vatOnCommission.toFixed(2)}
-            </p>
-            <p className="text-[10px] text-zinc-500">Malta tax authority</p>
-          </div>
-
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 space-y-1">
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
               Net Payout to Bank
             </span>
@@ -508,8 +464,8 @@ export default function RestaurantAnalyticsPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-black text-white flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-[#FCD223]" />
-            Sales Performance (Revenue by Fulfillment, Category &amp; Item)
+            <Euro className="h-5 w-5 text-[#FCD223]" />
+            Sales Performance (Revenue &amp; Category Breakdown)
           </h2>
           {/* Revenue chart view toggle */}
           <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-[#121214] p-0.5 print:hidden">
@@ -581,47 +537,93 @@ export default function RestaurantAnalyticsPage() {
           </div>
         </div>
 
-        {/* Revenue by Fulfillment & Revenue by Category (2-Column Grid) */}
+        {/* Peak Ordering Timings & Revenue by Category (2-Column Grid) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Revenue by Fulfillment Channel */}
+          {/* Peak Ordering Timings (User App Orders) */}
           <div className="rounded-2xl border border-white/10 bg-[#121214] p-5 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                <Truck className="h-4 w-4 text-[#FCD223]" />
-                Revenue by Fulfillment Channel
-              </h3>
-              <span className="text-xs text-zinc-500 font-mono">2 Fulfillment Channels</span>
+              <div>
+                <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                  <Flame className="h-4 w-4 text-orange-400" />
+                  Peak Ordering Timings
+                </h3>
+                <p className="text-[11px] text-zinc-400 mt-0.5">
+                  High-velocity booking windows on GOZOLT User App
+                </p>
+              </div>
+              <Badge className="border-orange-500/30 bg-orange-500/10 text-orange-400 text-[10px] font-mono">
+                APP ORDERS
+              </Badge>
             </div>
 
-            <div className="space-y-3">
-              {fulfillmentBreakdown.map((channel) => (
-                <div
-                  key={channel.id}
-                  className="rounded-xl border border-white/5 bg-[#18181B] p-3.5 space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-bold text-xs text-white">{channel.name}</h4>
-                      <p className="text-[10px] text-zinc-400">{channel.orders} orders • AOV €{channel.aov.toFixed(2)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-mono font-black text-sm text-[#FCD223]">
-                        €{channel.grossRevenue.toLocaleString()}
-                      </p>
-                      <p className="text-[10px] text-zinc-500 font-mono">
-                        Net: €{channel.netPayout.toLocaleString()} ({channel.sharePct}%)
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-[#FCD223]"
-                      style={{ width: `${channel.sharePct}%` }}
-                    />
-                  </div>
+            {/* Key Surge Windows */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Clock className="h-3.5 w-3.5 text-amber-400" />
+                    Lunch Surge
+                  </span>
+                  <span className="text-[10px] font-mono text-amber-400 font-bold">12:00 – 14:00</span>
                 </div>
-              ))}
+                <p className="text-[10px] text-zinc-400">160+ average orders • Rapid turnaround</p>
+              </div>
+
+              <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-3 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Flame className="h-3.5 w-3.5 text-orange-400" />
+                    Dinner Surge
+                  </span>
+                  <span className="text-[10px] font-mono text-orange-400 font-bold">19:00 – 21:30</span>
+                </div>
+                <p className="text-[10px] text-zinc-400">214+ average orders • Peak ticket size</p>
+              </div>
+            </div>
+
+            {/* Top Hourly Demand Breakdown */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                <span className="font-medium text-white">Top Demand Hours</span>
+                <span className="text-[10px] text-zinc-500 font-mono">User App Peak Windows</span>
+              </div>
+
+              <div className="space-y-2">
+                {[
+                  { hour: '12:00 – 13:00', orders: 54, label: 'Lunch Rush Start', pct: 64, intensity: 'high' },
+                  { hour: '13:00 – 14:00', orders: 68, label: 'Peak Lunch Hour', pct: 81, intensity: 'peak' },
+                  { hour: '19:00 – 20:00', orders: 72, label: 'Dinner Wave #1', pct: 86, intensity: 'peak' },
+                  { hour: '20:00 – 21:00', orders: 84, label: 'Main Dinner Peak', pct: 100, intensity: 'peak' },
+                  { hour: '21:00 – 22:00', orders: 58, label: 'Late Evening Rush', pct: 69, intensity: 'high' },
+                ].map((item) => (
+                  <div key={item.hour} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-white flex items-center gap-1.5">
+                        <span
+                          className={cn(
+                            'w-2 h-2 rounded-full',
+                            item.intensity === 'peak' ? 'bg-orange-500 animate-pulse' : 'bg-amber-400'
+                          )}
+                        />
+                        {item.hour}
+                        <span className="text-[10px] text-zinc-500 font-normal">({item.label})</span>
+                      </span>
+                      <span className="font-mono text-zinc-300 font-bold">
+                        {item.orders} orders
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden">
+                      <div
+                        className={cn(
+                          'h-full rounded-full transition-all',
+                          item.intensity === 'peak' ? 'bg-orange-500' : 'bg-amber-400'
+                        )}
+                        style={{ width: `${item.pct}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -664,7 +666,7 @@ export default function RestaurantAnalyticsPage() {
       <div className="space-y-4">
         <h2 className="text-base font-black text-white flex items-center gap-2">
           <ShoppingBag className="h-5 w-5 text-[#FCD223]" />
-          Order Volume &amp; Peak Hour Distribution
+          User App Order Volume &amp; Kitchen Performance
         </h2>
 
         {/* 4 KPI Cards: Total Orders, AOV, Completed, Cancelled */}
@@ -707,67 +709,6 @@ export default function RestaurantAnalyticsPage() {
               {financialTotals.cancelledOrders}
             </p>
             <p className="text-[10px] text-zinc-500">{financialTotals.cancellationRate} cancellation rate</p>
-          </div>
-        </div>
-
-        {/* Peak Ordering Times Heat Breakdown */}
-        <div className="rounded-2xl border border-white/10 bg-[#121214] p-5 shadow-xl space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                <Flame className="h-4 w-4 text-orange-400" />
-                Peak Ordering Times (Hourly Kitchen Ticket Velocity)
-              </h3>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                Key demand surges: Lunch (12:00–14:00) &amp; Dinner Rush (19:00–21:30)
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3 text-xs">
-              <span className="flex items-center gap-1 text-zinc-400">
-                <span className="h-2.5 w-2.5 rounded bg-zinc-600" /> Light
-              </span>
-              <span className="flex items-center gap-1 text-zinc-400">
-                <span className="h-2.5 w-2.5 rounded bg-amber-400" /> Busy
-              </span>
-              <span className="flex items-center gap-1 text-zinc-400">
-                <span className="h-2.5 w-2.5 rounded bg-orange-500" /> Peak
-              </span>
-            </div>
-          </div>
-
-          {/* Hourly Timeline */}
-          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2 pt-2">
-            {peakHours.map((slot) => (
-              <div
-                key={slot.hour}
-                className={cn(
-                  'rounded-xl border p-2.5 text-center space-y-1 transition-all',
-                  slot.intensity === 'peak'
-                    ? 'border-orange-500/40 bg-orange-500/10 shadow-[0_0_12px_rgba(249,115,22,0.15)]'
-                    : slot.intensity === 'high'
-                    ? 'border-amber-400/30 bg-amber-400/10'
-                    : slot.intensity === 'medium'
-                    ? 'border-white/10 bg-[#18181B]'
-                    : 'border-white/5 bg-[#121214] opacity-70'
-                )}
-              >
-                <span className="font-mono text-xs font-bold text-white">{slot.hour}</span>
-                <p
-                  className={cn(
-                    'font-mono text-sm font-black',
-                    slot.intensity === 'peak'
-                      ? 'text-orange-400'
-                      : slot.intensity === 'high'
-                      ? 'text-amber-400'
-                      : 'text-zinc-300'
-                  )}
-                >
-                  {slot.orders}
-                </p>
-                <p className="text-[9px] text-zinc-400 truncate">{slot.label}</p>
-              </div>
-            ))}
           </div>
         </div>
       </div>
@@ -960,31 +901,6 @@ export default function RestaurantAnalyticsPage() {
             </p>
           </div>
         </div>
-
-        {/* Cancellation Reasons Breakdown */}
-        <div className="rounded-2xl border border-white/10 bg-[#121214] p-5 space-y-3 shadow-xl">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-sm text-white">Cancellation Reasons Breakdown</h3>
-            <span className="text-xs text-zinc-500 font-mono">Total 22 Orders Cancelled</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {[
-              { reason: 'Station overload during peak', count: 10, pct: 45 },
-              { reason: 'Ingredient stockout', count: 7, pct: 32 },
-              { reason: 'Customer requested change', count: 3, pct: 14 },
-              { reason: 'Courier dispatch timeout', count: 2, pct: 9 },
-            ].map((r) => (
-              <div key={r.reason} className="rounded-xl border border-white/5 bg-[#18181B] p-3 text-xs space-y-1">
-                <span className="font-semibold text-white">{r.reason}</span>
-                <div className="flex items-center justify-between font-mono text-[11px] pt-1">
-                  <span className="text-amber-400">{r.count} orders</span>
-                  <span className="text-zinc-500">{r.pct}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* ──────────────────────────────────────────────────────────────────────────
@@ -1024,7 +940,7 @@ export default function RestaurantAnalyticsPage() {
             </div>
 
             <div className="rounded-xl border border-white/5 bg-[#18181B] p-3 text-zinc-400 text-[11px]">
-              This export complies with MFSA and EU e-commerce VAT declarations. Includes detailed line item deductions and transaction logs.
+              This export complies with MFSA and EU e-commerce accounting standards. Includes detailed line item deductions and transaction logs.
             </div>
           </div>
 

@@ -20,6 +20,7 @@ import {
   Building,
   Check,
   Calendar,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -163,8 +164,15 @@ export default function RestaurantProfilePage() {
             disabled={isSaving}
             className="bg-[#FCD223] font-bold text-black hover:bg-[#FCD223]/90 text-xs shadow-md shadow-[#FCD223]/10"
           >
-            <Save className="mr-1.5 h-4 w-4" />
-            {isSaving ? 'Saving Changes...' : 'Save Profile'}
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Saving Changes...
+              </>
+            ) : (
+              <>
+                <Save className="mr-1.5 h-4 w-4" /> Save Profile
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -246,8 +254,8 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Trattoria Bella Napoli"
-                  className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs"
+                  placeholder="Enter Restaurant Name"
+                  className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs capitalize"
                 />
               </div>
 
@@ -256,7 +264,7 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={legalName}
                   onChange={(e) => setLegalName(e.target.value)}
-                  placeholder="e.g. Bella Napoli Hospitality Ltd."
+                  placeholder="Enter Legal Entity Name"
                   className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs"
                 />
               </div>
@@ -266,7 +274,7 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={regNumber}
                   onChange={(e) => setRegNumber(e.target.value)}
-                  placeholder="C-XXXXX"
+                  placeholder="Enter Business Registration Number"
                   className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs"
                 />
               </div>
@@ -276,7 +284,7 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={vatNumber}
                   onChange={(e) => setVatNumber(e.target.value)}
-                  placeholder="MT XXXXXXXX"
+                  placeholder="Enter VAT Identification Number"
                   className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs"
                 />
               </div>
@@ -286,7 +294,7 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={cuisines}
                   onChange={(e) => setCuisines(e.target.value)}
-                  placeholder="Italian, Woodfired Pizza, Pasta, Mediterranean"
+                  placeholder="Enter Cuisine Tags"
                   className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs"
                 />
               </div>
@@ -316,7 +324,7 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+356 2134 7890"
+                  placeholder="Enter Phone Number"
                   className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs"
                 />
               </div>
@@ -327,7 +335,7 @@ export default function RestaurantProfilePage() {
                   type="email"
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
-                  placeholder="kitchen@bellanapoli.mt"
+                  placeholder="Enter Email Address"
                   className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs"
                 />
               </div>
@@ -337,7 +345,7 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={postalCode}
                   onChange={(e) => setPostalCode(e.target.value)}
-                  placeholder="VLT 1112"
+                  placeholder="Enter Postal Code"
                   className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs"
                 />
               </div>
@@ -347,8 +355,8 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="42 Republic Street"
-                  className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs"
+                  placeholder="Enter Street Address"
+                  className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs capitalize"
                 />
               </div>
 
@@ -357,8 +365,8 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  placeholder="Valletta"
-                  className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs"
+                  placeholder="Enter City"
+                  className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs capitalize"
                 />
               </div>
             </div>
@@ -462,7 +470,7 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={accountHolder}
                   onChange={(e) => setAccountHolder(e.target.value)}
-                  placeholder="Bella Napoli Hospitality Ltd."
+                  placeholder="Enter Account Holder Name"
                   className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs"
                 />
               </div>
@@ -472,7 +480,7 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
-                  placeholder="Bank of Valletta (BOV)"
+                  placeholder="Enter Bank Name"
                   className="mt-1 border-white/10 bg-[#0A0A0A] text-white text-xs"
                 />
               </div>
@@ -482,7 +490,7 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={iban}
                   onChange={(e) => setIban(e.target.value)}
-                  placeholder="MT84BOVM22013000000012345678001"
+                  placeholder="Enter IBAN (e.g. MT84BOVM22013000000012345678001)"
                   className="mt-1 border-white/10 bg-[#0A0A0A] font-mono text-white text-xs"
                 />
               </div>
@@ -492,7 +500,7 @@ export default function RestaurantProfilePage() {
                 <Input
                   value={swiftBic}
                   onChange={(e) => setSwiftBic(e.target.value)}
-                  placeholder="BOVMMTMTXXX"
+                  placeholder="Enter SWIFT / BIC Code"
                   className="mt-1 border-white/10 bg-[#0A0A0A] font-mono text-white text-xs"
                 />
               </div>

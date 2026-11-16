@@ -133,7 +133,7 @@ export default function RestaurantSettingsPage() {
                   <Input
                     value={printerIp}
                     onChange={(e) => setPrinterIp(e.target.value)}
-                    placeholder="192.168.1.100"
+                    placeholder="Enter Printer IP Address"
                     className="border-white/10 bg-[#0A0A0A] text-white font-mono max-w-xs"
                   />
                   <Button

@@ -5,12 +5,9 @@ import {
   Star,
   MessageSquare,
   ThumbsUp,
-  AlertTriangle,
   ShieldCheck,
-  Flag,
   Check,
   Clock,
-  Reply,
   Search,
   Filter,
   Eye,
@@ -21,7 +18,6 @@ import {
   CheckCircle2,
   Sparkles,
   Award,
-  Send,
   Info,
   Calendar,
 } from 'lucide-react';
@@ -187,21 +183,11 @@ const AVERAGE_RATING = 4.8;
 export default function RestaurantReviewsPage() {
   const [reviews, setReviews] = useState<CustomerReview[]>(INITIAL_REVIEWS);
   const [starFilter, setStarFilter] = useState<number | 'ALL'>('ALL');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'NEEDS_REPLY' | 'RESPONDED' | 'UNDER_MODERATION'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
   // ── Modals State ──
   const [selectedReviewForView, setSelectedReviewForView] = useState<CustomerReview | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-
-  const [selectedReviewForReply, setSelectedReviewForReply] = useState<CustomerReview | null>(null);
-  const [replyText, setReplyText] = useState('');
-  const [isReplyModalOpen, setIsReplyModalOpen] = useState(false);
-
-  const [selectedReviewForReport, setSelectedReviewForReport] = useState<CustomerReview | null>(null);
-  const [reportReason, setReportReason] = useState('COURIER_ISSUE');
-  const [reportDetails, setReportDetails] = useState('');
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   // ── Actions ──
 
@@ -209,76 +195,6 @@ export default function RestaurantReviewsPage() {
   const handleOpenView = (review: CustomerReview) => {
     setSelectedReviewForView(review);
     setIsViewModalOpen(true);
-  };
-
-  // Open Reply Modal
-  const handleOpenReply = (review: CustomerReview) => {
-    setSelectedReviewForReply(review);
-    setReplyText(review.restaurantResponse ? review.restaurantResponse.text : '');
-    setIsReplyModalOpen(true);
-  };
-
-  // Submit Reply (One response allowed per review)
-  const handleSubmitReply = () => {
-    if (!selectedReviewForReply) return;
-    if (!replyText.trim()) {
-      toast.error('Please enter your response message');
-      return;
-    }
-
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === selectedReviewForReply.id
-          ? {
-              ...r,
-              responseStatus: 'RESPONDED',
-              restaurantResponse: {
-                text: replyText.trim(),
-                respondedAt: new Date().toISOString().replace('T', ' ').slice(0, 16),
-                authorRole: 'Restaurant Manager',
-                isModerated: true,
-              },
-            }
-          : r
-      )
-    );
-
-    toast.success('Official Response Published', {
-      description:
-        'Your response will be visible publicly on the Gozolt customer mobile app after automated safety checks.',
-    });
-    setIsReplyModalOpen(false);
-  };
-
-  // Open Report Modal
-  const handleOpenReport = (review: CustomerReview) => {
-    setSelectedReviewForReport(review);
-    setReportReason('COURIER_ISSUE');
-    setReportDetails('');
-    setIsReportModalOpen(true);
-  };
-
-  // Submit Report
-  const handleSubmitReport = () => {
-    if (!selectedReviewForReport) return;
-
-    setReviews((prev) =>
-      prev.map((r) =>
-        r.id === selectedReviewForReport.id
-          ? {
-              ...r,
-              responseStatus: 'UNDER_MODERATION',
-              reportedReason: `Reported: ${reportReason}. ${reportDetails}`,
-            }
-          : r
-      )
-    );
-
-    toast.success('Review Escalated to Gozolt Trust & Safety', {
-      description:
-        'Our merchant compliance team will inspect order telematics and delivery timestamps within 24 hours.',
-    });
-    setIsReportModalOpen(false);
   };
 
   // Filtered reviews
@@ -293,8 +209,6 @@ export default function RestaurantReviewsPage() {
     if (!matchesSearch) return false;
 
     if (starFilter !== 'ALL' && r.rating !== starFilter) return false;
-
-    if (statusFilter !== 'ALL' && r.responseStatus !== statusFilter) return false;
 
     return true;
   });
@@ -453,7 +367,7 @@ export default function RestaurantReviewsPage() {
               Customer Reviews
             </h2>
             <p className="text-xs text-zinc-400 mt-0.5">
-              Verified customer feedback with 1 official restaurant response per review
+              Verified customer feedback and food ratings from the Gozolt customer app
             </p>
           </div>
 
@@ -488,9 +402,9 @@ export default function RestaurantReviewsPage() {
           </div>
         </div>
 
-        {/* Search & Status Filters */}
+        {/* Search */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-          <div className="relative w-full sm:w-80">
+          <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
             <Input
               placeholder="Search customer, order #, review text..."
@@ -498,31 +412,6 @@ export default function RestaurantReviewsPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 text-xs border-white/10 bg-[#18181B] text-white"
             />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-500">Status:</span>
-            {(
-              [
-                { id: 'ALL', label: 'All' },
-                { id: 'NEEDS_REPLY', label: 'Needs Reply' },
-                { id: 'RESPONDED', label: 'Responded' },
-                { id: 'UNDER_MODERATION', label: 'Reported' },
-              ] as const
-            ).map((st) => (
-              <button
-                key={st.id}
-                onClick={() => setStatusFilter(st.id as any)}
-                className={cn(
-                  'rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all border cursor-pointer',
-                  statusFilter === st.id
-                    ? 'border-white/20 bg-white/10 text-white'
-                    : 'border-transparent text-zinc-500 hover:text-zinc-300'
-                )}
-              >
-                {st.label}
-              </button>
-            ))}
           </div>
         </div>
 
@@ -536,14 +425,13 @@ export default function RestaurantReviewsPage() {
                 <th className="py-3 px-4">Rating</th>
                 <th className="py-3 px-4">Review</th>
                 <th className="py-3 px-4">Date</th>
-                <th className="py-3 px-4">Response Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
               {filteredReviews.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-zinc-500">
+                  <td colSpan={6} className="py-12 text-center text-zinc-500">
                     No reviews found matching the selected criteria.
                   </td>
                 </tr>
@@ -629,61 +517,16 @@ export default function RestaurantReviewsPage() {
                       {rev.reviewDate}
                     </td>
 
-                    {/* Response Status */}
-                    <td className="py-3 px-4">
-                      <Badge
-                        className={cn(
-                          'text-[10px] font-bold border font-mono',
-                          rev.responseStatus === 'RESPONDED' &&
-                            'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
-                          rev.responseStatus === 'NEEDS_REPLY' &&
-                            'border-amber-500/30 bg-amber-500/10 text-amber-400',
-                          rev.responseStatus === 'UNDER_MODERATION' &&
-                            'border-purple-500/30 bg-purple-500/10 text-purple-400'
-                        )}
-                      >
-                        {rev.responseStatus === 'RESPONDED'
-                          ? 'Responded'
-                          : rev.responseStatus === 'NEEDS_REPLY'
-                          ? 'Needs Reply'
-                          : 'In Moderation'}
-                      </Badge>
-                    </td>
-
-                    {/* Actions: View Review, Reply, Report Review */}
+                    {/* Actions: View Details Only */}
                     <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {/* View Review */}
+                      <div className="flex items-center justify-end">
                         <button
                           onClick={() => handleOpenView(rev)}
-                          className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-zinc-400 hover:text-white transition-all cursor-pointer"
-                          title="View Review & Order Receipt"
+                          className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                          title="View Review & Order Details"
                         >
-                          <Eye className="h-3.5 w-3.5" />
-                        </button>
-
-                        {/* Reply */}
-                        <button
-                          onClick={() => handleOpenReply(rev)}
-                          className={cn(
-                            'rounded-lg px-2.5 py-1 text-xs font-bold border flex items-center gap-1 transition-all cursor-pointer',
-                            rev.responseStatus === 'RESPONDED'
-                              ? 'border-white/10 bg-white/5 text-zinc-300 hover:text-white'
-                              : 'border-[#FCD223] bg-[#FCD223]/10 text-[#FCD223] hover:bg-[#FCD223]/20'
-                          )}
-                          title="Post Official Response"
-                        >
-                          <Reply className="h-3 w-3" />
-                          <span>{rev.responseStatus === 'RESPONDED' ? 'Edit Reply' : 'Reply'}</span>
-                        </button>
-
-                        {/* Report Review */}
-                        <button
-                          onClick={() => handleOpenReport(rev)}
-                          className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-zinc-500 hover:text-red-400 transition-all cursor-pointer"
-                          title="Report Review (Violations, Courier Blame, Spam)"
-                        >
-                          <Flag className="h-3.5 w-3.5" />
+                          <Eye className="h-3.5 w-3.5 text-[#FCD223]" />
+                          <span>View</span>
                         </button>
                       </div>
                     </td>
@@ -798,163 +641,6 @@ export default function RestaurantReviewsPage() {
               className="border-white/10 bg-white/5 text-xs text-zinc-300"
             >
               Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ──────────────────────────────────────────────────────────────────────────
-          MODAL 2: REPLY TO REVIEW (ONE RESPONSE PER REVIEW SUBJECT TO MODERATION)
-          ────────────────────────────────────────────────────────────────────────── */}
-      <Dialog open={isReplyModalOpen} onOpenChange={setIsReplyModalOpen}>
-        <DialogContent className="max-w-lg border-white/10 bg-[#0E0E10] p-6 text-white">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-black text-white flex items-center gap-2">
-              <Reply className="h-5 w-5 text-[#FCD223]" />
-              Official Restaurant Response
-            </DialogTitle>
-            <DialogDescription className="text-xs text-zinc-400">
-              Post an official public response to {selectedReviewForReply?.customerName}'s review.
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedReviewForReply && (
-            <div className="space-y-4 py-2">
-              {/* Customer Review Quote */}
-              <div className="rounded-xl border border-white/10 bg-[#18181B] p-3 text-xs space-y-1">
-                <div className="flex items-center justify-between text-zinc-400">
-                  <span className="font-bold text-white">{selectedReviewForReply.customerName}</span>
-                  <span className="text-[#FCD223] font-mono">
-                    ★ {selectedReviewForReply.rating}.0
-                  </span>
-                </div>
-                <p className="text-zinc-300 italic">
-                  &quot;{selectedReviewForReply.reviewComment}&quot;
-                </p>
-              </div>
-
-              {/* Reply Textarea */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-zinc-200">
-                    Your Response (Published Publicly) *
-                  </label>
-                  <span className="text-[10px] text-zinc-500">
-                    {replyText.length} / 500 chars
-                  </span>
-                </div>
-                <textarea
-                  rows={4}
-                  maxLength={500}
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="Thank the customer, address feedback professionally, and invite them back..."
-                  className="w-full rounded-xl border border-white/10 bg-[#18181B] p-3 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#FCD223]/50"
-                />
-              </div>
-
-              {/* Policy Alert Notice (Required: One restaurant response per review, subject to moderation) */}
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-300 flex items-start gap-2.5">
-                <Info className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="font-bold">Moderation &amp; Single-Response Policy</p>
-                  <p className="text-[11px] text-zinc-400">
-                    Restaurants are permitted <strong>one official response per review</strong>. All replies undergo automated filtering for vulgarity, privacy disclosures (phone numbers/emails), and platform policy compliance before being published on Gozolt app.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="flex items-center justify-end gap-2 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsReplyModalOpen(false)}
-              className="border-white/10 bg-white/5 text-xs text-zinc-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmitReply}
-              className="bg-[#FCD223] text-black font-bold text-xs hover:bg-[#FCD223]/90 shadow-md shadow-[#FCD223]/10"
-            >
-              <Send className="mr-1.5 h-3.5 w-3.5" />
-              Publish Response
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ──────────────────────────────────────────────────────────────────────────
-          MODAL 3: REPORT REVIEW TO GOZOLT MODERATION
-          ────────────────────────────────────────────────────────────────────────── */}
-      <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
-        <DialogContent className="max-w-md border-white/10 bg-[#0E0E10] p-6 text-white">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-black text-white flex items-center gap-2">
-              <Flag className="h-5 w-5 text-red-400" />
-              Report Review to Moderation
-            </DialogTitle>
-            <DialogDescription className="text-xs text-zinc-400">
-              Flag reviews that breach Gozolt Merchant Community Guidelines for Trust &amp; Safety audit.
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedReviewForReport && (
-            <div className="space-y-4 py-2">
-              <div className="rounded-xl border border-white/10 bg-[#18181B] p-3 text-xs space-y-1">
-                <span className="font-bold text-white">
-                  Flagging Review for Order {selectedReviewForReport.orderNumber}
-                </span>
-                <p className="text-zinc-400 italic line-clamp-2">
-                  &quot;{selectedReviewForReport.reviewComment}&quot;
-                </p>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-zinc-200">Reason for Report *</label>
-                <select
-                  value={reportReason}
-                  onChange={(e) => setReportReason(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-[#18181B] p-2.5 text-xs text-white focus:outline-none"
-                >
-                  <option value="COURIER_ISSUE">Courier / Delivery Transit Delay (Not Food Quality)</option>
-                  <option value="SPAM_ADVERTISING">Spam, Phishing, or Competitor Advertising</option>
-                  <option value="ABUSIVE_LANGUAGE">Harassment, Hate Speech, or Defamation</option>
-                  <option value="WRONG_MERCHANT">Mistaken Restaurant or Fraudulent Ticket</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-zinc-200">Additional Context</label>
-                <textarea
-                  rows={3}
-                  value={reportDetails}
-                  onChange={(e) => setReportDetails(e.target.value)}
-                  placeholder="Provide kitchen prep timestamps, handover logs, or photographic proof..."
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-[#18181B] p-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-red-400/50"
-                />
-              </div>
-
-              <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3 text-[11px] text-red-300">
-                Gozolt Trust &amp; Safety reviews telematics data. If an order was delayed by courier road congestion rather than kitchen cooking, the rating is sanitized from your public merchant score.
-              </div>
-            </div>
-          )}
-
-          <DialogFooter className="flex items-center justify-end gap-2 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsReportModalOpen(false)}
-              className="border-white/10 bg-white/5 text-xs text-zinc-300"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmitReport}
-              className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs"
-            >
-              Submit Report
             </Button>
           </DialogFooter>
         </DialogContent>

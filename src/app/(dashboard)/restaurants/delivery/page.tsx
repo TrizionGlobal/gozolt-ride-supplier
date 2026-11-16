@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Truck,
   MapPin,
-  Save,
   CheckCircle2,
   Navigation,
   ShieldCheck,
@@ -12,7 +11,6 @@ import {
   Clock,
   Phone,
   AlertCircle,
-  Lock,
   Info,
   Check,
   Eye,
@@ -27,6 +25,10 @@ import {
   ShoppingBag,
   ExternalLink,
   ChevronRight,
+  Power,
+  Smartphone,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +43,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { foodGrocerySupplierService } from '@/services/food-grocery-supplier/food-grocery-supplier.service';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -181,17 +184,30 @@ export default function RestaurantDeliveryPage() {
   // Navigation: Screen 30 (Orders) vs Screen 29 (Configuration)
   const [activeTab, setActiveTab] = useState<'orders' | 'config'>('orders');
 
-  // ── Screen 29: Delivery Configuration State ──
-  const [deliveryEnabled, setDeliveryEnabled] = useState(true);
-  const [pickupEnabled, setPickupEnabled] = useState(true);
-  const [deliveryRadiusKm, setDeliveryRadiusKm] = useState('8.5');
-  const [minimumOrderAmount, setMinimumOrderAmount] = useState('15.00');
-  const [estimatedDeliveryTimeMins, setEstimatedDeliveryTimeMins] = useState('35');
-  const [restaurantPrepTimeMins, setRestaurantPrepTimeMins] = useState('20');
-  const [deliveryInstructions, setDeliveryInstructions] = useState(
-    'Enter via Republic Street rear delivery bay. Ring buzzer #2 for kitchen counter pickup. Scooters can park temporarily in loading bay 4.'
-  );
-  const [isSavingConfig, setIsSavingConfig] = useState(false);
+  // ── Screen 29: Restaurant Ordering Availability State ──
+  const [isOrderingEnabled, setIsOrderingEnabled] = useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [restaurantName, setRestaurantName] = useState('Gozolt Partner Restaurant');
+
+  // Load current store status from profile
+  useEffect(() => {
+    async function fetchStatus() {
+      try {
+        const profile = await foodGrocerySupplierService.getProfile();
+        if (profile?.business) {
+          if (profile.business.name) setRestaurantName(profile.business.name);
+          const isOpen =
+            profile.business.status === 'OPEN' ||
+            profile.business.status === 'BUSY' ||
+            profile.business.status === 'CLOSING_SOON';
+          setIsOrderingEnabled(isOpen);
+        }
+      } catch (err) {
+        console.error('Failed to load profile ordering status:', err);
+      }
+    }
+    fetchStatus();
+  }, []);
 
   // ── Screen 30: Delivery Orders State ──
   const [orders, setOrders] = useState<DeliveryOrder[]>(INITIAL_DELIVERY_ORDERS);
@@ -247,15 +263,34 @@ export default function RestaurantDeliveryPage() {
     setIsHandoverModalOpen(false);
   };
 
-  // Save Configuration (Screen 29)
-  const handleSaveConfig = () => {
-    setIsSavingConfig(true);
-    setTimeout(() => {
-      setIsSavingConfig(false);
-      toast.success('Delivery Configurations Saved', {
-        description: 'New service radius, prep buffer, and customer instructions are immediately active.',
+  // Toggle ordering availability with instant sync
+  const toggleOrderingStatus = async () => {
+    if (isUpdatingStatus) return;
+    const nextState = !isOrderingEnabled;
+    setIsOrderingEnabled(nextState);
+    setIsUpdatingStatus(true);
+    try {
+      await foodGrocerySupplierService.updateProfile({
+        status: nextState ? 'OPEN' : 'CLOSED',
+        isActive: nextState,
       });
-    }, 600);
+      toast.success(
+        nextState
+          ? 'Restaurant is Online & Accepting Orders'
+          : 'Restaurant is Offline / Ordering Disabled',
+        {
+          description: nextState
+            ? 'Restaurant details and menu are now active on the GOZOLT customer app.'
+            : 'Restaurant is marked as closed. Orders are paused on the GOZOLT customer app.',
+        }
+      );
+    } catch (err) {
+      console.error('Failed to toggle status:', err);
+      setIsOrderingEnabled(!nextState);
+      toast.error('Failed to update ordering status. Please try again.');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
   };
 
   // Filtered Orders
@@ -343,8 +378,14 @@ export default function RestaurantDeliveryPage() {
                   : 'text-zinc-400 hover:text-white'
               )}
             >
-              <Navigation className="h-3.5 w-3.5" />
-              Delivery Configuration
+              <Power className="h-3.5 w-3.5" />
+              Store Ordering Status
+              <span
+                className={cn(
+                  'w-2 h-2 rounded-full',
+                  isOrderingEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'
+                )}
+              />
             </button>
           </div>
         </div>
@@ -643,314 +684,128 @@ export default function RestaurantDeliveryPage() {
           ────────────────────────────────────────────────────────────────────────── */}
       {activeTab === 'config' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Navigation className="h-5 w-5 text-[#FCD223]" />
-                Delivery &amp; Collection Parameters
+                <Store className="h-5 w-5 text-[#FCD223]" />
+                Restaurant Ordering Availability
               </h2>
               <p className="text-xs text-zinc-400 mt-0.5">
-                Set customer ordering availability, service radius, preparation timing, and driver counter instructions.
+                Enable or disable ordering from your restaurant. This directly controls your restaurant's visibility and checkout status on the GOZOLT customer app.
               </p>
             </div>
-
-            <Button
-              onClick={handleSaveConfig}
-              disabled={isSavingConfig}
-              className="bg-[#FCD223] text-black font-bold hover:bg-[#FCD223]/90 text-xs shadow-md shadow-[#FCD223]/10"
-            >
-              <Save className="mr-1.5 h-4 w-4" />
-              {isSavingConfig ? 'Saving...' : 'Save Configuration'}
-            </Button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Card 1: Service Activation Modes */}
-            <div className="rounded-2xl border border-white/10 bg-[#121214] p-6 space-y-5 shadow-xl">
-              <div>
-                <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                  <ShoppingBag className="h-4 w-4 text-[#FCD223]" />
-                  Service Fulfillment Channels
-                </h3>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Control which ordering channels are open for your restaurant on the customer app.
-                </p>
-              </div>
-
-              {/* Delivery Enabled Switch */}
-              <div className="flex items-center justify-between p-4 rounded-xl border border-white/10 bg-[#18181B]">
-                <div className="space-y-0.5 pr-4">
-                  <div className="flex items-center gap-2">
-                    <Truck className="h-4 w-4 text-[#FCD223]" />
-                    <span className="text-xs font-bold text-white">Delivery Enabled</span>
-                  </div>
-                  <p className="text-[11px] text-zinc-400">
-                    Accept on-demand delivery orders fulfilled by the GOZOLT automated courier dispatch fleet.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setDeliveryEnabled(!deliveryEnabled)}
-                  className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer',
-                    deliveryEnabled ? 'bg-emerald-500' : 'bg-zinc-700'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'inline-block h-4 w-4 transform rounded-full bg-black transition-transform',
-                      deliveryEnabled ? 'translate-x-6' : 'translate-x-1'
-                    )}
-                  />
-                </button>
-              </div>
-
-              {/* Pickup Enabled Switch */}
-              <div className="flex items-center justify-between p-4 rounded-xl border border-white/10 bg-[#18181B]">
-                <div className="space-y-0.5 pr-4">
-                  <div className="flex items-center gap-2">
-                    <Store className="h-4 w-4 text-[#FCD223]" />
-                    <span className="text-xs font-bold text-white">Pickup Enabled</span>
-                  </div>
-                  <p className="text-[11px] text-zinc-400">
-                    Allow local customers to order ahead and collect directly from the restaurant counter.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setPickupEnabled(!pickupEnabled)}
-                  className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer',
-                    pickupEnabled ? 'bg-emerald-500' : 'bg-zinc-700'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'inline-block h-4 w-4 transform rounded-full bg-black transition-transform',
-                      pickupEnabled ? 'translate-x-6' : 'translate-x-1'
-                    )}
-                  />
-                </button>
-              </div>
-            </div>
-
-            {/* Card 2: Coverage Radius & Minimum Order Amount */}
-            <div className="rounded-2xl border border-white/10 bg-[#121214] p-6 space-y-5 shadow-xl">
-              <div>
-                <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-[#FCD223]" />
-                  Delivery Radius &amp; Cart Minimums
-                </h3>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Define geographic reach and minimum basket size required for delivery checkout.
-                </p>
-              </div>
-
-              {/* Delivery Radius */}
-              <div className="space-y-2 p-4 rounded-xl border border-white/10 bg-[#18181B]">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-white">Delivery Radius</label>
-                  <span className="text-xs font-mono font-bold text-[#FCD223]">
-                    {deliveryRadiusKm} km
-                  </span>
-                </div>
+          {/* Master Ordering Switch Card */}
+          <div className="rounded-2xl border border-white/10 bg-[#121214] p-6 space-y-6 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-white/5">
+              <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <input
-                    type="range"
-                    min="1"
-                    max="20"
-                    step="0.5"
-                    value={deliveryRadiusKm}
-                    onChange={(e) => setDeliveryRadiusKm(e.target.value)}
-                    className="w-full accent-[#FCD223] cursor-pointer"
-                  />
-                  <Input
-                    type="number"
-                    step="0.5"
-                    value={deliveryRadiusKm}
-                    onChange={(e) => setDeliveryRadiusKm(e.target.value)}
-                    className="w-20 text-xs border-white/10 bg-[#0E0E10] text-white font-mono text-center"
-                  />
+                  <span className="font-bold text-sm text-white">Accept Customer Orders</span>
+                  {isOrderingEnabled ? (
+                    <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-bold px-2.5 py-0.5 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      ONLINE &amp; ACCEPTING ORDERS
+                    </Badge>
+                  ) : (
+                    <Badge className="border-red-500/30 bg-red-500/10 text-red-400 text-xs font-bold px-2.5 py-0.5 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-red-500" />
+                      OFFLINE &amp; NOT ACCEPTING ORDERS
+                    </Badge>
+                  )}
                 </div>
-                <p className="text-[11px] text-zinc-500">
-                  Covers Valletta, Floriana, Msida, Gzira, Sliema, and St. Julian's perimeter.
+                <p className="text-xs text-zinc-400">
+                  {isOrderingEnabled
+                    ? 'Your restaurant is live and accepting orders. Customers can view dishes and complete checkout.'
+                    : 'Your restaurant is temporarily closed. Customers will see you as closed and cannot place orders.'}
                 </p>
               </div>
 
-              {/* Minimum Order Amount */}
-              <div className="space-y-2 p-4 rounded-xl border border-white/10 bg-[#18181B]">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-white">Minimum Order Amount (€)</label>
-                  <span className="text-xs text-zinc-400">Required subtotal</span>
-                </div>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 font-mono">
-                    €
-                  </span>
-                  <Input
-                    type="number"
-                    step="1.00"
-                    min="0"
-                    value={minimumOrderAmount}
-                    onChange={(e) => setMinimumOrderAmount(e.target.value)}
-                    placeholder="15.00"
-                    className="pl-7 text-xs border-white/10 bg-[#0E0E10] text-white font-mono"
+              {/* Master Toggle */}
+              <div className="flex items-center gap-3 shrink-0">
+                <span className={cn('text-xs font-bold', isOrderingEnabled ? 'text-emerald-400' : 'text-zinc-500')}>
+                  {isOrderingEnabled ? 'Ordering Enabled' : 'Ordering Disabled'}
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleOrderingStatus}
+                  disabled={isUpdatingStatus}
+                  className={cn(
+                    'relative inline-flex h-7 w-14 shrink-0 items-center rounded-full transition-colors cursor-pointer focus:outline-none disabled:opacity-50',
+                    isOrderingEnabled ? 'bg-emerald-500' : 'bg-zinc-700'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'inline-block h-5 w-5 transform rounded-full bg-black shadow transition-transform',
+                      isOrderingEnabled ? 'translate-x-8' : 'translate-x-1'
+                    )}
                   />
+                </button>
+              </div>
+            </div>
+
+            {/* Live Customer App Impact Preview */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+              {/* Enabled State Indicator */}
+              <div
+                className={cn(
+                  'rounded-xl border p-4 transition-all',
+                  isOrderingEnabled
+                    ? 'border-emerald-500/40 bg-emerald-500/5'
+                    : 'border-white/5 bg-[#18181B]/50 opacity-40'
+                )}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-400" />
+                  <span className="text-xs font-bold text-white">When Enabled (Online)</span>
                 </div>
-                <p className="text-[11px] text-zinc-500">
-                  Customers cannot place delivery orders if their cart subtotal is less than this value.
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  • Restaurant appears in the GOZOLT Customer App listing with ratings, delivery time, and cuisines.
+                  <br />
+                  • Customers can open your restaurant, view menu categories, select food items, customize add-ons, and proceed to checkout.
+                </p>
+              </div>
+
+              {/* Disabled State Indicator */}
+              <div
+                className={cn(
+                  'rounded-xl border p-4 transition-all',
+                  !isOrderingEnabled
+                    ? 'border-red-500/40 bg-red-500/5'
+                    : 'border-white/5 bg-[#18181B]/50 opacity-40'
+                )}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <XCircle className="h-4 w-4 text-red-400" />
+                  <span className="text-xs font-bold text-white">When Disabled (Offline)</span>
+                </div>
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  • Restaurant is displayed as <strong>Closed</strong> on the customer app.
+                  <br />
+                  • Customers see banner: <em>"Closed. This restaurant is currently not accepting orders."</em>
+                  <br />
+                  • Checkout button is disabled so no unexpected orders are placed.
                 </p>
               </div>
             </div>
 
-            {/* Card 3: Preparation & Delivery Timings */}
-            <div className="rounded-2xl border border-white/10 bg-[#121214] p-6 space-y-5 shadow-xl">
-              <div>
-                <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                  <Timer className="h-4 w-4 text-[#FCD223]" />
-                  Service Time Estimates &amp; Kitchen Buffer
-                </h3>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Provides realistic countdown estimates to customers and coordinates courier arrival timing.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Restaurant Preparation Time */}
-                <div className="space-y-2 p-4 rounded-xl border border-white/10 bg-[#18181B]">
-                  <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-[#FCD223]" />
-                    Restaurant Prep Time
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      min="5"
-                      max="120"
-                      value={restaurantPrepTimeMins}
-                      onChange={(e) => setRestaurantPrepTimeMins(e.target.value)}
-                      className="text-xs border-white/10 bg-[#0E0E10] text-white font-mono"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 font-mono">
-                      mins
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-zinc-500">
-                    Average time needed by the kitchen from accepting order to bag packaging.
-                  </p>
-                </div>
-
-                {/* Estimated Delivery Time */}
-                <div className="space-y-2 p-4 rounded-xl border border-white/10 bg-[#18181B]">
-                  <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <Truck className="h-3.5 w-3.5 text-[#FCD223]" />
-                    Estimated Delivery Time
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      min="10"
-                      max="180"
-                      value={estimatedDeliveryTimeMins}
-                      onChange={(e) => setEstimatedDeliveryTimeMins(e.target.value)}
-                      className="text-xs border-white/10 bg-[#0E0E10] text-white font-mono"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 font-mono">
-                      mins
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-zinc-500">
-                    Displayed to customers in app as the total order-to-door ETA.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 4: Delivery Handover Instructions */}
-            <div className="rounded-2xl border border-white/10 bg-[#121214] p-6 space-y-5 shadow-xl">
-              <div>
-                <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                  <PackageCheck className="h-4 w-4 text-[#FCD223]" />
-                  Courier Collection Instructions
-                </h3>
-                <p className="text-xs text-zinc-400 mt-1">
-                  Sent to the assigned courier's GOZOLT Driver App when they arrive at your location.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <textarea
-                  rows={4}
-                  value={deliveryInstructions}
-                  onChange={(e) => setDeliveryInstructions(e.target.value)}
-                  placeholder="e.g. Enter through side alley, counter pickup..."
-                  className="w-full rounded-xl border border-white/10 bg-[#18181B] p-3 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#FCD223]/50 transition-colors"
-                />
-                <p className="text-[11px] text-zinc-500">
-                  Include parking spots for scooters, entrance buzzer codes, or specific counter lanes.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 5: Platform Pricing & Driver Payouts (System-Enforced Lock) */}
-          <div className="rounded-2xl border border-white/10 bg-[#121214] p-6 space-y-4 shadow-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Mobile App Sync Status Note */}
+            <div className="rounded-xl border border-white/5 bg-[#18181B] p-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-amber-400">
-                  <Lock className="h-5 w-5" />
+                <div className="rounded-lg bg-[#FCD223]/10 p-2 text-[#FCD223]">
+                  <Smartphone className="h-4 w-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                    GOZOLT Platform Delivery Pricing &amp; Driver Compensation
-                    <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-400 text-[10px] font-bold">
-                      CENTRAL DISPATCH POLICY
-                    </Badge>
-                  </h3>
-                  <p className="text-xs text-zinc-400 mt-0.5">
-                    Platform delivery pricing and courier payout rates are locked and cannot be manually modified by the restaurant.
+                  <span className="text-xs font-bold text-white">Real-Time Mobile App Synchronization</span>
+                  <p className="text-[11px] text-zinc-400">
+                    Status changes reflect instantly across customer iOS and Android apps connected to the GOZOLT network.
                   </p>
                 </div>
               </div>
-
-              <span className="text-[11px] text-zinc-500 font-mono">
-                System Rule: Section 4.2 Rider Agreement
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-              <div className="rounded-xl border border-white/5 bg-[#18181B] p-4 space-y-1">
-                <span className="text-[11px] text-zinc-400 font-medium">Standard Customer Delivery Fee</span>
-                <p className="text-lg font-black text-white font-mono">€2.50 + €0.85/km</p>
-                <p className="text-[10px] text-zinc-500">
-                  Calculated dynamically at checkout based on distance and weather.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-white/5 bg-[#18181B] p-4 space-y-1">
-                <span className="text-[11px] text-zinc-400 font-medium">Driver Earnings Guarantee</span>
-                <p className="text-lg font-black text-emerald-400 font-mono">100% Platform Payout</p>
-                <p className="text-[10px] text-zinc-500">
-                  Dispatched couriers receive 100% of the delivery fare plus customer tips.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-white/5 bg-[#18181B] p-4 space-y-1">
-                <span className="text-[11px] text-zinc-400 font-medium">Restaurant Liability</span>
-                <p className="text-lg font-black text-[#FCD223] font-mono">€0.00 Fleet Cost</p>
-                <p className="text-[10px] text-zinc-500">
-                  Gozolt covers all courier insurance, dispatch routing, and fleet support.
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-white/5 bg-[#18181B] p-3 text-xs text-zinc-400 flex items-start gap-2.5">
-              <Info className="h-4 w-4 text-[#FCD223] shrink-0 mt-0.5" />
-              <span>
-                <strong>System Transparency Notice:</strong> Restaurants do not set or charge custom driver payouts or delivery rates. If your restaurant operates an in-house fleet for specific corporate contracts, contact your GOZOLT merchant account partner for dedicated enterprise routing permissions.
-              </span>
+              <Badge className="border-white/10 bg-white/5 text-zinc-400 text-[10px] font-mono shrink-0">
+                SYNC: REAL-TIME
+              </Badge>
             </div>
           </div>
         </div>
@@ -1022,7 +877,7 @@ export default function RestaurantDeliveryPage() {
                   maxLength={4}
                   value={enteredPin}
                   onChange={(e) => setEnteredPin(e.target.value)}
-                  placeholder={`e.g. ${selectedOrderForHandover.collectionPin}`}
+                  placeholder="Enter 4-Digit PIN"
                   className="text-center font-mono text-lg font-black tracking-widest border-white/10 bg-[#18181B] text-white"
                 />
                 <p className="text-[11px] text-zinc-400 text-center">

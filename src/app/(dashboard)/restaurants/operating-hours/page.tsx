@@ -354,7 +354,7 @@ export default function RestaurantOperatingHoursPage() {
                   <span className="text-[11px] text-zinc-500">
                     {day.isOpen
                       ? `${day.shifts.length} active service shift${day.shifts.length > 1 ? 's' : ''}`
-                      : 'Not accepting delivery or pickup orders'}
+                      : 'Not accepting customer orders'}
                   </span>
                 </div>
               </div>

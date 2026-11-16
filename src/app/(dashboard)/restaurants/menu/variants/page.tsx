@@ -12,10 +12,9 @@ import {
   Edit2,
   Trash2,
   Utensils,
-  DollarSign,
-  Building2,
+  Euro,
+  Loader2,
   ArrowRight,
-  Sparkles,
   Tag,
   Copy,
   AlertCircle,
@@ -32,6 +31,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -48,7 +48,7 @@ import {
   SupplierVariant,
 } from '@/services/food-grocery-supplier/food-grocery-supplier.service';
 
-export type VariantSizePreset =
+type VariantSizePreset =
   | 'Small'
   | 'Medium'
   | 'Large'
@@ -56,7 +56,7 @@ export type VariantSizePreset =
   | 'Family Size'
   | 'Custom';
 
-export interface FoodVariant {
+interface FoodVariant {
   id: string;
   productId: string;
   name: string;
@@ -72,8 +72,37 @@ export interface FoodVariant {
   status: 'ACTIVE' | 'INACTIVE';
 }
 
+interface VariantRow {
+  id?: string;
+  name: string;
+  variantSize?: VariantSizePreset;
+  price: string;
+  portionSpec?: string;
+  isAvailable: boolean;
+}
+
+const SIZE_PRESETS: { name: VariantSizePreset; label: string }[] = [
+  { name: 'Small', label: 'Small' },
+  { name: 'Medium', label: 'Medium' },
+  { name: 'Large', label: 'Large' },
+  { name: 'Regular', label: 'Regular' },
+  { name: 'Family Size', label: 'Family Size' },
+  { name: 'Custom', label: 'Custom' },
+];
+
 // Fallback initial categories
 const INITIAL_CATEGORIES: SupplierCategory[] = [
+  {
+    id: 'cat-biryani',
+    name: 'Biryani & Rice',
+    slug: 'biryani-rice',
+    description: 'Slow-cooked royal dum biryanis and fragrant basmati rice dishes',
+    imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80',
+    displayOrder: 1,
+    isActive: true,
+    status: 'ACTIVE',
+    itemCount: 4,
+  },
   {
     id: 'cat-1',
     name: 'Pizza',
@@ -122,6 +151,30 @@ const INITIAL_CATEGORIES: SupplierCategory[] = [
 
 // Fallback initial food items
 const INITIAL_ITEMS: SupplierItem[] = [
+  {
+    id: 'item-biryani-1',
+    name: 'Royal Hyderabadi Chicken Dum Biryani',
+    sku: 'SKU-BRY-001',
+    description: 'Fragrant long-grain aged basmati rice slow-cooked on dum with saffron, marinated chicken, caramelised onions, mint and royal spices.',
+    categoryId: 'cat-biryani',
+    category: 'Biryani & Rice',
+    categorySlug: 'biryani-rice',
+    basePrice: 8.5,
+    pricingMode: 'VARIANT_BASED',
+    prepTime: '20-25 min',
+    images: ['https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80'],
+    isAvailable: true,
+    isActive: true,
+    status: 'ACTIVE',
+    isPopular: true,
+    isCustomizable: true,
+    hasVariants: true,
+    isVegetarian: false,
+    isVegan: false,
+    isHalal: true,
+    isGlutenFree: false,
+    variants: [],
+  },
   {
     id: 'item-1',
     name: 'Woodfired Pizza Collection',
@@ -222,6 +275,66 @@ const INITIAL_ITEMS: SupplierItem[] = [
 
 // Fallback initial variants
 const INITIAL_VARIANTS: FoodVariant[] = [
+  {
+    id: 'var-bry-1',
+    productId: 'item-biryani-1',
+    name: 'Single / Regular Pack',
+    variantSize: 'Small',
+    sku: 'SKU-BRY-VAR-REG',
+    baseItemName: 'Royal Hyderabadi Chicken Dum Biryani',
+    category: 'Biryani & Rice',
+    priceType: 'FIXED_PRICE',
+    price: 8.5,
+    portionSpec: 'Serves 1 person • 450g • 1 Succulent Chicken Piece + 1 Boiled Egg',
+    displayOrder: 1,
+    isAvailable: true,
+    status: 'ACTIVE',
+  },
+  {
+    id: 'var-bry-2',
+    productId: 'item-biryani-1',
+    name: 'Medium / Couple Pack',
+    variantSize: 'Medium',
+    sku: 'SKU-BRY-VAR-MED',
+    baseItemName: 'Royal Hyderabadi Chicken Dum Biryani',
+    category: 'Biryani & Rice',
+    priceType: 'FIXED_PRICE',
+    price: 14.5,
+    portionSpec: 'Serves 2 persons • 850g • 2 Chicken Pieces + 2 Boiled Eggs + Extra Salan',
+    displayOrder: 2,
+    isAvailable: true,
+    status: 'ACTIVE',
+  },
+  {
+    id: 'var-bry-3',
+    productId: 'item-biryani-1',
+    name: 'Large / Family Pack',
+    variantSize: 'Large',
+    sku: 'SKU-BRY-VAR-LRG',
+    baseItemName: 'Royal Hyderabadi Chicken Dum Biryani',
+    category: 'Biryani & Rice',
+    priceType: 'FIXED_PRICE',
+    price: 22.0,
+    portionSpec: 'Serves 3-4 persons • 1.5kg • 4 Chicken Pieces + 3 Boiled Eggs + Double Raita & Salan',
+    displayOrder: 3,
+    isAvailable: true,
+    status: 'ACTIVE',
+  },
+  {
+    id: 'var-bry-4',
+    productId: 'item-biryani-1',
+    name: 'Jumbo / Handi Feast',
+    variantSize: 'Family Size',
+    sku: 'SKU-BRY-VAR-JMB',
+    baseItemName: 'Royal Hyderabadi Chicken Dum Biryani',
+    category: 'Biryani & Rice',
+    priceType: 'FIXED_PRICE',
+    price: 34.0,
+    portionSpec: 'Serves 6-8 persons • 2.6kg • 7 Chicken Pieces + 5 Boiled Eggs + Clay Handi Pot',
+    displayOrder: 4,
+    isAvailable: true,
+    status: 'ACTIVE',
+  },
   {
     id: 'var-1',
     productId: 'item-1',
@@ -351,31 +464,83 @@ function RestaurantVariantsContent() {
   const [sizeFilter, setSizeFilter] = useState<string>('ALL');
   const [availabilityFilter, setAvailabilityFilter] = useState<'ALL' | 'IN_STOCK' | 'OUT_OF_STOCK'>('ALL');
 
-  // Screen 17: Add/Edit Modal State
+  // Add/Edit Multi-Variant Modal State
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formMode, setFormMode] = useState<'ADD' | 'EDIT'>('ADD');
-  const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
+  const [formProductId, setFormProductId] = useState('');
 
-  // Form Fields
-  const [formName, setFormName] = useState('');
-  const [formSize, setFormSize] = useState<VariantSizePreset>('Medium');
-  const [formSku, setFormSku] = useState('');
-  const [formProductId, setFormProductId] = useState('item-1');
-  const [formBaseItem, setFormBaseItem] = useState('Woodfired Pizza Collection');
-  const [formCategory, setFormCategory] = useState('Pizza');
-  const [formPriceType, setFormPriceType] = useState<'FIXED_PRICE' | 'PRICE_ADJUSTMENT'>('FIXED_PRICE');
-  const [formPrice, setFormPrice] = useState('10.00');
-  const [formPortionSpec, setFormPortionSpec] = useState('12-inch diameter (8 slices)');
-  const [formDisplayOrder, setFormDisplayOrder] = useState(1);
-  const [formIsAvailable, setFormIsAvailable] = useState(true);
+  // Multi-row variants state (starts with 1 row by default)
+  const [variantRows, setVariantRows] = useState<VariantRow[]>([
+    { name: '', price: '', portionSpec: '', isAvailable: true },
+  ]);
 
-  // Inspection Drawer
+  const handleAddVariantRow = () => {
+    setVariantRows((prev) => [
+      ...prev,
+      { name: '', price: '', portionSpec: '', isAvailable: true },
+    ]);
+  };
+
+  const handleRemoveVariantRow = (index: number) => {
+    if (variantRows.length <= 1) {
+      setVariantRows([{ name: '', price: '', portionSpec: '', isAvailable: true }]);
+      return;
+    }
+    setVariantRows((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateVariantRow = (
+    index: number,
+    field: keyof VariantRow,
+    value: any
+  ) => {
+    setVariantRows((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
+    );
+  };
+
+  // Inspection/View Modal State (per Food Item)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [selectedVariant, setSelectedVariant] = useState<FoodVariant | null>(null);
+  const [viewingDish, setViewingDish] = useState<{
+    id: string;
+    name: string;
+    category: string;
+    basePrice: number;
+    variants: FoodVariant[];
+    count: number;
+  } | null>(null);
 
-  // Delete Confirmation
+  const handleOpenView = (dishGroup: {
+    id: string;
+    name: string;
+    category: string;
+    basePrice: number;
+    variants: FoodVariant[];
+    count: number;
+  }) => {
+    setViewingDish(dishGroup);
+    setIsDetailsOpen(true);
+  };
+
+  // Delete Confirmation (per Food Item)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deletingVariant, setDeletingVariant] = useState<FoodVariant | null>(null);
+  const [deletingDish, setDeletingDish] = useState<{ id: string; name: string; count: number } | null>(null);
+
+  const handleOpenDeleteDish = (dishId: string, dishName: string, count: number) => {
+    setDeletingDish({ id: dishId, name: dishName, count });
+    setIsDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deletingDish) return;
+    setVariants((prev) => prev.filter((v) => v.productId !== deletingDish.id));
+    toast.success('Variants Removed', {
+      description: `All ${deletingDish.count} variant(s) removed for ${deletingDish.name}.`,
+    });
+    setIsDeleteOpen(false);
+    setDeletingDish(null);
+  };
 
   // ── Load Menu Data from Backend ──────────────────────────────────────────
   const fetchMenuData = async () => {
@@ -516,280 +681,250 @@ function RestaurantVariantsContent() {
     });
   }, [variants, selectedItemId, selectedCategoryId, categories, searchTerm, sizeFilter, availabilityFilter]);
 
-  // Open Screen 17 in ADD Mode
-  const handleOpenAdd = () => {
-    setFormMode('ADD');
-    setEditingVariantId(null);
+  // Grouped by Food Dish for Table Display (Most recently added/updated dishes appear at the very first place)
+  const dishesWithVariants = useMemo(() => {
+    const seenItemIds = new Set<string>();
+    const orderedItemIds: string[] = [];
 
-    // Pre-fill with current selected food item if any
-    const base = focusedFoodItem || applicableItems[0] || items[0];
-    const prefix = base?.name ? base.name.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() : 'VAR';
-    setFormProductId(base ? base.id : 'item-1');
-    setFormBaseItem(base ? base.name : 'Woodfired Pizza Collection');
-    setFormCategory(base ? base.category : 'Pizza');
-    setFormName('');
-    setFormSize('Medium');
-    setFormSku(`VAR-${prefix}-MD-${Math.floor(1000 + Math.random() * 9000)}`);
-    setFormPriceType('FIXED_PRICE');
-    setFormPrice(base ? (base.basePrice ? base.basePrice.toFixed(2) : '10.00') : '10.00');
-    setFormPortionSpec('Standard portion');
-    setFormDisplayOrder(variants.filter((v) => v.productId === (base?.id || '')).length + 1);
-    setFormIsAvailable(true);
+    // Prioritize dish order by their appearance in variants (newest/most recent first)
+    variants.forEach((v) => {
+      if (!seenItemIds.has(v.productId)) {
+        seenItemIds.add(v.productId);
+        orderedItemIds.push(v.productId);
+      }
+    });
+
+    // Append any remaining available items
+    applicableItems.forEach((item) => {
+      if (!seenItemIds.has(item.id)) {
+        seenItemIds.add(item.id);
+        orderedItemIds.push(item.id);
+      }
+    });
+
+    return orderedItemIds
+      .map((itemId) => {
+        const dish = items.find((d) => d.id === itemId);
+        if (!dish) return null;
+        const dishVariants = variants.filter((v) => v.productId === dish.id);
+        return {
+          ...dish,
+          variants: dishVariants,
+          count: dishVariants.length,
+        };
+      })
+      .filter((group): group is NonNullable<typeof group> => {
+        if (!group) return false;
+        // If user selected a specific dish in dropdown:
+        if (selectedItemId !== 'ALL' && group.id !== selectedItemId) {
+          return false;
+        }
+
+        // If user selected a specific category:
+        if (selectedCategoryId !== 'ALL') {
+          const catObj = categories.find((c) => c.id === selectedCategoryId);
+          const catName = catObj ? catObj.name.toLowerCase() : selectedCategoryId.toLowerCase();
+          if (group.category.toLowerCase() !== catName) {
+            return false;
+          }
+        }
+
+        // If user typed search:
+        if (searchTerm.trim()) {
+          const term = searchTerm.toLowerCase();
+          const matchDish =
+            group.name.toLowerCase().includes(term) ||
+            group.category.toLowerCase().includes(term);
+          const matchVariant = group.variants.some((v) =>
+            v.name.toLowerCase().includes(term) ||
+            v.variantSize.toLowerCase().includes(term) ||
+            (v.portionSpec && v.portionSpec.toLowerCase().includes(term))
+          );
+          return matchDish || matchVariant;
+        }
+
+        // If size filter is applied:
+        if (sizeFilter !== 'ALL') {
+          return group.variants.some((v) => v.variantSize === sizeFilter);
+        }
+
+        // If availability filter is applied:
+        if (availabilityFilter !== 'ALL') {
+          return group.variants.some((v) =>
+            availabilityFilter === 'IN_STOCK' ? v.isAvailable : !v.isAvailable
+          );
+        }
+
+        // If "ALL" is selected and no search, show dishes that have variants configured!
+        return group.count > 0;
+      });
+  }, [variants, applicableItems, items, selectedItemId, selectedCategoryId, categories, searchTerm, sizeFilter, availabilityFilter]);
+
+  // Target dish selected in modal
+  const targetDish = useMemo(() => {
+    return items.find((i) => i.id === formProductId) || null;
+  }, [items, formProductId]);
+
+  // When user changes target food dish in modal dropdown:
+  const handleTargetProductChange = (productId: string) => {
+    setFormProductId(productId);
+    if (!productId) {
+      setVariantRows([{ name: '', price: '', portionSpec: '', isAvailable: true }]);
+      return;
+    }
+    const existing = variants.filter((v) => v.productId === productId);
+    if (existing.length > 0) {
+      setVariantRows(
+        existing.map((v) => ({
+          id: v.id,
+          name: v.name,
+          variantSize: v.variantSize,
+          price: v.price.toFixed(2),
+          portionSpec: v.portionSpec || '',
+          isAvailable: v.isAvailable !== false,
+        }))
+      );
+    } else {
+      setVariantRows([{ name: '', price: '', portionSpec: '', isAvailable: true }]);
+    }
+  };
+
+  // Open Modal to Add
+  const handleOpenAdd = (targetProductId?: string) => {
+    setFormMode('ADD');
+    const chosenId = targetProductId || (selectedItemId !== 'ALL' ? selectedItemId : '');
+    setFormProductId(chosenId);
+    if (chosenId) {
+      const existing = variants.filter((v) => v.productId === chosenId);
+      if (existing.length > 0) {
+        setVariantRows(
+          existing.map((v) => ({
+            id: v.id,
+            name: v.name,
+            variantSize: v.variantSize,
+            price: v.price.toFixed(2),
+            portionSpec: v.portionSpec || '',
+            isAvailable: v.isAvailable !== false,
+          }))
+        );
+      } else {
+        setVariantRows([{ name: '', price: '', portionSpec: '', isAvailable: true }]);
+      }
+    } else {
+      setVariantRows([{ name: '', price: '', portionSpec: '', isAvailable: true }]);
+    }
     setIsFormOpen(true);
   };
 
-  // Quick preset opener (Small Pizza €8, Medium Pizza €10, Large Pizza €13, etc.)
-  const handleOpenWithPreset = (
-    name: string,
-    size: VariantSizePreset,
-    price: string,
-    skuSuffix: string,
-    spec: string
-  ) => {
-    setFormMode('ADD');
-    setEditingVariantId(null);
-
-    const base = focusedFoodItem || applicableItems[0] || items[0];
-    const pid = base ? base.id : 'item-1';
-    const bName = base ? base.name : 'Woodfired Pizza Collection';
-    const bCat = base ? base.category : 'Pizza';
-    const prefix = bName.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'VAR';
-
-    setFormProductId(pid);
-    setFormBaseItem(bName);
-    setFormCategory(bCat);
-    setFormName(name);
-    setFormSize(size);
-    setFormSku(`VAR-${prefix}-${skuSuffix}-${Math.floor(1000 + Math.random() * 9000)}`);
-    setFormPriceType('FIXED_PRICE');
-    setFormPrice(price);
-    setFormPortionSpec(spec);
-    setFormDisplayOrder(variants.filter((v) => v.productId === pid).length + 1);
-    setFormIsAvailable(true);
-    setIsFormOpen(true);
-  };
-
-  // Open Screen 17 in EDIT Mode
-  const handleOpenEdit = (v: FoodVariant) => {
+  // Open Modal to Edit for a Food Dish
+  const handleOpenEditDish = (dishId: string) => {
     setFormMode('EDIT');
-    setEditingVariantId(v.id);
-    setFormProductId(v.productId);
-    setFormName(v.name);
-    setFormSize(v.variantSize);
-    setFormSku(v.sku);
-    setFormBaseItem(v.baseItemName);
-    setFormCategory(v.category);
-    setFormPriceType(v.priceType);
-    setFormPrice(v.price.toString());
-    setFormPortionSpec(v.portionSpec || '');
-    setFormDisplayOrder(v.displayOrder);
-    setFormIsAvailable(v.isAvailable);
+    setFormProductId(dishId);
+    const existing = variants.filter((v) => v.productId === dishId);
+    if (existing.length > 0) {
+      setVariantRows(
+        existing.map((v) => ({
+          id: v.id,
+          name: v.name,
+          variantSize: v.variantSize,
+          price: v.price.toFixed(2),
+          portionSpec: v.portionSpec || '',
+          isAvailable: v.isAvailable !== false,
+        }))
+      );
+    } else {
+      setVariantRows([{ name: '', price: '', portionSpec: '', isAvailable: true }]);
+    }
     setIsFormOpen(true);
   };
 
-  // Preset size picker handler
-  const handleSizePresetSelect = (size: VariantSizePreset) => {
-    setFormSize(size);
-    if (!formName.trim() || ['Small', 'Medium', 'Large', 'Regular', 'Family Size'].some((s) => formName.includes(s))) {
-      setFormName(`${size} Portion`);
-    }
-    // Automatically update internal code reference with size
-    const sizeTag = size.slice(0, 2).toUpperCase();
-    const prefix = formBaseItem ? formBaseItem.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() : 'VAR';
-    setFormSku(`VAR-${prefix}-${sizeTag}-${Math.floor(1000 + Math.random() * 9000)}`);
-  };
-
-  // Save Variant (Create or Update)
-  const handleSaveVariant = async () => {
-    if (!formName.trim()) {
-      toast.error('Variant Name is required', {
-        description: 'Please enter a name like "Small Pizza" or "Family Size".',
-      });
+  // Save Variants for the selected Food Dish
+  const handleSaveVariants = async () => {
+    if (!formProductId) {
+      toast.error('Validation Error', { description: 'Please select a food item.' });
       return;
     }
 
-    const priceNum = parseFloat(formPrice);
-    if (isNaN(priceNum) || priceNum <= 0) {
-      toast.error('Invalid Variant Price', {
-        description: 'Variant price cannot be negative or zero. Please enter a valid EUR price.',
-      });
+    const matchedDish = items.find((i) => i.id === formProductId);
+    if (!matchedDish) {
+      toast.error('Validation Error', { description: 'Please select a valid food item.' });
       return;
     }
 
-    // Auto-generate internal code if restaurant owner leaves it empty
-    let finalSku = formSku.trim();
-    if (!finalSku) {
-      const prefix = formBaseItem ? formBaseItem.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() : 'VAR';
-      const sizeTag = formSize ? formSize.slice(0, 2).toUpperCase() : 'MD';
-      finalSku = `VAR-${prefix}-${sizeTag}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const validRows = variantRows.filter((r) => r.name.trim() !== '');
+    if (validRows.length === 0) {
+      toast.error('Validation Error', { description: 'Please enter at least one variant name.' });
+      return;
     }
 
-    // Auto-resolve duplicate internal code if any so restaurant is never blocked
-    const isDuplicateSku = variants.some(
-      (v) => v.sku.toLowerCase() === finalSku.toLowerCase() && v.id !== editingVariantId
-    );
-    if (isDuplicateSku) {
-      finalSku = `${finalSku}-${Math.floor(100 + Math.random() * 900)}`;
+    for (const row of validRows) {
+      const priceNum = parseFloat(row.price);
+      if (isNaN(priceNum) || priceNum <= 0) {
+        toast.error('Validation Error', {
+          description: `Please enter a valid price for "${row.name}".`,
+        });
+        return;
+      }
     }
+
+    setIsSubmitting(true);
 
     try {
-      if (formMode === 'ADD') {
-        const payload = {
-          name: formName.trim(),
-          variantSize: formSize,
-          sku: finalSku,
-          price: priceNum,
-          unitText: formPortionSpec.trim(),
-          portionSpec: formPortionSpec.trim(),
-          priceType: formPriceType,
-          displayOrder: Number(formDisplayOrder) || 1,
-          isAvailable: formIsAvailable,
-        };
+      // Prioritize newly added rows so they appear first inside the dish's variant chips
+      const newRows = validRows.filter((r) => !r.id);
+      const existingRows = validRows.filter((r) => !!r.id);
+      const sortedValidRows = [...newRows, ...existingRows];
 
-        // Try API
-        let createdId = `var-${Date.now()}`;
-        try {
-          const apiRes = await foodGrocerySupplierService.createVariant(formProductId, payload);
-          if (apiRes && apiRes.id) createdId = apiRes.id;
-        } catch (apiErr) {
-          console.warn('Variant created in local state (API offline):', apiErr);
-        }
+      const updatedDishVariants: FoodVariant[] = sortedValidRows.map((row, idx) => ({
+        id: row.id || `var-${Date.now()}-${idx}`,
+        productId: matchedDish.id,
+        name: row.name.trim(),
+        variantSize: row.variantSize || 'Regular',
+        sku: `VAR-${matchedDish.name.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase()}-${(row.variantSize || 'Regular').slice(0, 2).toUpperCase()}-${idx + 100}`,
+        baseItemName: matchedDish.name,
+        category: matchedDish.category,
+        priceType: 'FIXED_PRICE',
+        price: parseFloat(row.price) || 0,
+        portionSpec: row.portionSpec?.trim() || '',
+        displayOrder: idx + 1,
+        isAvailable: row.isAvailable !== false,
+        status: 'ACTIVE',
+      }));
 
-        const newVar: FoodVariant = {
-          id: createdId,
-          productId: formProductId,
-          name: formName.trim(),
-          variantSize: formSize,
-          sku: finalSku,
-          baseItemName: formBaseItem,
-          category: formCategory,
-          priceType: formPriceType,
-          price: priceNum,
-          portionSpec: formPortionSpec.trim(),
-          displayOrder: Number(formDisplayOrder) || 1,
-          isAvailable: formIsAvailable,
-          status: 'ACTIVE',
-        };
+      // Prepend updated dish variants so this dish appears at the FIRST place on the table
+      setVariants((prev) => {
+        const remaining = prev.filter((v) => v.productId !== matchedDish.id);
+        return [...updatedDishVariants, ...remaining];
+      });
 
-        setVariants((prev) => [...prev, newVar]);
-        toast.success('Food Variant Created', {
-          description: `"${newVar.name}" added to "${newVar.baseItemName}" at €${newVar.price.toFixed(2)}.`,
-        });
-      } else if (editingVariantId) {
-        const payload = {
-          name: formName.trim(),
-          variantSize: formSize,
-          sku: finalSku,
-          price: priceNum,
-          unitText: formPortionSpec.trim(),
-          portionSpec: formPortionSpec.trim(),
-          priceType: formPriceType,
-          displayOrder: Number(formDisplayOrder) || 1,
-          isAvailable: formIsAvailable,
-        };
-
-        // Try API
-        try {
-          await foodGrocerySupplierService.updateVariant(formProductId, editingVariantId, payload);
-        } catch (apiErr) {
-          console.warn('Variant updated in local state (API offline):', apiErr);
-        }
-
-        setVariants((prev) =>
-          prev.map((v) =>
-            v.id === editingVariantId
-              ? {
-                  ...v,
-                  productId: formProductId,
-                  name: formName.trim(),
-                  variantSize: formSize,
-                  sku: finalSku,
-                  baseItemName: formBaseItem,
-                  category: formCategory,
-                  priceType: formPriceType,
-                  price: priceNum,
-                  portionSpec: formPortionSpec.trim(),
-                  displayOrder: Number(formDisplayOrder) || 1,
-                  isAvailable: formIsAvailable,
-                }
-              : v
-          )
-        );
-
-        toast.success('Food Variant Updated', {
-          description: `Changes to "${formName}" have been saved.`,
-        });
-      }
+      toast.success('Food Variants Saved', {
+        description: `${updatedDishVariants.length} variant(s) configured for ${matchedDish.name}.`,
+      });
 
       setIsFormOpen(false);
-    } catch (error: any) {
-      toast.error('Failed to save variant', {
-        description: error?.message || 'An error occurred while saving the variant.',
+    } catch (err: any) {
+      toast.error('Failed to save variants', {
+        description: err?.message || 'An error occurred.',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Toggle Availability (In Stock / Sold Out)
-  const handleToggleGlobalAvail = async (v: FoodVariant, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    const next = !v.isAvailable;
-
-    try {
-      await foodGrocerySupplierService.toggleVariantStatus(v.productId, v.id, next);
-    } catch (err) {
-      console.warn('Toggled locally:', err);
-    }
-
+  // Toggle In Stock / Out of Stock for a single Variant
+  const handleToggleVariantAvailability = (variantId: string) => {
+    const target = variants.find((v) => v.id === variantId);
+    if (!target) return;
+    const nextStatus = !target.isAvailable;
     setVariants((prev) =>
-      prev.map((item) => (item.id === v.id ? { ...item, isAvailable: next } : item))
+      prev.map((v) => (v.id === variantId ? { ...v, isAvailable: nextStatus } : v))
     );
-    toast.success(next ? `"${v.name}" marked In Stock` : `"${v.name}" marked Out of Stock`);
-  };
-
-  // Duplicate Variant
-  const handleDuplicate = (v: FoodVariant, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    const cloned: FoodVariant = {
-      ...v,
-      id: `var-${Date.now()}`,
-      name: `${v.name} (Copy)`,
-      sku: `${v.sku}-CPY`,
-      status: 'INACTIVE',
-    };
-    setVariants((prev) => [...prev, cloned]);
-    toast.success('Variant Duplicated', {
-      description: `Cloned "${v.name}" as inactive copy.`,
-    });
-  };
-
-  // Delete Variant Confirmation
-  const handleOpenDelete = (v: FoodVariant, e?: React.MouseEvent) => {
-    e?.stopPropagation();
-    setDeletingVariant(v);
-    setIsDeleteOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deletingVariant) return;
-
-    try {
-      await foodGrocerySupplierService.deleteVariant(deletingVariant.productId, deletingVariant.id);
-    } catch (err) {
-      console.warn('Deleted locally:', err);
-    }
-
-    setVariants((prev) => prev.filter((item) => item.id !== deletingVariant.id));
-    toast.success('Food Variant Deleted', {
-      description: `"${deletingVariant.name}" removed from the menu catalog.`,
-    });
-    setIsDeleteOpen(false);
-    setDeletingVariant(null);
-  };
-
-  // Open Details Modal
-  const handleOpenDetails = (v: FoodVariant) => {
-    setSelectedVariant(v);
-    setIsDetailsOpen(true);
+    toast.success(
+      nextStatus ? 'Marked In Stock' : 'Marked Out of Stock',
+      {
+        description: `"${target.name}" is now ${nextStatus ? 'active (In Stock)' : 'inactive (Out of Stock)'}.`,
+      }
+    );
   };
 
   return (
@@ -824,7 +959,7 @@ function RestaurantVariantsContent() {
           </Button>
 
           <Button
-            onClick={handleOpenAdd}
+            onClick={() => handleOpenAdd()}
             className="bg-[#FCD223] text-black font-bold hover:bg-[#FCD223]/90 text-xs shadow-md shadow-[#FCD223]/10"
           >
             <Plus className="mr-1.5 h-4 w-4" />
@@ -834,137 +969,9 @@ function RestaurantVariantsContent() {
       </div>
 
       {/* ──────────────────────────────────────────────────────────────────────────
-          DEPENDENT DROPDOWNS SELECTOR STRIP:
-          Menu Category → Food Item
-          ────────────────────────────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-white/10 bg-[#121214] p-5 space-y-4 shadow-lg shadow-black/20">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#FCD223]/10 text-[#FCD223] text-xs font-black">
-              1
-            </span>
-            <h2 className="text-sm font-bold text-white">
-              Menu Hierarchy: Category &amp; Dish Selection
-            </h2>
-          </div>
-          <span className="text-[11px] text-zinc-400 font-mono">
-            Menu Category → Food Dish → Variants
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Level 1: Menu Category */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-zinc-300 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Tag className="h-3.5 w-3.5 text-emerald-400" />
-                1. Menu Category
-              </span>
-              <span className="text-[10px] text-zinc-500 font-normal">
-                {applicableCategories.length} categories
-              </span>
-            </label>
-            <select
-              value={selectedCategoryId}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-[#18181B] py-2.5 px-3 text-xs text-white focus:border-[#FCD223] focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">All Categories ({applicableCategories.length})</option>
-              {applicableCategories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name} ({cat.itemCount || 0} items)
-                </option>
-              ))}
-            </select>
-            <p className="text-[10px] text-zinc-500">
-              Reloads dishes belonging strictly to this category
-            </p>
-          </div>
-
-          {/* Level 2: Food Item */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-zinc-300 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Utensils className="h-3.5 w-3.5 text-sky-400" />
-                2. Food Dish
-              </span>
-              <span className="text-[10px] text-zinc-500 font-normal">
-                {applicableItems.length} dishes
-              </span>
-            </label>
-            <select
-              value={selectedItemId}
-              onChange={(e) => setSelectedItemId(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-[#18181B] py-2.5 px-3 text-xs text-white focus:border-[#FCD223] focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">All Dishes in Category ({applicableItems.length})</option>
-              {applicableItems.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name} — €{item.basePrice.toFixed(2)} ({item.pricingMode})
-                </option>
-              ))}
-            </select>
-            <p className="text-[10px] text-zinc-500">
-              Select a dish to view, add, or configure its variants
-            </p>
-          </div>
-        </div>
-
-        {/* Active Selection Banner */}
-        {focusedFoodItem && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-[#FCD223]/20 bg-[#FCD223]/5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-[#FCD223]/10 p-2 text-[#FCD223]">
-                <Utensils className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-white">{focusedFoodItem.name}</span>
-                  <Badge className="border-sky-500/30 bg-sky-500/10 text-sky-400 text-[10px]">
-                    {focusedFoodItem.category}
-                  </Badge>
-                  <Badge
-                    className={cn(
-                      'text-[10px] font-bold border',
-                      focusedFoodItem.pricingMode === 'VARIANT_BASED'
-                        ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-                        : 'border-zinc-700 bg-zinc-800 text-zinc-300'
-                    )}
-                  >
-                    {focusedFoodItem.pricingMode === 'VARIANT_BASED' ? 'Variant-Based Pricing' : 'Fixed Base Price'}
-                  </Badge>
-                </div>
-                <p className="text-xs text-zinc-400 mt-0.5">
-                  Base Price: <strong className="text-white">€{focusedFoodItem.basePrice.toFixed(2)}</strong> • Category: <span className="text-zinc-300 font-semibold">{focusedFoodItem.category}</span> • Prep: {focusedFoodItem.prepTime}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/restaurants/menu?edit=${focusedFoodItem.id}`}
-                className="text-xs text-zinc-400 hover:text-white flex items-center gap-1 transition-colors px-2 py-1 rounded-lg border border-white/5 bg-white/5"
-              >
-                <span>Edit Dish in Menu</span>
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-              <Button
-                size="sm"
-                onClick={handleOpenAdd}
-                className="bg-[#FCD223] text-black font-bold hover:bg-[#FCD223]/90 text-xs h-8"
-              >
-                <Plus className="mr-1 h-3.5 w-3.5" />
-                Add Variant to Dish
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ──────────────────────────────────────────────────────────────────────────
           SCREEN 17: KPI SUMMARY CARDS
           ────────────────────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="rounded-2xl border border-white/10 bg-[#121214] p-4">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-zinc-400">Total Variants</span>
@@ -989,19 +996,8 @@ function RestaurantVariantsContent() {
 
         <div className="rounded-2xl border border-white/10 bg-[#121214] p-4">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-zinc-400">Portion Sizes</span>
-            <Building2 className="h-4 w-4 text-sky-400" />
-          </div>
-          <p className="mt-2 text-2xl font-black text-sky-400">
-            {new Set(filteredVariants.map((v) => v.variantSize)).size} Sizes
-          </p>
-          <span className="text-[10px] text-zinc-500">In current filter view</span>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-[#121214] p-4">
-          <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-zinc-400">Price Span</span>
-            <DollarSign className="h-4 w-4 text-[#FCD223]" />
+            <Euro className="h-4 w-4 text-[#FCD223]" />
           </div>
           <p className="mt-2 text-2xl font-black text-white font-mono">
             {filteredVariants.length > 0
@@ -1013,128 +1009,20 @@ function RestaurantVariantsContent() {
       </div>
 
       {/* ──────────────────────────────────────────────────────────────────────────
-          QUICK ADD PRESET EXAMPLES (USER SPECIFICATIONS)
-          Small Pizza (€8.00), Medium Pizza (€10.00), Large Pizza (€13.00), Regular (€15.68), Family Size (€36.00)
-          ────────────────────────────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-2 p-3.5 rounded-2xl border border-white/10 bg-[#121214]">
-        <span className="text-xs font-bold text-zinc-400 flex items-center gap-1.5 mr-1">
-          <Sparkles className="h-3.5 w-3.5 text-[#FCD223]" />
-          Quick Add Examples for {focusedFoodItem ? focusedFoodItem.name : 'Selected Dish'}:
-        </span>
-
-        <button
-          onClick={() =>
-            handleOpenWithPreset(
-              'Small Portion',
-              'Small',
-              '8.00',
-              'SM',
-              'Personal individual portion (10-inch)'
-            )
-          }
-          className="rounded-xl border border-sky-500/20 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-300 hover:bg-sky-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <span>Small</span>
-          <span className="font-mono font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">€8.00</span>
-        </button>
-
-        <button
-          onClick={() =>
-            handleOpenWithPreset(
-              'Medium Portion',
-              'Medium',
-              '10.00',
-              'MD',
-              'Classic regular portion (12-inch)'
-            )
-          }
-          className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <span>Medium</span>
-          <span className="font-mono font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">€10.00</span>
-        </button>
-
-        <button
-          onClick={() =>
-            handleOpenWithPreset(
-              'Large Portion',
-              'Large',
-              '13.00',
-              'LG',
-              'Sharing large portion (16-inch)'
-            )
-          }
-          className="rounded-xl border border-purple-500/20 bg-purple-500/10 px-3 py-1.5 text-xs font-semibold text-purple-300 hover:bg-purple-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <span>Large</span>
-          <span className="font-mono font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">€13.00</span>
-        </button>
-
-        <button
-          onClick={() =>
-            handleOpenWithPreset(
-              'Regular Bowl',
-              'Regular',
-              '15.68',
-              'REG',
-              '320g net weight individual bowl'
-            )
-          }
-          className="rounded-xl border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:bg-zinc-700 transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <span>Regular</span>
-          <span className="font-mono font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">€15.68</span>
-        </button>
-
-        <button
-          onClick={() =>
-            handleOpenWithPreset(
-              'Family Size Platter',
-              'Family Size',
-              '36.00',
-              'FAM',
-              '950g communal platter (3-4 persons)'
-            )
-          }
-          className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <span>Family Size</span>
-          <span className="font-mono font-bold text-white bg-black/40 px-1.5 py-0.5 rounded">€36.00</span>
-        </button>
-      </div>
-
-      {/* ──────────────────────────────────────────────────────────────────────────
           SCREEN 17: FILTERS STRIP
           ────────────────────────────────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-white/10 bg-[#121214] p-4 space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
             <input
               type="text"
-              placeholder="Search variant name, portion size..."
+              placeholder="Search variant name or food item..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full rounded-xl border border-white/10 bg-[#18181B] py-2 pl-9 pr-3 text-xs text-white placeholder-zinc-500 focus:border-[#FCD223] focus:outline-none"
             />
-          </div>
-
-          {/* Size Filter */}
-          <div>
-            <select
-              value={sizeFilter}
-              onChange={(e) => setSizeFilter(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-[#18181B] py-2 px-3 text-xs text-zinc-200 focus:border-[#FCD223] focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">All Portion Sizes</option>
-              <option value="Small">Small Size</option>
-              <option value="Medium">Medium Size</option>
-              <option value="Large">Large Size</option>
-              <option value="Regular">Regular Portion</option>
-              <option value="Family Size">Family Size Platter</option>
-              <option value="Custom">Custom Size</option>
-            </select>
           </div>
 
           {/* Availability Filter */}
@@ -1153,26 +1041,23 @@ function RestaurantVariantsContent() {
       </div>
 
       {/* ──────────────────────────────────────────────────────────────────────────
-          SCREEN 17: FOOD VARIANTS TABLE
-          Columns: Variant Name, SKU, Price Adjustment / Variant Price,
-                   Display Order, Availability, Actions
+          SCREEN 17: FOOD VARIANTS TABLE (GROUPED BY FOOD ITEM)
           ────────────────────────────────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-white/10 bg-[#121214] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/10 bg-white/[0.02] text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
-                <th className="py-3 px-4">Variant Name &amp; Dish</th>
-                <th className="py-3 px-4 text-center">Variant Price</th>
-                <th className="py-3 px-4 text-center">Display Order</th>
-                <th className="py-3 px-4 text-center">Kitchen Availability</th>
+                <th className="py-3 px-4">Food Item</th>
+                <th className="py-3 px-4">Configured Variants</th>
+                <th className="py-3 px-4 text-center">Total Variants</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 text-xs text-zinc-300">
-              {filteredVariants.length === 0 ? (
+              {dishesWithVariants.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-zinc-500">
+                  <td colSpan={4} className="py-12 text-center text-zinc-500">
                     <Layers className="h-8 w-8 mx-auto mb-2 opacity-30 text-[#FCD223]" />
                     <p className="font-semibold text-white">No food variants found</p>
                     <p className="text-[11px] text-zinc-500 mt-0.5">
@@ -1181,7 +1066,7 @@ function RestaurantVariantsContent() {
                         : 'Adjust your dependent filters or click "Add Food Variant" to define new portion sizes.'}
                     </p>
                     <Button
-                      onClick={handleOpenAdd}
+                      onClick={() => handleOpenAdd()}
                       className="mt-4 bg-[#FCD223] text-black font-bold hover:bg-[#FCD223]/90 text-xs"
                     >
                       <Plus className="mr-1.5 h-3.5 w-3.5" />
@@ -1190,126 +1075,119 @@ function RestaurantVariantsContent() {
                   </td>
                 </tr>
               ) : (
-                filteredVariants.map((v) => (
+                dishesWithVariants.map((dishGroup) => (
                   <tr
-                    key={v.id}
-                    onClick={() => handleOpenDetails(v)}
-                    className="hover:bg-white/[0.03] transition-colors cursor-pointer group"
+                    key={dishGroup.id}
+                    className="hover:bg-white/[0.02] transition-colors border-b border-white/5"
                   >
-                    {/* 1. Variant Name & Base Item */}
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 rounded-lg border border-white/10 bg-[#18181B] p-2 text-[#FCD223] group-hover:border-[#FCD223]/50 transition-colors">
-                          <Layers className="h-4 w-4" />
+                    {/* 1. Food Item */}
+                    <td className="py-4 px-4 align-top w-72">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-white text-sm">
+                          {dishGroup.name}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/5">
+                            {dishGroup.category}
+                          </span>
+                          <span className="text-[11px] text-zinc-400 font-mono">
+                            Base: €{Number(dishGroup.basePrice).toFixed(2)}
+                          </span>
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-white text-xs group-hover:text-[#FCD223] transition-colors">
-                              {v.name}
-                            </span>
-                            <Badge
+                      </div>
+                    </td>
+
+                    {/* 2. Configured Variants */}
+                    <td className="py-4 px-4 align-top">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {dishGroup.variants.length === 0 ? (
+                          <span className="text-xs text-zinc-500 italic">No variants configured</span>
+                        ) : (
+                          dishGroup.variants.map((variant) => (
+                            <div
+                              key={variant.id}
                               className={cn(
-                                'text-[10px] font-bold px-1.5 py-0 border',
-                                v.variantSize === 'Small'
-                                  ? 'border-sky-500/30 bg-sky-500/10 text-sky-400'
-                                  : v.variantSize === 'Medium'
-                                  ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
-                                  : v.variantSize === 'Large'
-                                  ? 'border-purple-500/30 bg-purple-500/10 text-purple-400'
-                                  : v.variantSize === 'Family Size'
-                                  ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-                                  : 'border-zinc-700 bg-zinc-800 text-zinc-300'
+                                'inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs transition-colors',
+                                variant.isAvailable
+                                  ? 'border-white/10 bg-white/[0.03] text-zinc-200'
+                                  : 'border-white/5 bg-white/[0.01] text-zinc-500 line-through opacity-70'
                               )}
                             >
-                              {v.variantSize}
-                            </Badge>
-                          </div>
-                          <p className="text-[11px] text-zinc-400 mt-0.5 flex items-center gap-1.5">
-                            <Utensils className="h-2.5 w-2.5 text-zinc-500" />
-                            <span>{v.baseItemName}</span>
-                            <span className="text-zinc-600">•</span>
-                            <span className="text-zinc-500">{v.category}</span>
-                          </p>
-                          {v.portionSpec && (
-                            <p className="text-[10px] text-zinc-500 mt-0.5 font-mono">
-                              {v.portionSpec}
-                            </p>
-                          )}
-                        </div>
+                              <div className="flex items-center gap-1.5 font-medium">
+                                <span
+                                  className={cn(
+                                    'h-1.5 w-1.5 rounded-full',
+                                    variant.isAvailable ? 'bg-emerald-400' : 'bg-zinc-600'
+                                  )}
+                                />
+                                <span>{variant.name}</span>
+                              </div>
+
+                              <span className="font-mono font-bold text-[#FCD223] text-xs">
+                                €{Number(variant.price).toFixed(2)}
+                              </span>
+
+                              {/* Stock Toggle pill button */}
+                              <button
+                                type="button"
+                                onClick={() => handleToggleVariantAvailability(variant.id)}
+                                title={variant.isAvailable ? 'Click to mark Out of Stock' : 'Click to mark In Stock'}
+                                className={cn(
+                                  'text-[10px] font-bold px-2 py-0.5 rounded-md border transition-colors ml-1 cursor-pointer',
+                                  variant.isAvailable
+                                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+                                    : 'border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                                )}
+                              >
+                                {variant.isAvailable ? 'In Stock' : 'Out of Stock'}
+                              </button>
+                            </div>
+                          ))
+                        )}
                       </div>
                     </td>
 
-                    {/* Variant Price */}
-                    <td className="py-3.5 px-4 text-center">
-                      <div className="inline-flex flex-col items-center">
-                        <span className="font-mono font-black text-sm text-[#FCD223]">
-                          €{Number(v.price).toFixed(2)}
-                        </span>
-                        <span className="text-[9px] text-zinc-500 uppercase">
-                          Standard Price
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Display Order */}
-                    <td className="py-3.5 px-4 text-center">
-                      <span className="font-mono font-bold text-xs text-white bg-white/5 rounded-md px-2 py-0.5 border border-white/10">
-                        #{v.displayOrder}
+                    {/* 3. Total Variants */}
+                    <td className="py-4 px-4 align-top text-center w-36">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-[#FCD223]/10 text-[#FCD223] border border-[#FCD223]/20">
+                        {dishGroup.count} {dishGroup.count === 1 ? 'Variant' : 'Variants'}
                       </span>
                     </td>
 
-                    {/* 6. Availability */}
-                    <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={(e) => handleToggleGlobalAvail(v, e)}
-                        className={cn(
-                          'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold border transition-colors cursor-pointer',
-                          v.isAvailable
-                            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-                            : 'border-zinc-700 bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-                        )}
-                        title="Click to toggle availability"
-                      >
-                        <span
-                          className={cn(
-                            'h-1.5 w-1.5 rounded-full',
-                            v.isAvailable ? 'bg-emerald-400' : 'bg-zinc-500'
-                          )}
-                        />
-                        {v.isAvailable ? 'In Stock' : 'Sold Out'}
-                      </button>
-                    </td>
-
-                    {/* 7. Actions */}
-                    <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    {/* 4. Actions: View, Edit, Delete */}
+                    <td className="py-4 px-4 align-top text-right w-32">
                       <div className="flex items-center justify-end gap-1.5">
                         <button
-                          onClick={() => handleOpenDetails(v)}
-                          className="rounded-lg p-1.5 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors"
+                          onClick={() =>
+                            handleOpenView({
+                              id: dishGroup.id,
+                              name: dishGroup.name,
+                              category: dishGroup.category,
+                              basePrice: Number(dishGroup.basePrice) || 0,
+                              variants: dishGroup.variants,
+                              count: dishGroup.count,
+                            })
+                          }
+                          className="rounded-lg p-2 text-zinc-400 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
                           title="View Details"
                         >
-                          <Eye className="h-3.5 w-3.5" />
+                          <Eye className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleOpenEdit(v)}
-                          className="rounded-lg p-1.5 text-zinc-400 hover:bg-white/10 hover:text-[#FCD223] transition-colors"
-                          title="Edit Variant"
+                          onClick={() => handleOpenEditDish(dishGroup.id)}
+                          className="rounded-lg p-2 text-zinc-400 hover:bg-white/10 hover:text-[#FCD223] transition-colors cursor-pointer"
+                          title="Edit Variants"
                         >
-                          <Edit2 className="h-3.5 w-3.5" />
+                          <Edit2 className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={(e) => handleDuplicate(v, e)}
-                          className="rounded-lg p-1.5 text-zinc-400 hover:bg-white/10 hover:text-sky-400 transition-colors"
-                          title="Duplicate Variant"
+                          onClick={() =>
+                            handleOpenDeleteDish(dishGroup.id, dishGroup.name, dishGroup.count)
+                          }
+                          className="rounded-lg p-2 text-zinc-400 hover:bg-red-500/10 hover:text-red-400 transition-colors cursor-pointer"
+                          title="Delete All Variants"
                         >
-                          <Copy className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => handleOpenDelete(v, e)}
-                          className="rounded-lg p-1.5 text-zinc-400 hover:bg-red-500/10 hover:text-red-400 transition-colors"
-                          title="Delete Variant"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </td>
@@ -1322,261 +1200,259 @@ function RestaurantVariantsContent() {
       </div>
 
       {/* ──────────────────────────────────────────────────────────────────────────
-          SCREEN 17: ADD / EDIT FOOD VARIANT MODAL
-          Fields: Dish Parent, Variant Name, Size, Price, Availability, Display Order
+          SCREEN 17: ADD / EDIT MULTI-VARIANT MODAL
           ────────────────────────────────────────────────────────────────────────── */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-3xl border-white/10 bg-[#0E0E10] p-6 text-white max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl border-white/10 bg-[#0E0E10] p-6 text-white max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-black text-white flex items-center gap-2.5">
               <Layers className="h-5 w-5 text-[#FCD223]" />
-              {formMode === 'ADD' ? 'Add Food Variant' : `Edit Variant: ${formName}`}
+              {formMode === 'ADD' ? 'Add Food Variants' : `Manage Variants: ${targetDish?.name || 'Food Item'}`}
             </DialogTitle>
             <DialogDescription className="text-xs text-zinc-400">
-              Configure portion sizes, pricing, and availability for this dish
+              Configure variant options, prices, and kitchen availability (In Stock / Out of Stock).
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-3">
-            {/* 1. Parent Dish Selection */}
-            <div className="space-y-3 rounded-xl border border-white/5 bg-[#141416] p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#FCD223] flex items-center gap-2">
-                <Utensils className="h-3.5 w-3.5" />
-                1. Parent Food Item &amp; Category
-              </h3>
+          <div className="space-y-4 py-3">
+            {/* Target Food Item Selection */}
+            <div>
+              <label className="text-xs font-semibold text-zinc-300 block mb-1.5">
+                Target Food Item *
+              </label>
+              <select
+                value={formProductId}
+                onChange={(e) => handleTargetProductChange(e.target.value)}
+                className="w-full rounded-xl border border-white/10 bg-[#18181B] py-2.5 px-3 text-xs text-white focus:border-[#FCD223] focus:outline-none cursor-pointer"
+              >
+                <option value="">Select Food Item</option>
+                {items.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name} ({item.category})
+                  </option>
+                ))}
+              </select>
+            </div>
 
-              <div>
+            {/* Variants List Header */}
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center gap-2">
                 <label className="text-xs font-semibold text-zinc-300">
-                  Select Target Food Dish *
+                  Variants List
                 </label>
-                <select
-                  value={formProductId}
-                  onChange={(e) => {
-                    setFormProductId(e.target.value);
-                    const found = items.find((i) => i.id === e.target.value);
-                    if (found) {
-                      setFormBaseItem(found.name);
-                      setFormCategory(found.category);
-                      const prefix = found.name.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'VAR';
-                      const sizeTag = formSize ? formSize.slice(0, 2).toUpperCase() : 'MD';
-                      setFormSku(`VAR-${prefix}-${sizeTag}-${Math.floor(1000 + Math.random() * 9000)}`);
-                    }
-                  }}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-[#18181B] py-2.5 px-3 text-xs text-white focus:border-[#FCD223] focus:outline-none"
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-[#FCD223] font-bold border border-[#FCD223]/20">
+                  {variantRows.filter((r) => r.name.trim()).length} of {variantRows.length} filled
+                </span>
+              </div>
+              <span className="text-[10px] text-zinc-500">
+                Manage variant options, extra prices & availability
+              </span>
+            </div>
+
+            {/* Dynamic Variant Rows */}
+            <div className="space-y-3">
+              {variantRows.map((row, index) => (
+                <div
+                  key={index}
+                  className="p-3.5 rounded-xl border border-white/10 bg-[#141416] space-y-3"
                 >
-                  {items.map((i) => (
-                    <option key={i.id} value={i.id}>
-                      {i.name} — {i.category} (€{i.basePrice.toFixed(2)})
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-zinc-500 mt-1">
-                  Variants are always attached to a valid parent dish in the restaurant catalog
-                </p>
-              </div>
-            </div>
+                  <div className="flex items-center gap-3">
+                    {/* Variant Name */}
+                    <div className="flex-1">
+                      <label className="text-[11px] font-semibold text-zinc-400 block mb-1 uppercase">
+                        Variant Name *
+                      </label>
+                      <Input
+                        value={row.name}
+                        onChange={(e) => handleUpdateVariantRow(index, 'name', e.target.value)}
+                        placeholder="Enter Variant Name"
+                        className="capitalize text-xs border-white/10 bg-[#18181B] text-white placeholder:text-[10px] sm:placeholder:text-[11px] placeholder:text-zinc-500"
+                      />
+                    </div>
 
-            {/* 2. Portion Size & Basic Info */}
-            <div className="space-y-4 rounded-xl border border-white/5 bg-[#141416] p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#FCD223]">
-                2. Portion Size &amp; Identity
-              </h3>
+                    {/* Price (€) */}
+                    <div className="w-36 sm:w-44">
+                      <label className="text-[11px] font-semibold text-zinc-400 block mb-1 uppercase">
+                        Price (€) *
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-zinc-400 font-mono">
+                          €
+                        </span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={row.price}
+                          onChange={(e) => handleUpdateVariantRow(index, 'price', e.target.value)}
+                          onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
+                          }}
+                          placeholder="Enter Price"
+                          className="pl-7 text-xs border-white/10 bg-[#18181B] text-white font-mono placeholder:text-[10px] sm:placeholder:text-[11px] placeholder:text-zinc-500"
+                        />
+                      </div>
+                    </div>
 
-              {/* Preset Size Buttons */}
-              <div>
-                <label className="text-xs font-semibold text-zinc-300">
-                  Select Size Tier Preset
-                </label>
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-1.5">
-                  {(['Small', 'Medium', 'Large', 'Regular', 'Family Size', 'Custom'] as VariantSizePreset[]).map(
-                    (size) => (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => handleSizePresetSelect(size)}
-                        className={cn(
-                          'rounded-xl border py-2 px-2 text-center text-xs font-bold transition-all',
-                          formSize === size
-                            ? 'border-[#FCD223] bg-[#FCD223]/10 text-[#FCD223]'
-                            : 'border-white/5 bg-[#18181B] text-zinc-400 hover:border-white/10 hover:text-white'
-                        )}
-                      >
-                        {size}
-                      </button>
-                    )
-                  )}
-                </div>
-              </div>
+                    {/* Delete Row button */}
+                    {variantRows.length > 1 && (
+                      <div className="pt-5">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveVariantRow(index)}
+                          className="p-2 text-zinc-500 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                          title="Remove variant"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-zinc-300">
-                    Variant Display Name * <span className="text-zinc-500 font-normal">(e.g. Small Pizza, Large Pizza)</span>
-                  </label>
-                  <Input
-                    value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
-                    placeholder="e.g. Small Pizza (10-inch)"
-                    className="mt-1 border-white/10 bg-[#18181B] text-xs text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-zinc-300">
-                    Portion / Dimensions Specification
-                  </label>
-                  <Input
-                    value={formPortionSpec}
-                    onChange={(e) => setFormPortionSpec(e.target.value)}
-                    placeholder="e.g. '10-inch diameter (6 slices)', '320g net weight'"
-                    className="mt-1 border-white/10 bg-[#18181B] text-xs text-white"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="text-xs font-semibold text-zinc-300">
-                    Display Order
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={formDisplayOrder}
-                    onChange={(e) => setFormDisplayOrder(parseInt(e.target.value) || 1)}
-                    className="mt-1 border-white/10 bg-[#18181B] text-xs text-white font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Pricing Configuration */}
-            <div className="space-y-4 rounded-xl border border-white/5 bg-[#141416] p-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#FCD223] flex items-center justify-between">
-                <span>3. Pricing Configuration</span>
-                <span className="text-[10px] text-zinc-400 font-normal">Prices must be positive</span>
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-zinc-300">
-                    Price Model
-                  </label>
-                  <select
-                    value={formPriceType}
-                    onChange={(e) => setFormPriceType(e.target.value as any)}
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-[#18181B] py-2 px-3 text-xs text-white focus:border-[#FCD223] focus:outline-none"
-                  >
-                    <option value="FIXED_PRICE">Fixed Variant Price (e.g. €8.00 / €10.00 / €13.00)</option>
-                    <option value="PRICE_ADJUSTMENT">Price Adjustment Delta (+€ from Base Dish)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-semibold text-zinc-300">
-                    Standard Variant Price (€) *
-                  </label>
-                  <div className="relative mt-1">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
-                    <Input
-                      type="number"
-                      step="0.50"
-                      min="0.10"
-                      value={formPrice}
-                      onChange={(e) => setFormPrice(e.target.value)}
-                      placeholder="10.00"
-                      className="pl-9 text-xs border-white/10 bg-[#18181B] text-white font-mono font-bold text-sm"
-                    />
+                  {/* Full-width Availability Toggle */}
+                  <div className="pt-1 border-t border-white/5">
+                    <label className="text-[11px] font-semibold text-zinc-400 block mb-1.5 uppercase">
+                      Availability
+                    </label>
+                    <div className="flex items-center justify-between w-full rounded-xl border border-white/5 bg-[#18181B] px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            'h-2 w-2 rounded-full',
+                            row.isAvailable ? 'bg-emerald-400' : 'bg-zinc-600'
+                          )}
+                        />
+                        <span className="text-xs font-semibold text-zinc-300">
+                          {row.isAvailable ? 'In Stock (Active)' : 'Out of Stock (Inactive)'}
+                        </span>
+                      </div>
+                      <Switch
+                        checked={row.isAvailable}
+                        onCheckedChange={(checked) =>
+                          handleUpdateVariantRow(index, 'isAvailable', checked)
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
 
-            {/* 4. Kitchen Catalog Availability */}
-            <div className="flex items-center justify-between rounded-xl border border-white/5 bg-[#141416] p-4">
-              <div>
-                <p className="text-xs font-bold text-white">Kitchen Catalog Availability</p>
-                <p className="text-[10px] text-zinc-400 mt-0.5">
-                  When toggled off, this variant is hidden from customer ordering apps
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setFormIsAvailable(!formIsAvailable)}
-                className={cn(
-                  'relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
-                  formIsAvailable ? 'bg-[#FCD223]' : 'bg-zinc-700'
-                )}
-              >
-                <span
-                  className={cn(
-                    'inline-block h-3.5 w-3.5 transform rounded-full bg-black transition-transform',
-                    formIsAvailable ? 'translate-x-4.5' : 'translate-x-1'
-                  )}
-                />
-              </button>
-            </div>
+            {/* Add Another Variant Button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleAddVariantRow}
+              className="w-full border-dashed border-white/20 bg-transparent text-xs text-[#FCD223] hover:bg-white/5 hover:border-[#FCD223]/50 py-2.5 cursor-pointer"
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add Another Variant
+            </Button>
           </div>
 
           <DialogFooter className="border-t border-white/10 pt-4 flex items-center justify-between">
             <Button
               type="button"
               variant="outline"
+              disabled={isSubmitting}
               onClick={() => setIsFormOpen(false)}
-              className="border-white/10 bg-white/5 text-xs text-zinc-300 hover:bg-white/10"
+              className="border-white/10 bg-white/5 text-xs text-zinc-300 hover:bg-white/10 cursor-pointer"
             >
               Cancel
             </Button>
 
             <Button
               type="button"
-              onClick={handleSaveVariant}
-              className="bg-[#FCD223] text-black font-bold hover:bg-[#FCD223]/90 text-xs shadow-md shadow-[#FCD223]/10"
+              disabled={isSubmitting}
+              onClick={handleSaveVariants}
+              className="bg-[#FCD223] text-black font-bold hover:bg-[#FCD223]/90 text-xs shadow-md shadow-[#FCD223]/10 cursor-pointer"
             >
-              {formMode === 'ADD' ? 'Save Food Variant' : 'Update Variant'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Saving...
+                </>
+              ) : formMode === 'ADD' ? (
+                'Save Food Variants'
+              ) : (
+                'Update Variants'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* ──────────────────────────────────────────────────────────────────────────
-          SCREEN 17: DETAILS / INSPECTION MODAL
+          SCREEN 17: DETAILS / INSPECTION MODAL (PER FOOD ITEM)
           ────────────────────────────────────────────────────────────────────────── */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-2xl border-white/10 bg-[#0E0E10] p-6 text-white">
-          {selectedVariant && (
+        <DialogContent className="max-w-2xl border-white/10 bg-[#0E0E10] p-6 text-white max-h-[85vh] overflow-y-auto">
+          {viewingDish && (
             <div>
               <DialogHeader>
                 <div className="flex items-center gap-2">
                   <Badge className="border-[#FCD223]/30 bg-[#FCD223]/10 text-[#FCD223] text-[10px] font-bold">
-                    {selectedVariant.variantSize} Tier
+                    {viewingDish.category}
                   </Badge>
                   <span className="text-zinc-600 text-xs">•</span>
                   <span className="text-xs text-zinc-400 font-medium">
-                    {selectedVariant.category}
+                    Base Price: €{Number(viewingDish.basePrice).toFixed(2)}
                   </span>
                 </div>
                 <DialogTitle className="text-xl font-black text-white mt-1">
-                  {selectedVariant.name}
+                  {viewingDish.name}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-zinc-400">
-                  Base Dish: <strong className="text-white">{selectedVariant.baseItemName}</strong> ({selectedVariant.category})
+                  Total {viewingDish.variants.length} configured portion size {viewingDish.variants.length === 1 ? 'variant' : 'variants'}
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4 py-4">
-                {/* Price Display */}
-                <div className="rounded-xl border border-white/5 bg-[#141416] p-4 text-center">
-                  <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">
-                    Standard Customer Display Price
-                  </span>
-                  <p className="font-mono text-3xl font-black text-[#FCD223] mt-1">
-                    €{Number(selectedVariant.price).toFixed(2)}
-                  </p>
-                  {selectedVariant.portionSpec && (
-                    <p className="text-xs text-zinc-400 mt-1">
-                      {selectedVariant.portionSpec}
-                    </p>
-                  )}
+              <div className="py-4 space-y-3">
+                <div className="rounded-xl border border-white/10 bg-[#121214] overflow-hidden">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-white/10 bg-white/[0.02] text-[11px] font-semibold text-zinc-400 uppercase">
+                        <th className="py-2.5 px-3">#</th>
+                        <th className="py-2.5 px-3">Variant Name</th>
+                        <th className="py-2.5 px-3 text-right">Price</th>
+                        <th className="py-2.5 px-3 text-center">Stock Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-zinc-300">
+                      {viewingDish.variants.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} className="py-6 text-center text-zinc-500 italic">
+                            No variants configured yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        viewingDish.variants.map((v, i) => (
+                          <tr key={v.id} className="hover:bg-white/[0.02]">
+                            <td className="py-2.5 px-3 text-zinc-500 font-mono text-[11px]">
+                              {i + 1}
+                            </td>
+                            <td className="py-2.5 px-3 font-semibold text-white">
+                              {v.name}
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-mono font-bold text-[#FCD223]">
+                              €{Number(v.price).toFixed(2)}
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <span
+                                className={cn(
+                                  'text-[10px] font-bold px-2 py-0.5 rounded-full border',
+                                  v.isAvailable
+                                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                                    : 'border-red-500/30 bg-red-500/10 text-red-400'
+                                )}
+                              >
+                                {v.isAvailable ? 'In Stock' : 'Out of Stock'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -1584,17 +1460,22 @@ function RestaurantVariantsContent() {
                 <Button
                   variant="outline"
                   onClick={() => {
+                    const dId = viewingDish.id;
                     setIsDetailsOpen(false);
-                    handleOpenEdit(selectedVariant);
+                    setViewingDish(null);
+                    handleOpenEditDish(dId);
                   }}
-                  className="border-white/10 bg-white/5 text-xs text-zinc-300"
+                  className="border-white/10 bg-white/5 text-xs text-zinc-300 hover:text-white cursor-pointer"
                 >
                   <Edit2 className="h-3.5 w-3.5 mr-1.5" />
-                  Edit Variant
+                  Edit Variants
                 </Button>
                 <Button
-                  onClick={() => setIsDetailsOpen(false)}
-                  className="bg-[#FCD223] text-black font-bold hover:bg-[#FCD223]/90 text-xs"
+                  onClick={() => {
+                    setIsDetailsOpen(false);
+                    setViewingDish(null);
+                  }}
+                  className="bg-[#FCD223] text-black font-bold hover:bg-[#FCD223]/90 text-xs cursor-pointer"
                 >
                   Close
                 </Button>
@@ -1605,33 +1486,36 @@ function RestaurantVariantsContent() {
       </Dialog>
 
       {/* ──────────────────────────────────────────────────────────────────────────
-          DELETE CONFIRMATION MODAL
+          DELETE CONFIRMATION MODAL (PER FOOD ITEM)
           ────────────────────────────────────────────────────────────────────────── */}
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent className="max-w-md border-white/10 bg-[#0E0E10] p-6 text-white">
           <DialogHeader>
             <DialogTitle className="text-lg font-black text-white flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-red-400" />
-              Delete Food Variant
+              Delete Food Dish Variants
             </DialogTitle>
-            <DialogDescription className="text-xs text-zinc-400">
-              Are you sure you want to delete{' '}
-              <strong className="text-white">"{deletingVariant?.name}"</strong>?
-              If this variant is referenced by past customer orders, it will be safely deactivated to preserve accounting records.
+            <DialogDescription className="text-xs text-zinc-400 mt-2">
+              Are you sure you want to delete all variants configured for{' '}
+              <strong className="text-white">"{deletingDish?.name}"</strong>?
+              This will remove {deletingDish?.count || 0} variant option(s) from this food dish.
             </DialogDescription>
           </DialogHeader>
 
-          <DialogFooter className="mt-4 flex items-center justify-end gap-2">
+          <DialogFooter className="mt-5 flex items-center justify-end gap-2">
             <Button
               variant="outline"
-              onClick={() => setIsDeleteOpen(false)}
-              className="border-white/10 bg-white/5 text-xs text-zinc-300"
+              onClick={() => {
+                setIsDeleteOpen(false);
+                setDeletingDish(null);
+              }}
+              className="border-white/10 bg-white/5 text-xs text-zinc-300 cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               onClick={handleConfirmDelete}
-              className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs"
+              className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs cursor-pointer"
             >
               Confirm Delete
             </Button>

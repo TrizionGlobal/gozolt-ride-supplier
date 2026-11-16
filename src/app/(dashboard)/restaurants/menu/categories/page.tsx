@@ -28,6 +28,7 @@ import {
   Building2,
   ExternalLink,
   RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -60,6 +61,16 @@ export interface MenuCategory {
 
 export default function RestaurantCategoriesPage() {
   const [categories, setCategories] = useState<MenuCategory[]>([
+    {
+      id: 'cat-biryani',
+      name: 'Biryani & Rice',
+      slug: 'biryani-rice',
+      description: 'Slow-cooked royal dum biryanis, aromatic basmati rice bowls, and traditional rich accompaniments.',
+      imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80',
+      displayOrder: 1,
+      itemCount: 4,
+      status: 'ACTIVE',
+    },
     {
       id: 'cat-1',
       name: 'Pizza',
@@ -181,6 +192,7 @@ export default function RestaurantCategoriesPage() {
 
   // Modals state
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formMode, setFormMode] = useState<'ADD' | 'EDIT'>('ADD');
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
 
@@ -287,73 +299,78 @@ export default function RestaurantCategoriesPage() {
       return;
     }
 
-    const slug = formName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    setIsSubmitting(true);
+    try {
+      const slug = formName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-    if (formMode === 'ADD') {
-      const newCategory: MenuCategory = {
-        id: `cat-${Date.now()}`,
-        name: formName.trim(),
-        slug,
-        description: formDescription.trim() || 'Delicious kitchen category items.',
-        imageUrl: formImageUrl || '',
-        displayOrder: Number(formDisplayOrder) || categories.length + 1,
-        itemCount: 0,
-        status: formStatus,
-      };
-
-      setCategories((prev) => [...prev, newCategory]);
-      try {
-        const created = await foodGrocerySupplierService.createCategory({
-          name: newCategory.name,
-          description: newCategory.description,
-          imageUrl: newCategory.imageUrl,
-          displayOrder: newCategory.displayOrder,
-        });
-        if (created?.id) {
-          setCategories((prev) =>
-            prev.map((c) => (c.id === newCategory.id ? { ...c, id: created.id } : c))
-          );
-        }
-      } catch (err: any) {
-        console.warn('Backend category sync fallback (local state preserved):', err);
-      }
-
-      toast.success('Category Created', {
-        description: `"${newCategory.name}" added to menu catalog.`,
-      });
-    } else if (editingCategoryId) {
-      setCategories((prev) =>
-        prev.map((c) =>
-          c.id === editingCategoryId
-            ? {
-                ...c,
-                name: formName.trim(),
-                slug,
-                description: formDescription.trim(),
-                imageUrl: formImageUrl || c.imageUrl,
-                displayOrder: Number(formDisplayOrder) || c.displayOrder,
-                status: formStatus,
-              }
-            : c
-        )
-      );
-
-      try {
-        await foodGrocerySupplierService.updateCategory(editingCategoryId, {
+      if (formMode === 'ADD') {
+        const newCategory: MenuCategory = {
+          id: `cat-${Date.now()}`,
           name: formName.trim(),
-          displayOrder: Number(formDisplayOrder),
-          isActive: formStatus === 'ACTIVE',
+          slug,
+          description: formDescription.trim() || 'Delicious kitchen category items.',
+          imageUrl: formImageUrl || '',
+          displayOrder: Number(formDisplayOrder) || categories.length + 1,
+          itemCount: 0,
+          status: formStatus,
+        };
+
+        setCategories((prev) => [...prev, newCategory]);
+        try {
+          const created = await foodGrocerySupplierService.createCategory({
+            name: newCategory.name,
+            description: newCategory.description,
+            imageUrl: newCategory.imageUrl,
+            displayOrder: newCategory.displayOrder,
+          });
+          if (created?.id) {
+            setCategories((prev) =>
+              prev.map((c) => (c.id === newCategory.id ? { ...c, id: created.id } : c))
+            );
+          }
+        } catch (err: any) {
+          console.warn('Backend category sync fallback (local state preserved):', err);
+        }
+
+        toast.success('Category Created', {
+          description: `"${newCategory.name}" added to menu catalog.`,
         });
-      } catch (err) {
-        console.warn('Backend category update sync fallback:', err);
+      } else if (editingCategoryId) {
+        setCategories((prev) =>
+          prev.map((c) =>
+            c.id === editingCategoryId
+              ? {
+                  ...c,
+                  name: formName.trim(),
+                  slug,
+                  description: formDescription.trim(),
+                  imageUrl: formImageUrl || c.imageUrl,
+                  displayOrder: Number(formDisplayOrder) || c.displayOrder,
+                  status: formStatus,
+                }
+              : c
+          )
+        );
+
+        try {
+          await foodGrocerySupplierService.updateCategory(editingCategoryId, {
+            name: formName.trim(),
+            displayOrder: Number(formDisplayOrder),
+            isActive: formStatus === 'ACTIVE',
+          });
+        } catch (err) {
+          console.warn('Backend category update sync fallback:', err);
+        }
+
+        toast.success('Category Updated', {
+          description: `Category "${formName}" changes saved.`,
+        });
       }
 
-      toast.success('Category Updated', {
-        description: `Category "${formName}" changes saved.`,
-      });
+      setIsFormOpen(false);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsFormOpen(false);
   };
 
   // Toggle Active/Inactive Status
@@ -896,10 +913,10 @@ export default function RestaurantCategoriesPage() {
             <div>
               <label className="text-xs font-semibold text-zinc-300">Category Name *</label>
               <Input
-                placeholder="e.g. Pizza, Pasta, Burgers, Starters..."
+                placeholder="Enter Category Name"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                className="mt-1 border-white/10 bg-[#18181B] text-xs text-white"
+                className="mt-1 border-white/10 bg-[#18181B] text-xs text-white capitalize"
               />
             </div>
 
@@ -908,7 +925,7 @@ export default function RestaurantCategoriesPage() {
               <label className="text-xs font-semibold text-zinc-300">Category Description</label>
               <textarea
                 rows={2}
-                placeholder="Provide a delicious customer-facing description..."
+                placeholder="Enter Category Description"
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
                 className="mt-1 w-full rounded-md border border-white/10 bg-[#18181B] p-2 text-xs text-white placeholder-zinc-500 focus:border-[#FCD223] focus:outline-none"
@@ -987,8 +1004,12 @@ export default function RestaurantCategoriesPage() {
                 <Input
                   type="number"
                   min={1}
+                  placeholder="Enter Display Order"
                   value={formDisplayOrder}
                   onChange={(e) => setFormDisplayOrder(parseInt(e.target.value) || 1)}
+                  onKeyDown={(e) => {
+                    if (['e', 'E', '+', '-', '.'].includes(e.key)) e.preventDefault();
+                  }}
                   className="mt-1 border-white/10 bg-[#18181B] text-xs font-mono text-[#FCD223]"
                 />
                 <span className="text-[10px] text-zinc-500">Position in menu tabs</span>
@@ -1029,15 +1050,25 @@ export default function RestaurantCategoriesPage() {
             <Button
               variant="outline"
               onClick={() => setIsFormOpen(false)}
+              disabled={isSubmitting}
               className="border-white/10 text-zinc-400 hover:text-white"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSaveCategory}
+              disabled={isSubmitting}
               className="bg-[#FCD223] text-black font-bold hover:bg-[#FCD223]/90 text-xs shadow-md shadow-[#FCD223]/10"
             >
-              {formMode === 'ADD' ? 'Save Category' : 'Save Changes'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Saving...
+                </>
+              ) : formMode === 'ADD' ? (
+                'Save Category'
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

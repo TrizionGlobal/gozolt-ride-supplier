@@ -15,7 +15,8 @@ import {
   CheckCircle2,
   XCircle,
   Tag,
-  DollarSign,
+  Euro,
+  Loader2,
   Clock,
   Layers,
   Sliders,
@@ -64,6 +65,7 @@ export interface FoodVariantItem {
   price: number;
   originalPrice?: number | null;
   portionSpec?: string;
+  displayOrder?: number;
   isAvailable?: boolean;
   isActive?: boolean;
   status?: 'ACTIVE' | 'INACTIVE';
@@ -108,7 +110,8 @@ export interface FoodItem {
 
 export default function RestaurantFoodItemsPage() {
   const [categories, setCategories] = useState<SupplierCategory[]>([
-    { id: 'cat-1', name: 'Pizza', slug: 'pizza', description: 'Woodfired artisan pizzas', imageUrl: '', displayOrder: 1, isActive: true, status: 'ACTIVE', itemCount: 3 },
+    { id: 'cat-biryani', name: 'Biryani & Rice', slug: 'biryani-rice', description: 'Royal dum biryanis and basmati rice', imageUrl: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=400&q=80', displayOrder: 1, isActive: true, status: 'ACTIVE', itemCount: 4 },
+    { id: 'cat-1', name: 'Pizza', slug: 'pizza', description: 'Woodfired artisan pizzas', imageUrl: '', displayOrder: 2, isActive: true, status: 'ACTIVE', itemCount: 3 },
     { id: 'cat-2', name: 'Pasta', slug: 'pasta', description: 'Fresh durum pasta', imageUrl: '', displayOrder: 2, isActive: true, status: 'ACTIVE', itemCount: 2 },
     { id: 'cat-3', name: 'Burgers', slug: 'burgers', description: 'Smashed prime Angus', imageUrl: '', displayOrder: 3, isActive: true, status: 'ACTIVE', itemCount: 1 },
     { id: 'cat-4', name: 'Starters', slug: 'starters', description: 'Authentic antipasti', imageUrl: '', displayOrder: 4, isActive: true, status: 'ACTIVE', itemCount: 1 },
@@ -124,6 +127,43 @@ export default function RestaurantFoodItemsPage() {
 
   // Pre-populated Food Items Catalog with complete relationships
   const [items, setItems] = useState<FoodItem[]>([
+    {
+      id: 'dish-biryani',
+      name: 'Royal Hyderabadi Chicken Dum Biryani',
+      sku: 'SKU-BRY-001',
+      category: 'Biryani & Rice',
+      categoryId: 'cat-biryani',
+      categorySlug: 'biryani-rice',
+      description: 'Fragrant long-grain aged basmati rice slow-cooked on dum with saffron, marinated chicken, caramelised onions, mint and royal spices.',
+      images: ['https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&q=80'],
+      prepTime: '20-25 min',
+      pricingMode: 'VARIANT_BASED',
+      basePrice: 8.50,
+      vatRate: 18,
+      discountPrice: null,
+      isVegetarian: false,
+      isVegan: false,
+      isHalal: true,
+      isSpicy: true,
+      spicyLevel: 'Medium',
+      calories: '750 kcal',
+      servingSize: '1-4 Persons (based on variant)',
+      hasVariants: true,
+      hasAddons: true,
+      isCustomizable: true,
+      addonGroups: ['Biryani Accompaniments', 'Extra Pieces', 'Desserts'],
+      variants: [
+        { id: 'v-bry-1', name: 'Single / Regular Pack', variantSize: 'Small', sku: 'SKU-BRY-VAR-REG', price: 8.5, portionSpec: 'Serves 1 • 450g • 1 Succulent Chicken Piece + 1 Boiled Egg', displayOrder: 1, isAvailable: true },
+        { id: 'v-bry-2', name: 'Medium / Couple Pack', variantSize: 'Medium', sku: 'SKU-BRY-VAR-MED', price: 14.5, portionSpec: 'Serves 2 • 850g • 2 Chicken Pieces + 2 Boiled Eggs + Extra Salan', displayOrder: 2, isAvailable: true },
+        { id: 'v-bry-3', name: 'Large / Family Pack', variantSize: 'Large', sku: 'SKU-BRY-VAR-LRG', price: 22.0, portionSpec: 'Serves 3-4 • 1.5kg • 4 Chicken Pieces + 3 Boiled Eggs + Double Raita & Salan', displayOrder: 3, isAvailable: true },
+        { id: 'v-bry-4', name: 'Jumbo / Handi Feast', variantSize: 'Family Size', sku: 'SKU-BRY-VAR-JMB', price: 34.0, portionSpec: 'Serves 6-8 • 2.6kg • 7 Chicken Pieces + 5 Boiled Eggs + Clay Handi Pot', displayOrder: 4, isAvailable: true },
+      ],
+      hasMandatoryOptions: true,
+      hasOptionalOptions: true,
+      isAvailable: true,
+      status: 'ACTIVE',
+      scheduledAvailability: 'Always Available',
+    },
     {
       id: 'dish-1',
       name: 'Truffle Mushroom Tagliolini',
@@ -366,6 +406,7 @@ export default function RestaurantFoodItemsPage() {
 
   // Screen 13: Add/Edit Modal State
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formMode, setFormMode] = useState<'ADD' | 'EDIT'>('ADD');
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
@@ -492,12 +533,11 @@ export default function RestaurantFoodItemsPage() {
     setFormName('');
     setFormDescription('');
     setFormImages([]);
-    const defaultCat = categories[0]?.name || 'Pizza';
-    setFormCategory(defaultCat);
+    setFormCategory('');
     setFormSku(`SKU-FD-00${items.length + 1}`);
-    setFormPrepTime('15 min');
+    setFormPrepTime('');
     setFormPricingMode('FIXED');
-    setFormBasePrice('12.00');
+    setFormBasePrice('');
     setFormVatRate('18');
     setFormDiscountPrice('');
     setFormVegetarian(false);
@@ -743,7 +783,12 @@ export default function RestaurantFoodItemsPage() {
   // Save Food Item (Add or Edit)
   const handleSaveItem = async (isDraft = false) => {
     if (!formName.trim()) {
-      toast.error('Validation Error', { description: 'Please provide a dish name.' });
+      toast.error('Validation Error', { description: 'Please enter food item name.' });
+      return;
+    }
+
+    if (!formCategory) {
+      toast.error('Validation Error', { description: 'Please select a menu category.' });
       return;
     }
 
@@ -752,79 +797,84 @@ export default function RestaurantFoodItemsPage() {
       return;
     }
 
-    const matchedCat = categories.find((c) => c.name === formCategory) || categories[0];
-    const basePriceNum = parseFloat(formBasePrice) || 0;
+    setIsSubmitting(true);
+    try {
+      const matchedCat = categories.find((c) => c.name === formCategory) || categories[0];
+      const basePriceNum = parseFloat(formBasePrice) || 0;
 
-    const payload: any = {
-      name: formName.trim(),
-      sku: formSku.trim() || `SKU-0${items.length + 1}`,
-      categoryId: matchedCat?.id,
-      category: matchedCat?.name || formCategory,
-      categorySlug: matchedCat?.slug || 'general',
-      description: formDescription.trim() || 'Freshly prepared signature culinary dish.',
-      imageUrl: formImages[0] || '',
-      images: formImages.length > 0 ? formImages : [],
-      prepTime: formPrepTime.trim() || '15 min',
-      pricingMode: formPricingMode,
-      basePrice: basePriceNum,
-      vatRate: parseFloat(formVatRate) || 18,
-      offerPrice: formDiscountPrice ? parseFloat(formDiscountPrice) : null,
-      isVegetarian: formVegetarian,
-      isVegan: formVegan,
-      isHalal: formHalal,
-      isSpicy: formSpicy,
-      spicyLevel: formSpicyLevel,
-      calories: formCalories.trim(),
-      servingSize: formServingSize.trim(),
-      hasVariants: formHasVariants,
-      hasAddons: formHasAddons,
-      isCustomizable: formIsCustomizable,
-      addonGroups: formAddonGroups,
-      variants: formVariants,
-      hasMandatoryOptions: formMandatory,
-      hasOptionalOptions: formOptional,
-      isAvailable: formAvailable,
-      status: isDraft ? 'DRAFT' : 'ACTIVE',
-      scheduledAvailability: formScheduled,
-    };
-
-    if (formMode === 'ADD') {
-      const newItem: FoodItem = {
-        ...payload,
-        id: `dish-${Date.now()}`,
+      const payload: any = {
+        name: formName.trim(),
+        sku: formSku.trim() || `SKU-0${items.length + 1}`,
+        categoryId: matchedCat?.id,
+        category: matchedCat?.name || formCategory,
+        categorySlug: matchedCat?.slug || 'general',
+        description: formDescription.trim() || 'Freshly prepared signature culinary dish.',
+        imageUrl: formImages[0] || '',
+        images: formImages.length > 0 ? formImages : [],
+        prepTime: formPrepTime.trim() || '15 min',
+        pricingMode: formPricingMode,
+        basePrice: basePriceNum,
+        vatRate: parseFloat(formVatRate) || 18,
+        offerPrice: formDiscountPrice ? parseFloat(formDiscountPrice) : null,
+        isVegetarian: formVegetarian,
+        isVegan: formVegan,
+        isHalal: formHalal,
+        isSpicy: formSpicy,
+        spicyLevel: formSpicyLevel,
+        calories: formCalories.trim(),
+        servingSize: formServingSize.trim(),
+        hasVariants: formHasVariants,
+        hasAddons: formHasAddons,
+        isCustomizable: formIsCustomizable,
+        addonGroups: formAddonGroups,
+        variants: formVariants,
+        hasMandatoryOptions: formMandatory,
+        hasOptionalOptions: formOptional,
+        isAvailable: formAvailable,
+        status: isDraft ? 'DRAFT' : 'ACTIVE',
+        scheduledAvailability: formScheduled,
       };
 
-      setItems((prev) => [newItem, ...prev]);
+      if (formMode === 'ADD') {
+        const newItem: FoodItem = {
+          ...payload,
+          id: `dish-${Date.now()}`,
+        };
 
-      try {
-        const created = await foodGrocerySupplierService.createItem(payload);
-        if (created?.id) {
-          setItems((prev) => prev.map((i) => (i.id === newItem.id ? { ...i, id: created.id } : i)));
+        setItems((prev) => [newItem, ...prev]);
+
+        try {
+          const created = await foodGrocerySupplierService.createItem(payload);
+          if (created?.id) {
+            setItems((prev) => prev.map((i) => (i.id === newItem.id ? { ...i, id: created.id } : i)));
+          }
+        } catch (err) {
+          console.warn('Backend item create sync fallback:', err);
         }
-      } catch (err) {
-        console.warn('Backend item create sync fallback:', err);
+
+        toast.success(isDraft ? 'Dish Draft Saved' : 'Dish Created Live', {
+          description: `"${newItem.name}" added to ${matchedCat?.name}.`,
+        });
+      } else if (editingItemId) {
+        setItems((prev) =>
+          prev.map((it) => (it.id === editingItemId ? { ...it, ...payload, id: editingItemId } : it))
+        );
+
+        try {
+          await foodGrocerySupplierService.updateItem(editingItemId, payload);
+        } catch (err) {
+          console.warn('Backend item update sync fallback:', err);
+        }
+
+        toast.success('Food Item Updated', {
+          description: `Changes to "${formName}" saved successfully.`,
+        });
       }
 
-      toast.success(isDraft ? 'Dish Draft Saved' : 'Dish Created Live', {
-        description: `"${newItem.name}" added to ${matchedCat?.name}.`,
-      });
-    } else if (editingItemId) {
-      setItems((prev) =>
-        prev.map((it) => (it.id === editingItemId ? { ...it, ...payload, id: editingItemId } : it))
-      );
-
-      try {
-        await foodGrocerySupplierService.updateItem(editingItemId, payload);
-      } catch (err) {
-        console.warn('Backend item update sync fallback:', err);
-      }
-
-      toast.success('Food Item Updated', {
-        description: `Changes to "${formName}" saved successfully.`,
-      });
+      setIsFormOpen(false);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setIsFormOpen(false);
   };
 
   // Publish / Unpublish Menu Handler
@@ -1295,10 +1345,10 @@ export default function RestaurantFoodItemsPage() {
                 <div>
                   <label className="text-xs font-semibold text-zinc-300">Food Item Name *</label>
                   <Input
-                    placeholder="e.g. Truffle Mushroom Tagliolini"
+                    placeholder="Enter Food Item Name"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
-                    className="mt-1 border-white/10 bg-[#18181B] text-xs text-white"
+                    className="mt-1 border-white/10 bg-[#18181B] text-xs text-white capitalize"
                   />
                 </div>
 
@@ -1310,6 +1360,7 @@ export default function RestaurantFoodItemsPage() {
                       onChange={(e) => setFormCategory(e.target.value)}
                       className="mt-1 w-full rounded-md border border-white/10 bg-[#18181B] py-2 px-3 text-xs text-white focus:border-[#FCD223] focus:outline-none cursor-pointer"
                     >
+                      <option value="">Select Category</option>
                       {categories.map((c) => (
                         <option key={c.id} value={c.name}>
                           {c.name}
@@ -1329,7 +1380,7 @@ export default function RestaurantFoodItemsPage() {
                 <div className="sm:col-span-2">
                   <label className="text-xs font-semibold text-zinc-300">Kitchen Preparation Time</label>
                   <Input
-                    placeholder="e.g. 15 min"
+                    placeholder="Enter Preparation Time (e.g. 15 min)"
                     value={formPrepTime}
                     onChange={(e) => setFormPrepTime(e.target.value)}
                     className="mt-1 border-white/10 bg-[#18181B] text-xs text-white"
@@ -1341,7 +1392,7 @@ export default function RestaurantFoodItemsPage() {
                 <label className="text-xs font-semibold text-zinc-300">Description</label>
                 <textarea
                   rows={2}
-                  placeholder="Describe dish ingredients, recipe heritage, and culinary preparation..."
+                  placeholder="Enter Food Item Description"
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   className="mt-1 w-full rounded-md border border-white/10 bg-[#18181B] p-2 text-xs text-white placeholder-zinc-500 focus:border-[#FCD223] focus:outline-none"
@@ -1419,7 +1470,7 @@ export default function RestaurantFoodItemsPage() {
             {/* Section 2: Pricing Configuration */}
             <div className="space-y-3 pt-3 border-t border-white/10">
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#FCD223] flex items-center gap-1.5">
-                <DollarSign className="h-3.5 w-3.5" /> Food Item Pricing
+                <Euro className="h-3.5 w-3.5" /> Food Item Pricing
               </h3>
 
               <div className="rounded-xl border border-white/10 bg-[#18181B] p-4">
@@ -1433,9 +1484,12 @@ export default function RestaurantFoodItemsPage() {
                       type="number"
                       step="0.01"
                       min="0"
-                      placeholder="e.g. 12.00"
+                      placeholder="Enter Price"
                       value={formBasePrice}
                       onChange={(e) => setFormBasePrice(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
+                      }}
                       className="border-white/10 bg-[#121214] pl-7 text-xs font-mono text-white font-bold"
                     />
                   </div>
@@ -1443,15 +1497,18 @@ export default function RestaurantFoodItemsPage() {
               </div>
             </div>
 
-            {/* Section 3: Customization, Variants & Add-ons Switches */}
+            {/* Section 3: Variants & Add-ons Switches */}
             <div className="space-y-3 pt-3 border-t border-white/10">
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#FCD223] flex items-center gap-1.5">
-                <Sliders className="h-3.5 w-3.5" /> Variants &amp; Customization Rules
+                <Sliders className="h-3.5 w-3.5" /> Variants &amp; Add-on Rules
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-[#18181B] cursor-pointer">
-                  <span className="text-xs font-semibold">Enable Variants</span>
+                  <div>
+                    <span className="text-xs font-semibold block text-white">Enable Variants</span>
+                    <span className="text-[10px] text-zinc-400">Offer multiple portion sizes (e.g. Small, Medium, Large)</span>
+                  </div>
                   <input
                     type="checkbox"
                     checked={formHasVariants}
@@ -1461,21 +1518,14 @@ export default function RestaurantFoodItemsPage() {
                 </label>
 
                 <label className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-[#18181B] cursor-pointer">
-                  <span className="text-xs font-semibold">Enable Add-ons</span>
+                  <div>
+                    <span className="text-xs font-semibold block text-white">Enable Add-ons</span>
+                    <span className="text-[10px] text-zinc-400">Allow customers to order extra sauces, cheese, or toppings</span>
+                  </div>
                   <input
                     type="checkbox"
                     checked={formHasAddons}
                     onChange={(e) => setFormHasAddons(e.target.checked)}
-                    className="accent-[#FCD223] h-4 w-4"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-[#18181B] cursor-pointer">
-                  <span className="text-xs font-semibold">Allow Customizations</span>
-                  <input
-                    type="checkbox"
-                    checked={formIsCustomizable}
-                    onChange={(e) => setFormIsCustomizable(e.target.checked)}
                     className="accent-[#FCD223] h-4 w-4"
                   />
                 </label>
@@ -1552,15 +1602,25 @@ export default function RestaurantFoodItemsPage() {
             <Button
               variant="outline"
               onClick={() => setIsFormOpen(false)}
+              disabled={isSubmitting}
               className="border-white/10 text-zinc-400 hover:text-white"
             >
               Cancel
             </Button>
             <Button
               onClick={() => handleSaveItem(false)}
+              disabled={isSubmitting}
               className="bg-[#FCD223] text-black font-bold hover:bg-[#FCD223]/90 text-xs shadow-md shadow-[#FCD223]/10"
             >
-              {formMode === 'ADD' ? 'Save & Publish Dish' : 'Save Changes'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Saving...
+                </>
+              ) : formMode === 'ADD' ? (
+                'Save & Publish Dish'
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
